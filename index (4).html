@@ -1,0 +1,5906 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Zombie Defense V2.2</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    overflow: hidden;
+    background: #10151c;
+    color: white;
+    font-family: Arial, sans-serif;
+    user-select: none;
+}
+
+canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+}
+
+#topBar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 58px;
+    z-index: 20;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 8px 10px;
+
+    background: #17212b;
+    border-bottom: 2px solid #334155;
+}
+
+.stat {
+    min-width: 105px;
+    padding: 7px 12px;
+
+    background: #202d3a;
+    border: 1px solid #475569;
+    border-radius: 7px;
+
+    text-align: center;
+    font-weight: bold;
+}
+
+#floorName {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+
+    font-size: 18px;
+    font-weight: bold;
+}
+
+#version {
+    margin-left: auto;
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+#floorControls {
+    position: fixed;
+    top: 68px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    z-index: 15;
+
+    display: flex;
+    gap: 5px;
+
+    padding: 6px;
+
+    background: rgba(15,23,42,.92);
+    border: 1px solid #475569;
+    border-radius: 9px;
+}
+
+.floorButton {
+    border: 0;
+    border-radius: 6px;
+
+    padding: 8px 14px;
+
+    color: white;
+    background: #334155;
+
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.floorButton:hover {
+    background: #475569;
+}
+
+.floorButton.active {
+    background: #2563eb;
+}
+
+#shop {
+    position: fixed;
+    left: 10px;
+    bottom: 10px;
+
+    width: 235px;
+    max-height: calc(100vh - 90px);
+
+    overflow-y: auto;
+
+    z-index: 30;
+
+    background: rgba(15,23,42,.96);
+    border: 1px solid #475569;
+    border-radius: 10px;
+
+    padding: 10px;
+}
+
+#shop h3 {
+    margin-bottom: 8px;
+    font-size: 15px;
+}
+
+.shopButton {
+    width: 100%;
+    margin-bottom: 6px;
+
+    padding: 9px;
+
+    border: 1px solid #475569;
+    border-radius: 7px;
+
+    background: #1e293b;
+    color: white;
+
+    text-align: left;
+    cursor: pointer;
+}
+
+.shopButton:hover {
+    background: #334155;
+}
+
+.shopButton.selected {
+    border-color: #60a5fa;
+    background: #1d4ed8;
+}
+
+.shopName {
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.shopInfo {
+    color: #94a3b8;
+    font-size: 11px;
+    margin-top: 3px;
+}
+
+#tools {
+    position: fixed;
+    right: 10px;
+    bottom: 10px;
+
+    z-index: 30;
+
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.toolButton {
+    padding: 10px 14px;
+
+    border: 1px solid #475569;
+    border-radius: 7px;
+
+    background: rgba(15,23,42,.96);
+    color: white;
+
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.toolButton:hover {
+    background: #334155;
+}
+
+.toolButton.active {
+    background: #b91c1c;
+    border-color: #ef4444;
+}
+
+#message {
+    position: fixed;
+    left: 50%;
+    bottom: 18px;
+
+    transform: translateX(-50%);
+
+    z-index: 40;
+
+    padding: 9px 15px;
+
+    background: rgba(15,23,42,.94);
+    border: 1px solid #475569;
+    border-radius: 8px;
+
+    font-size: 13px;
+    pointer-events: none;
+
+    opacity: 0;
+    transition: opacity .15s;
+}
+
+#buildTimer {
+    position: fixed;
+    top: 68px;
+    right: 12px;
+
+    z-index: 30;
+
+    padding: 9px 13px;
+
+    background: rgba(15,23,42,.95);
+    border: 1px solid #475569;
+    border-radius: 8px;
+
+    font-weight: bold;
+}
+
+#controlsText {
+    position: fixed;
+    right: 10px;
+    top: 105px;
+
+    z-index: 20;
+
+    padding: 8px 10px;
+
+    background: rgba(15,23,42,.85);
+    border: 1px solid #334155;
+    border-radius: 7px;
+
+    color: #94a3b8;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+#startScreen,
+#gameOver {
+    position: fixed;
+    inset: 0;
+
+    z-index: 100;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(2,6,23,.88);
+}
+
+.panel {
+    width: min(520px, 90vw);
+
+    padding: 30px;
+
+    background: #17212b;
+    border: 1px solid #475569;
+    border-radius: 14px;
+
+    text-align: center;
+
+    box-shadow: 0 20px 70px rgba(0,0,0,.45);
+}
+
+.panel h1 {
+    margin-bottom: 12px;
+}
+
+.panel p {
+    color: #cbd5e1;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.bigButton {
+    width: 100%;
+
+    padding: 13px;
+
+    margin-top: 8px;
+
+    border: 0;
+    border-radius: 8px;
+
+    background: #2563eb;
+    color: white;
+
+    font-size: 16px;
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+.bigButton:hover {
+    background: #3b82f6;
+}
+
+#gameOver {
+    display: none;
+}
+
+#gameOver h1 {
+    color: #ef4444;
+}
+
+::-webkit-scrollbar {
+    width: 7px;
+}
+
+::-webkit-scrollbar-track {
+    background: #0f172a;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 5px;
+}
+</style>
+
+</head>
+
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="topBar">
+
+```
+<div class="stat">
+    💰 $<span id="money">500</span>
+</div>
+
+<div class="stat">
+    ⚡ <span id="power">0 / 0</span>
+</div>
+
+<div class="stat">
+    ❤️ <span id="baseHP">0</span>
+</div>
+
+<div class="stat">
+    🌊 Wave <span id="wave">0 / 10</span>
+</div>
+
+<div class="stat">
+    🧟 <span id="zombieCount">0</span>
+</div>
+
+<div id="floorName">
+    Ground Floor
+</div>
+
+<div id="version">
+    V2.2
+</div>
+```
+
+</div>
+
+<div id="floorControls">
+
+```
+<button
+    class="floorButton"
+    onclick="setFloor(0)"
+>
+    🕳 Basement
+</button>
+
+<button
+    class="floorButton active"
+    onclick="setFloor(1)"
+>
+    🏠 Ground
+</button>
+
+<button
+    class="floorButton"
+    onclick="setFloor(2)"
+>
+    🏢 Roof
+</button>
+```
+
+</div>
+
+<div id="buildTimer">
+    BUILD PHASE:
+    <span id="timer">300</span>s
+</div>
+
+<div id="controlsText">
+    Left Click = Place<br>
+    Right Click = Remove<br>
+    R = Rotate<br>
+    ESC = Cancel<br>
+    Middle Mouse = Pan<br>
+    Wheel = Zoom
+</div>
+
+<div id="shop">
+
+```
+<h3>🏗 BUILD</h3>
+
+<button
+    class="shopButton"
+    onclick="selectBuild('wall')"
+>
+    <div class="shopName">
+        🧱 Wall — $20
+    </div>
+
+    <div class="shopInfo">
+        Completely blocks zombies
+    </div>
+</button>
+
+
+<button
+    class="shopButton"
+    onclick="selectBuild('door')"
+>
+    <div class="shopName">
+        🚪 Door — $40
+    </div>
+
+    <div class="shopInfo">
+        Zombies must break it
+    </div>
+</button>
+
+
+<button
+    class="shopButton"
+    onclick="selectBuild('ladder')"
+>
+    <div class="shopName">
+        🪜 Ladder — $60
+    </div>
+
+    <div class="shopInfo">
+        Connects all 3 floors
+    </div>
+</button>
+
+
+<button
+    class="shopButton"
+    onclick="selectBuild('generator')"
+>
+    <div class="shopName">
+        ⚡ Generator — $100
+    </div>
+
+    <div class="shopInfo">
+        Provides 3 power
+    </div>
+</button>
+
+
+<button
+    class="shopButton"
+    onclick="selectBuild('turret')"
+>
+    <div class="shopName">
+        🔫 Turret — $150
+    </div>
+
+    <div class="shopInfo">
+        Uses 1 power
+    </div>
+</button>
+
+
+<button
+    class="shopButton"
+    onclick="selectBuild('heavyTurret')"
+>
+    <div class="shopName">
+        💥 Heavy Turret — $250
+    </div>
+
+    <div class="shopInfo">
+        Uses 2 power
+    </div>
+</button>
+
+
+<button
+    class="shopButton"
+    onclick="selectBuild('mine')"
+>
+    <div class="shopName">
+        💣 Mine — $50
+    </div>
+
+    <div class="shopInfo">
+        Basement only
+    </div>
+</button>
+
+
+<button
+    class="shopButton"
+    onclick="selectBuild('survivor')"
+>
+    <div class="shopName">
+        🧍 Survivor — $0
+    </div>
+
+    <div class="shopInfo">
+        Person you must protect
+    </div>
+</button>
+```
+
+</div>
+
+<div id="tools">
+
+```
+<button
+    id="demolishButton"
+    class="toolButton"
+    onclick="toggleDemolish()"
+>
+    🔨 Demolish — $25
+</button>
+
+<button
+    class="toolButton"
+    onclick="addMoney()"
+>
+    +$100 TEST
+</button>
+
+<button
+    class="toolButton"
+    onclick="startNextWave()"
+>
+    ▶ START WAVE
+</button>
+
+<button
+    class="toolButton"
+    onclick="restartGame()"
+>
+    ↻ RESTART
+</button>
+```
+
+</div>
+
+<div id="message"></div>
+
+<div id="startScreen">
+
+```
+<div class="panel">
+
+    <h1>
+        🧟 ZOMBIE DEFENSE
+    </h1>
+
+    <p>
+        You have 5 minutes to build your base.
+        <br><br>
+
+        Protect the survivor for 10 waves.
+        <br><br>
+
+        🧱 Walls block zombies.
+        <br>
+        🚪 Doors must be broken.
+        <br>
+        🪜 Ladders connect the floors.
+        <br><br>
+
+        Zombies will intelligently navigate
+        your entire base.
+    </p>
+
+    <button
+        class="bigButton"
+        onclick="startGame()"
+    >
+        ▶ START GAME
+    </button>
+
+</div>
+```
+
+</div>
+
+<div id="gameOver">
+
+```
+<div class="panel">
+
+    <h1>
+        BASE OVERRUN
+    </h1>
+
+    <p id="gameOverText">
+        The survivor didn't make it.
+    </p>
+
+    <button
+        class="bigButton"
+        onclick="restartGame()"
+    >
+        ↻ PLAY AGAIN
+    </button>
+
+</div>
+```
+
+</div>
+
+<script>
+
+/* =========================================================
+   CANVAS
+========================================================= */
+
+const canvas =
+    document.getElementById("game");
+
+const ctx =
+    canvas.getContext("2d");
+
+
+/* =========================================================
+   WORLD
+========================================================= */
+
+const TILE = 48;
+
+const WORLD_W = 30;
+
+const WORLD_H = 20;
+
+const FLOORS = 3;
+
+
+/* =========================================================
+   CAMERA
+========================================================= */
+
+const camera = {
+
+    x: 720,
+
+    y: 480,
+
+    zoom: 1
+
+};
+
+
+let dragging = false;
+
+let dragStartX = 0;
+
+let dragStartY = 0;
+
+let cameraStartX = 0;
+
+let cameraStartY = 0;
+
+
+/* =========================================================
+   GAME STATE
+========================================================= */
+
+let gameStarted = false;
+
+let gameRunning = false;
+
+let currentFloor = 1;
+
+let money = 500;
+
+let baseHP = 100;
+
+let currentWave = 0;
+
+const MAX_WAVES = 10;
+
+let buildTime = 300;
+
+let buildPhase = true;
+
+let waveActive = false;
+
+let enemiesToSpawn = 0;
+
+let spawnTimer = 0;
+
+let zombies = [];
+
+let particles = [];
+
+
+/* =========================================================
+   BUILDINGS
+========================================================= */
+
+const BUILDINGS = {
+
+    wall: {
+
+        name: "Wall",
+
+        cost: 20,
+
+        hp: 999999,
+
+        color: "#64748b"
+
+    },
+
+    door: {
+
+        name: "Door",
+
+        cost: 40,
+
+        hp: 180,
+
+        color: "#a16207"
+
+    },
+
+    ladder: {
+
+        name: "Ladder",
+
+        cost: 60,
+
+        hp: 999999,
+
+        color: "#d97706"
+
+    },
+
+    generator: {
+
+        name: "Generator",
+
+        cost: 100,
+
+        power: 3,
+
+        hp: 120,
+
+        color: "#facc15"
+
+    },
+
+    turret: {
+
+        name: "Turret",
+
+        cost: 150,
+
+        power: 1,
+
+        hp: 100,
+
+        range: 260,
+
+        damage: 15,
+
+        cooldown: 45,
+
+        color: "#3b82f6"
+
+    },
+
+    heavyTurret: {
+
+        name: "Heavy Turret",
+
+        cost: 250,
+
+        power: 2,
+
+        hp: 150,
+
+        range: 330,
+
+        damage: 40,
+
+        cooldown: 90,
+
+        color: "#ef4444"
+
+    },
+
+    mine: {
+
+        name: "Mine",
+
+        cost: 50,
+
+        power: 0,
+
+        hp: 50,
+
+        damage: 100,
+
+        color: "#dc2626"
+
+    },
+
+    survivor: {
+
+        name: "Survivor",
+
+        cost: 0,
+
+        hp: 100,
+
+        color: "#22c55e"
+
+    }
+
+};
+
+
+const buildings = [];
+
+const premadeObjects = [];
+
+let selectedBuild = null;
+
+let demolishMode = false;
+
+let rotation = 0;
+
+let survivor = null;
+
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+const mouse = {
+
+    x: 0,
+
+    y: 0
+
+};
+
+
+canvas.addEventListener(
+    "mousemove",
+    e => {
+
+        mouse.x = e.clientX;
+
+        mouse.y = e.clientY;
+
+    }
+);
+
+
+canvas.addEventListener(
+    "mousedown",
+    e => {
+
+        if (
+            e.button !== 1
+        ) {
+
+            return;
+
+        }
+
+
+        dragging = true;
+
+        dragStartX =
+            e.clientX;
+
+        dragStartY =
+            e.clientY;
+
+        cameraStartX =
+            camera.x;
+
+        cameraStartY =
+            camera.y;
+
+    }
+);
+
+
+window.addEventListener(
+    "mouseup",
+    e => {
+
+        if (
+            e.button === 1
+        ) {
+
+            dragging = false;
+
+        }
+
+    }
+);
+
+
+window.addEventListener(
+    "mousemove",
+    e => {
+
+        if (!dragging) {
+
+            return;
+
+        }
+
+
+        camera.x =
+            cameraStartX -
+            (
+                e.clientX -
+                dragStartX
+            ) /
+            camera.zoom;
+
+        camera.y =
+            cameraStartY -
+            (
+                e.clientY -
+                dragStartY
+            ) /
+            camera.zoom;
+
+    }
+);
+
+
+/* =========================================================
+   RESIZE
+========================================================= */
+
+function resize() {
+
+    canvas.width =
+        window.innerWidth;
+
+    canvas.height =
+        window.innerHeight;
+
+}
+
+window.addEventListener(
+    "resize",
+    resize
+);
+
+resize();
+
+
+/* =========================================================
+   COORDINATES
+========================================================= */
+
+function screenToWorld(
+    sx,
+    sy
+) {
+
+    return {
+
+        x:
+            (
+                sx -
+                canvas.width / 2
+            ) /
+            camera.zoom +
+            camera.x,
+
+        y:
+            (
+                sy -
+                canvas.height / 2
+            ) /
+            camera.zoom +
+            camera.y
+
+    };
+
+}
+
+
+function worldToScreen(
+    x,
+    y
+) {
+
+    return {
+
+        x:
+            (
+                x -
+                camera.x
+            ) *
+            camera.zoom +
+            canvas.width / 2,
+
+        y:
+            (
+                y -
+                camera.y
+            ) *
+            camera.zoom +
+            canvas.height / 2
+
+    };
+
+}
+
+
+function tileCenter(
+    tx,
+    ty
+) {
+
+    return {
+
+        x:
+            tx *
+            TILE +
+            TILE / 2,
+
+        y:
+            ty *
+            TILE +
+            TILE / 2
+
+    };
+
+}
+
+
+/* =========================================================
+   OBJECT LOOKUP
+========================================================= */
+
+function getBuildingAt(
+    floor,
+    tx,
+    ty
+) {
+
+    return buildings.find(
+        b =>
+            b.floor === floor &&
+            b.tx === tx &&
+            b.ty === ty
+    );
+
+}
+
+
+function getPremadeAt(
+    floor,
+    tx,
+    ty
+) {
+
+    return premadeObjects.find(
+        b =>
+            b.floor === floor &&
+            b.tx === tx &&
+            b.ty === ty
+    );
+
+}
+
+
+function getAnyObjectAt(
+    floor,
+    tx,
+    ty
+) {
+
+    return (
+        getBuildingAt(
+            floor,
+            tx,
+            ty
+        ) ||
+        getPremadeAt(
+            floor,
+            tx,
+            ty
+        )
+    );
+
+}
+
+
+/* =========================================================
+   OBJECT TYPES
+========================================================= */
+
+function isWall(
+    object
+) {
+
+    return object &&
+        (
+            object.type === "wall" ||
+            object.type === "premadeWall"
+        );
+
+}
+
+
+function isDoor(
+    object
+) {
+
+    return object &&
+        object.type === "door";
+
+}
+
+
+function isLadder(
+    object
+) {
+
+    return object &&
+        object.type === "ladder";
+
+}
+
+
+/* =========================================================
+   ZOMBIE PASSABILITY
+========================================================= */
+
+/*
+    IMPORTANT:
+
+    Walls are impossible.
+
+    Doors are NOT treated as impossible.
+
+    Instead, doors are allowed into the path.
+    When a zombie reaches the door node,
+    it stops and attacks the door.
+
+    This means the pathfinder can deliberately
+    choose a door as part of its route.
+
+    Once the door is destroyed, the zombie
+    recalculates and continues.
+*/
+
+function isBlockedForZombie(
+    floor,
+    tx,
+    ty
+) {
+
+    if (
+        tx < 0 ||
+        ty < 0 ||
+        tx >= WORLD_W ||
+        ty >= WORLD_H
+    ) {
+
+        return true;
+
+    }
+
+
+    const object =
+        getAnyObjectAt(
+            floor,
+            tx,
+            ty
+        );
+
+
+    if (!object) {
+
+        return false;
+
+    }
+
+
+    if (
+        isWall(object)
+    ) {
+
+        return true;
+
+    }
+
+
+    /*
+        Doors are intentionally
+        passable for pathfinding.
+    */
+
+    if (
+        isDoor(object)
+    ) {
+
+        return false;
+
+    }
+
+
+    return false;
+
+}
+
+
+/* =========================================================
+   PREMADE MAP
+========================================================= */
+
+function addPremadeWall(
+    floor,
+    tx,
+    ty
+) {
+
+    if (
+        getAnyObjectAt(
+            floor,
+            tx,
+            ty
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    premadeObjects.push({
+
+        type: "premadeWall",
+
+        floor,
+
+        tx,
+
+        ty,
+
+        hp: 999999,
+
+        premade: true
+
+    });
+
+}
+
+
+function createPremadeMap() {
+
+    premadeObjects.length = 0;
+
+
+    for (
+        let floor = 0;
+        floor < FLOORS;
+        floor++
+    ) {
+
+        const left = 5;
+
+        const right = 24;
+
+        const top = 3;
+
+        const bottom = 16;
+
+
+        /*
+            Outer walls.
+        */
+
+        for (
+            let x = left;
+            x <= right;
+            x++
+        ) {
+
+            addPremadeWall(
+                floor,
+                x,
+                top
+            );
+
+            addPremadeWall(
+                floor,
+                x,
+                bottom
+            );
+
+        }
+
+
+        for (
+            let y = top;
+            y <= bottom;
+            y++
+        ) {
+
+            addPremadeWall(
+                floor,
+                left,
+                y
+            );
+
+            addPremadeWall(
+                floor,
+                right,
+                y
+            );
+
+        }
+
+
+        /*
+            Door openings.
+        */
+
+        const doorY = 10;
+
+
+        const leftWall =
+            premadeObjects.find(
+                b =>
+                    b.floor === floor &&
+                    b.tx === left &&
+                    b.ty === doorY
+            );
+
+
+        const rightWall =
+            premadeObjects.find(
+                b =>
+                    b.floor === floor &&
+                    b.tx === right &&
+                    b.ty === doorY
+            );
+
+
+        if (leftWall) {
+
+            premadeObjects.splice(
+                premadeObjects.indexOf(
+                    leftWall
+                ),
+                1
+            );
+
+        }
+
+
+        if (rightWall) {
+
+            premadeObjects.splice(
+                premadeObjects.indexOf(
+                    rightWall
+                ),
+                1
+            );
+
+        }
+
+
+        /*
+            Interior wall.
+        */
+
+        for (
+            let y = 6;
+            y <= 13;
+            y++
+        ) {
+
+            if (
+                y === 9 ||
+                y === 10
+            ) {
+
+                continue;
+
+            }
+
+
+            addPremadeWall(
+                floor,
+                14,
+                y
+            );
+
+        }
+
+    }
+
+
+    /*
+        Starting doors.
+    */
+
+    for (
+        let floor = 0;
+        floor < FLOORS;
+        floor++
+    ) {
+
+        buildings.push({
+
+            type: "door",
+
+            floor,
+
+            tx: 5,
+
+            ty: 10,
+
+            hp: 180,
+
+            maxHp: 180,
+
+            premade: true
+
+        });
+
+
+        buildings.push({
+
+            type: "door",
+
+            floor,
+
+            tx: 24,
+
+            ty: 10,
+
+            hp: 180,
+
+            maxHp: 180,
+
+            premade: true
+
+        });
+
+    }
+
+
+    /*
+        Starting central ladder.
+    */
+
+    createLadderShaft(
+        18,
+        10,
+        true
+    );
+
+}
+
+
+/* =========================================================
+   LADDER SHAFT
+========================================================= */
+
+function createLadderShaft(
+    tx,
+    ty,
+    free = false
+) {
+
+    for (
+        let floor = 0;
+        floor < FLOORS;
+        floor++
+    ) {
+
+        if (
+            getAnyObjectAt(
+                floor,
+                tx,
+                ty
+            )
+        ) {
+
+            continue;
+
+        }
+
+
+        buildings.push({
+
+            type: "ladder",
+
+            floor,
+
+            tx,
+
+            ty,
+
+            hp: 999999,
+
+            free
+
+        });
+
+    }
+
+}
+
+
+/* =========================================================
+   FLOOR
+========================================================= */
+
+function setFloor(
+    floor
+) {
+
+    currentFloor =
+        floor;
+
+
+    document
+        .querySelectorAll(
+            ".floorButton"
+        )
+        .forEach(
+            (
+                button,
+                index
+            ) => {
+
+                button.classList.toggle(
+                    "active",
+                    index === floor
+                );
+
+            }
+        );
+
+
+    const names = [
+
+        "Basement",
+
+        "Ground Floor",
+
+        "Roof"
+
+    ];
+
+
+    document.getElementById(
+        "floorName"
+    ).textContent =
+        names[floor];
+
+}
+
+
+/* =========================================================
+   ZOOM
+========================================================= */
+
+canvas.addEventListener(
+    "wheel",
+    e => {
+
+        e.preventDefault();
+
+
+        const before =
+            screenToWorld(
+                e.clientX,
+                e.clientY
+            );
+
+
+        camera.zoom *=
+            e.deltaY < 0
+                ? 1.1
+                : .9;
+
+
+        camera.zoom =
+            Math.max(
+                .45,
+                Math.min(
+                    2.2,
+                    camera.zoom
+                )
+            );
+
+
+        const after =
+            screenToWorld(
+                e.clientX,
+                e.clientY
+            );
+
+
+        camera.x +=
+            before.x -
+            after.x;
+
+        camera.y +=
+            before.y -
+            after.y;
+
+    },
+    {
+        passive: false
+    }
+);
+
+
+/* =========================================================
+   BUILD SELECTION
+========================================================= */
+
+function selectBuild(
+    type
+) {
+
+    selectedBuild =
+        type;
+
+    demolishMode =
+        false;
+
+
+    document
+        .getElementById(
+            "demolishButton"
+        )
+        .classList.remove(
+            "active"
+        );
+
+
+    showMessage(
+        `Selected ${BUILDINGS[type].name}`
+    );
+
+}
+
+
+function cancelBuild() {
+
+    selectedBuild =
+        null;
+
+    demolishMode =
+        false;
+
+}
+
+
+/* =========================================================
+   DEMOLISH
+========================================================= */
+
+function toggleDemolish() {
+
+    demolishMode =
+        !demolishMode;
+
+    selectedBuild =
+        null;
+
+
+    document
+        .getElementById(
+            "demolishButton"
+        )
+        .classList.toggle(
+            "active",
+            demolishMode
+        );
+
+
+    showMessage(
+        demolishMode
+            ? "🔨 Demolish mode"
+            : "Demolish cancelled"
+    );
+
+}
+
+
+/* =========================================================
+   PLACE
+========================================================= */
+
+function placeBuilding(
+    tx,
+    ty
+) {
+
+    if (!selectedBuild) {
+
+        return;
+
+    }
+
+
+    const data =
+        BUILDINGS[
+            selectedBuild
+        ];
+
+
+    if (
+        selectedBuild === "mine" &&
+        currentFloor !== 0
+    ) {
+
+        showMessage(
+            "Mines can only be placed downstairs."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        selectedBuild === "survivor" &&
+        survivor
+    ) {
+
+        showMessage(
+            "You already placed the survivor."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        getAnyObjectAt(
+            currentFloor,
+            tx,
+            ty
+        )
+    ) {
+
+        showMessage(
+            "That space is occupied."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        money < data.cost
+    ) {
+
+        showMessage(
+            "Not enough money."
+        );
+
+        return;
+
+    }
+
+
+    /*
+        Ladders create a full shaft.
+    */
+
+    if (
+        selectedBuild === "ladder"
+    ) {
+
+        const clear =
+            [0,1,2].every(
+                floor =>
+                    !getAnyObjectAt(
+                        floor,
+                        tx,
+                        ty
+                    )
+            );
+
+
+        if (!clear) {
+
+            showMessage(
+                "All three floors must be clear."
+            );
+
+            return;
+
+        }
+
+
+        money -=
+            data.cost;
+
+
+        createLadderShaft(
+            tx,
+            ty
+        );
+
+
+        /*
+            Force all zombies to
+            reconsider their routes.
+        */
+
+        invalidateZombiePaths();
+
+
+        showMessage(
+            "🪜 Ladder shaft created."
+        );
+
+
+        updateUI();
+
+        return;
+
+    }
+
+
+    money -=
+        data.cost;
+
+
+    const object = {
+
+        type:
+            selectedBuild,
+
+        floor:
+            currentFloor,
+
+        tx,
+
+        ty,
+
+        hp:
+            data.hp || 100,
+
+        maxHp:
+            data.hp || 100,
+
+        cooldown: 0,
+
+        rotation
+
+    };
+
+
+    buildings.push(
+        object
+    );
+
+
+    if (
+        selectedBuild ===
+        "survivor"
+    ) {
+
+        survivor =
+            object;
+
+    }
+
+
+    invalidateZombiePaths();
+
+    updateUI();
+
+}
+
+
+/* =========================================================
+   DEMOLISH OBJECT
+========================================================= */
+
+function demolishAt(
+    tx,
+    ty
+) {
+
+    const building =
+        getBuildingAt(
+            currentFloor,
+            tx,
+            ty
+        );
+
+
+    if (building) {
+
+        if (
+            building.type ===
+            "survivor"
+        ) {
+
+            showMessage(
+                "You cannot demolish the survivor."
+            );
+
+            return;
+
+        }
+
+
+        if (
+            building.type ===
+            "ladder"
+        ) {
+
+            showMessage(
+                "Ladder shafts cannot be removed individually."
+            );
+
+            return;
+
+        }
+
+
+        if (
+            building.premade
+        ) {
+
+            if (
+                money < 25
+            ) {
+
+                showMessage(
+                    "You need $25."
+                );
+
+                return;
+
+            }
+
+
+            money -= 25;
+
+
+            buildings.splice(
+                buildings.indexOf(
+                    building
+                ),
+                1
+            );
+
+
+            invalidateZombiePaths();
+
+
+            showMessage(
+                "Premade object demolished."
+            );
+
+
+            updateUI();
+
+            return;
+
+        }
+
+
+        money +=
+            Math.floor(
+                BUILDINGS[
+                    building.type
+                ].cost * .6
+            );
+
+
+        buildings.splice(
+            buildings.indexOf(
+                building
+            ),
+            1
+        );
+
+
+        invalidateZombiePaths();
+
+
+        showMessage(
+            "Object removed."
+        );
+
+
+        updateUI();
+
+        return;
+
+    }
+
+
+    const premade =
+        getPremadeAt(
+            currentFloor,
+            tx,
+            ty
+        );
+
+
+    if (premade) {
+
+        if (
+            money < 25
+        ) {
+
+            showMessage(
+                "You need $25."
+            );
+
+            return;
+
+        }
+
+
+        money -= 25;
+
+
+        premadeObjects.splice(
+            premadeObjects.indexOf(
+                premade
+            ),
+            1
+        );
+
+
+        invalidateZombiePaths();
+
+
+        showMessage(
+            "Premade wall removed."
+        );
+
+
+        updateUI();
+
+    }
+
+}
+
+
+/* =========================================================
+   CLICK
+========================================================= */
+
+canvas.addEventListener(
+    "click",
+    e => {
+
+        if (
+            e.button !== 0 ||
+            dragging
+        ) {
+
+            return;
+
+        }
+
+
+        const pos =
+            screenToWorld(
+                e.clientX,
+                e.clientY
+            );
+
+
+        const tx =
+            Math.floor(
+                pos.x / TILE
+            );
+
+        const ty =
+            Math.floor(
+                pos.y / TILE
+            );
+
+
+        if (
+            tx < 0 ||
+            ty < 0 ||
+            tx >= WORLD_W ||
+            ty >= WORLD_H
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            demolishMode
+        ) {
+
+            demolishAt(
+                tx,
+                ty
+            );
+
+            return;
+
+        }
+
+
+        if (
+            selectedBuild
+        ) {
+
+            placeBuilding(
+                tx,
+                ty
+            );
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   RIGHT CLICK
+========================================================= */
+
+canvas.addEventListener(
+    "contextmenu",
+    e => {
+
+        e.preventDefault();
+
+
+        const pos =
+            screenToWorld(
+                e.clientX,
+                e.clientY
+            );
+
+
+        const tx =
+            Math.floor(
+                pos.x / TILE
+            );
+
+        const ty =
+            Math.floor(
+                pos.y / TILE
+            );
+
+
+        const building =
+            getBuildingAt(
+                currentFloor,
+                tx,
+                ty
+            );
+
+
+        if (
+            building &&
+            !building.premade &&
+            building.type !==
+                "survivor" &&
+            building.type !==
+                "ladder"
+        ) {
+
+            money +=
+                Math.floor(
+                    BUILDINGS[
+                        building.type
+                    ].cost * .6
+                );
+
+
+            buildings.splice(
+                buildings.indexOf(
+                    building
+                ),
+                1
+            );
+
+
+            invalidateZombiePaths();
+
+
+            updateUI();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   ROTATION
+========================================================= */
+
+window.addEventListener(
+    "keydown",
+    e => {
+
+        if (
+            e.key.toLowerCase() === "r"
+        ) {
+
+            rotation =
+                (
+                    rotation +
+                    1
+                ) % 4;
+
+
+            showMessage(
+                `Rotation: ${rotation * 90}°`
+            );
+
+        }
+
+
+        if (
+            e.key === "Escape"
+        ) {
+
+            cancelBuild();
+
+
+            document
+                .getElementById(
+                    "demolishButton"
+                )
+                .classList.remove(
+                    "active"
+                );
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   SMART MULTI-FLOOR PATHFINDING
+========================================================= */
+
+/*
+    This is the major V2.2 AI system.
+
+    A node is:
+
+        floor
+        x
+        y
+
+    Zombies can move:
+
+        left
+        right
+        up
+        down
+
+    They can also move:
+
+        floor - 1
+        floor + 1
+
+    BUT ONLY when standing on a ladder.
+
+    Walls cannot be crossed.
+
+    Doors CAN appear in the path.
+
+    Doors have a cost, which makes the
+    pathfinder prefer open routes when possible,
+    but still lets it find a route through a door
+    when necessary.
+*/
+
+
+const DIRECTIONS = [
+
+    {
+        x: 1,
+        y: 0
+    },
+
+    {
+        x: -1,
+        y: 0
+    },
+
+    {
+        x: 0,
+        y: 1
+    },
+
+    {
+        x: 0,
+        y: -1
+    }
+
+];
+
+
+function nodeKey(
+    floor,
+    x,
+    y
+) {
+
+    return (
+        floor +
+        ":" +
+        x +
+        ":" +
+        y
+    );
+
+}
+
+
+/*
+    Cost of entering a tile.
+
+    Normal floor = 1
+
+    Door = 3
+
+    Ladder = 1
+*/
+
+function movementCost(
+    floor,
+    x,
+    y
+) {
+
+    const object =
+        getAnyObjectAt(
+            floor,
+            x,
+            y
+        );
+
+
+    if (
+        isWall(object)
+    ) {
+
+        return Infinity;
+
+    }
+
+
+    if (
+        isDoor(object)
+    ) {
+
+        return 3;
+
+    }
+
+
+    return 1;
+
+}
+
+
+/*
+    Dijkstra-style pathfinder.
+
+    This is used instead of plain BFS because
+    doors have a higher cost than open floor.
+*/
+
+function findSmartPath(
+    startFloor,
+    startX,
+    startY,
+    goalFloor,
+    goalX,
+    goalY
+) {
+
+    const start =
+        nodeKey(
+            startFloor,
+            startX,
+            startY
+        );
+
+
+    const goal =
+        nodeKey(
+            goalFloor,
+            goalX,
+            goalY
+        );
+
+
+    const distances =
+        new Map();
+
+
+    const cameFrom =
+        new Map();
+
+
+    const open = [];
+
+
+    distances.set(
+        start,
+        0
+    );
+
+
+    open.push({
+
+        floor:
+            startFloor,
+
+        x:
+            startX,
+
+        y:
+            startY,
+
+        cost: 0
+
+    });
+
+
+    /*
+        Small priority queue.
+        Good enough for this grid.
+    */
+
+    while (
+        open.length
+    ) {
+
+        open.sort(
+            (
+                a,
+                b
+            ) =>
+                a.cost -
+                b.cost
+        );
+
+
+        const current =
+            open.shift();
+
+
+        const currentKey =
+            nodeKey(
+                current.floor,
+                current.x,
+                current.y
+            );
+
+
+        const knownCost =
+            distances.get(
+                currentKey
+            );
+
+
+        if (
+            current.cost >
+            knownCost
+        ) {
+
+            continue;
+
+        }
+
+
+        if (
+            currentKey ===
+            goal
+        ) {
+
+            break;
+
+        }
+
+
+        /*
+            Normal movement.
+        */
+
+        for (
+            const dir of
+            DIRECTIONS
+        ) {
+
+            const nx =
+                current.x +
+                dir.x;
+
+            const ny =
+                current.y +
+                dir.y;
+
+
+            if (
+                nx < 0 ||
+                ny < 0 ||
+                nx >= WORLD_W ||
+                ny >= WORLD_H
+            ) {
+
+                continue;
+
+            }
+
+
+            const cost =
+                movementCost(
+                    current.floor,
+                    nx,
+                    ny
+                );
+
+
+            if (
+                cost === Infinity
+            ) {
+
+                continue;
+
+            }
+
+
+            const nextCost =
+                current.cost +
+                cost;
+
+
+            const nextKey =
+                nodeKey(
+                    current.floor,
+                    nx,
+                    ny
+                );
+
+
+            if (
+                !distances.has(
+                    nextKey
+                ) ||
+                nextCost <
+                    distances.get(
+                        nextKey
+                    )
+            ) {
+
+                distances.set(
+                    nextKey,
+                    nextCost
+                );
+
+
+                cameFrom.set(
+                    nextKey,
+                    currentKey
+                );
+
+
+                open.push({
+
+                    floor:
+                        current.floor,
+
+                    x:
+                        nx,
+
+                    y:
+                        ny,
+
+                    cost:
+                        nextCost
+
+                });
+
+            }
+
+        }
+
+
+        /*
+            LADDER TRANSITIONS.
+
+            The zombie can only change floors
+            while standing on a ladder.
+        */
+
+        const currentObject =
+            getAnyObjectAt(
+                current.floor,
+                current.x,
+                current.y
+            );
+
+
+        if (
+            isLadder(
+                currentObject
+            )
+        ) {
+
+            const possibleFloors = [
+
+                current.floor - 1,
+
+                current.floor + 1
+
+            ];
+
+
+            for (
+                const nextFloor of
+                possibleFloors
+            ) {
+
+                if (
+                    nextFloor < 0 ||
+                    nextFloor >= FLOORS
+                ) {
+
+                    continue;
+
+                }
+
+
+                const otherLadder =
+                    getAnyObjectAt(
+                        nextFloor,
+                        current.x,
+                        current.y
+                    );
+
+
+                /*
+                    There MUST be a ladder
+                    on the other floor too.
+                */
+
+                if (
+                    !isLadder(
+                        otherLadder
+                    )
+                ) {
+
+                    continue;
+
+                }
+
+
+                const nextKey =
+                    nodeKey(
+                        nextFloor,
+                        current.x,
+                        current.y
+                    );
+
+
+                const nextCost =
+                    current.cost +
+                    1;
+
+
+                if (
+                    !distances.has(
+                        nextKey
+                    ) ||
+                    nextCost <
+                        distances.get(
+                            nextKey
+                        )
+                ) {
+
+                    distances.set(
+                        nextKey,
+                        nextCost
+                    );
+
+
+                    cameFrom.set(
+                        nextKey,
+                        currentKey
+                    );
+
+
+                    open.push({
+
+                        floor:
+                            nextFloor,
+
+                        x:
+                            current.x,
+
+                        y:
+                            current.y,
+
+                        cost:
+                            nextCost
+
+                    });
+
+                }
+
+            }
+
+        }
+
+    }
+
+
+    if (
+        !distances.has(
+            goal
+        )
+    ) {
+
+        return null;
+
+    }
+
+
+    /*
+        Reconstruct path.
+    */
+
+    const path = [];
+
+    let cursor =
+        goal;
+
+
+    while (
+        cursor !== undefined
+    ) {
+
+        const parts =
+            cursor
+                .split(":")
+                .map(Number);
+
+
+        path.push({
+
+            floor:
+                parts[0],
+
+            x:
+                parts[1],
+
+            y:
+                parts[2]
+
+        });
+
+
+        if (
+            cursor === start
+        ) {
+
+            break;
+
+        }
+
+
+        cursor =
+            cameFrom.get(
+                cursor
+            );
+
+    }
+
+
+    path.reverse();
+
+    return path;
+
+}
+
+
+/* =========================================================
+   PATH INVALIDATION
+========================================================= */
+
+function invalidateZombiePaths() {
+
+    for (
+        const zombie of
+        zombies
+    ) {
+
+        zombie.path =
+            null;
+
+        zombie.pathTimer =
+            0;
+
+    }
+
+}
+
+
+/* =========================================================
+   DOOR DAMAGE
+========================================================= */
+
+function damageDoor(
+    door,
+    amount
+) {
+
+    door.hp -=
+        amount;
+
+
+    createParticle(
+        door.tx * TILE +
+            TILE / 2,
+        door.ty * TILE +
+            TILE / 2,
+        "#f59e0b"
+    );
+
+
+    if (
+        door.hp <= 0
+    ) {
+
+        const index =
+            buildings.indexOf(
+                door
+            );
+
+
+        if (
+            index >= 0
+        ) {
+
+            buildings.splice(
+                index,
+                1
+            );
+
+        }
+
+
+        /*
+            Every zombie needs to know
+            that the map changed.
+        */
+
+        invalidateZombiePaths();
+
+
+        showMessage(
+            "🚪 DOOR BROKEN!"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   ZOMBIE SPAWN
+========================================================= */
+
+function spawnZombie() {
+
+    const side =
+        Math.floor(
+            Math.random() * 4
+        );
+
+
+    let x;
+
+    let y;
+
+
+    if (
+        side === 0
+    ) {
+
+        x = 1;
+
+        y =
+            3 +
+            Math.floor(
+                Math.random() * 14
+            );
+
+    }
+    else if (
+        side === 1
+    ) {
+
+        x = 28;
+
+        y =
+            3 +
+            Math.floor(
+                Math.random() * 14
+            );
+
+    }
+    else if (
+        side === 2
+    ) {
+
+        x =
+            5 +
+            Math.floor(
+                Math.random() * 20
+            );
+
+        y = 1;
+
+    }
+    else {
+
+        x =
+            5 +
+            Math.floor(
+                Math.random() * 20
+            );
+
+        y = 18;
+
+    }
+
+
+    const roll =
+        Math.random();
+
+
+    let type =
+        "normal";
+
+
+    if (
+        currentWave >= 4 &&
+        roll < .18
+    ) {
+
+        type =
+            "fast";
+
+    }
+
+
+    if (
+        currentWave >= 6 &&
+        roll < .28
+    ) {
+
+        type =
+            "tank";
+
+    }
+
+
+    let hp =
+        45 +
+        currentWave *
+        12;
+
+
+    let speed =
+        1 +
+        currentWave *
+        .025;
+
+
+    let radius = 13;
+
+    let damage = 8;
+
+
+    if (
+        type === "fast"
+    ) {
+
+        hp *= .65;
+
+        speed *= 1.8;
+
+        damage = 5;
+
+    }
+
+
+    if (
+        type === "tank"
+    ) {
+
+        hp *= 3;
+
+        speed *= .55;
+
+        radius = 17;
+
+        damage = 15;
+
+    }
+
+
+    zombies.push({
+
+        floor: 1,
+
+        tx: x,
+
+        ty: y,
+
+        x:
+            x * TILE +
+            TILE / 2,
+
+        y:
+            y * TILE +
+            TILE / 2,
+
+        type,
+
+        hp,
+
+        maxHp: hp,
+
+        speed,
+
+        radius,
+
+        damage,
+
+        path: null,
+
+        pathTimer: 0,
+
+        attackTimer: 0,
+
+        doorTarget: null,
+
+        color:
+
+            type === "tank"
+
+                ? "#991b1b"
+
+                : type === "fast"
+
+                    ? "#f97316"
+
+                    : "#22c55e"
+
+    });
+
+}
+
+
+/* =========================================================
+   SMART ZOMBIE TARGET
+========================================================= */
+
+function calculateZombiePath(
+    zombie
+) {
+
+    if (
+        !survivor
+    ) {
+
+        return null;
+
+    }
+
+
+    const startX =
+        Math.floor(
+            zombie.x / TILE
+        );
+
+
+    const startY =
+        Math.floor(
+            zombie.y / TILE
+        );
+
+
+    return findSmartPath(
+
+        zombie.floor,
+
+        startX,
+
+        startY,
+
+        survivor.floor,
+
+        survivor.tx,
+
+        survivor.ty
+
+    );
+
+}
+
+
+/* =========================================================
+   ZOMBIE DOOR ATTACK
+========================================================= */
+
+function attackZombieDoor(
+    zombie,
+    door
+) {
+
+    zombie.attackTimer--;
+
+
+    if (
+        zombie.attackTimer > 0
+    ) {
+
+        return;
+
+    }
+
+
+    damageDoor(
+        door,
+        zombie.damage
+    );
+
+
+    zombie.attackTimer =
+        30;
+
+}
+
+
+/* =========================================================
+   ZOMBIE MOVEMENT
+========================================================= */
+
+function moveZombie(
+    zombie
+) {
+
+    if (
+        !survivor
+    ) {
+
+        return;
+
+    }
+
+
+    /*
+        Recalculate periodically.
+    */
+
+    zombie.pathTimer--;
+
+
+    if (
+        zombie.pathTimer <= 0 ||
+        !zombie.path
+    ) {
+
+        zombie.path =
+            calculateZombiePath(
+                zombie
+            );
+
+
+        /*
+            Frequent enough to react to
+            doors disappearing.
+        */
+
+        zombie.pathTimer =
+            12;
+
+    }
+
+
+    /*
+        No route.
+
+        This can happen if the survivor is
+        completely sealed behind walls.
+
+        Instead of freezing, the zombie
+        looks for the nearest reachable
+        breakable door and attacks it.
+    */
+
+    if (
+        !zombie.path ||
+        zombie.path.length < 2
+    ) {
+
+        handleNoPathZombie(
+            zombie
+        );
+
+        return;
+
+    }
+
+
+    const next =
+        zombie.path[1];
+
+
+    /*
+        Check what is in the next tile.
+    */
+
+    const nextObject =
+        getAnyObjectAt(
+            next.floor,
+            next.x,
+            next.y
+        );
+
+
+    /*
+        DOOR:
+
+        The door is part of the route.
+
+        Zombie walks right up to it,
+        then attacks it.
+
+        It does NOT walk through it.
+    */
+
+    if (
+        isDoor(
+            nextObject
+        )
+    ) {
+
+        const target =
+            tileCenter(
+                next.x,
+                next.y
+            );
+
+
+        const dx =
+            target.x -
+            zombie.x;
+
+
+        const dy =
+            target.y -
+            zombie.y;
+
+
+        const distance =
+            Math.hypot(
+                dx,
+                dy
+            );
+
+
+        /*
+            Get right beside the door.
+        */
+
+        if (
+            distance >
+            TILE * .65
+        ) {
+
+            moveTowardPoint(
+                zombie,
+                target.x,
+                target.y
+            );
+
+            return;
+
+        }
+
+
+        /*
+            Now attack it.
+        */
+
+        zombie.doorTarget =
+            nextObject;
+
+
+        attackZombieDoor(
+            zombie,
+            nextObject
+        );
+
+
+        return;
+
+    }
+
+
+    /*
+        NORMAL PATH TILE.
+    */
+
+    const target =
+        tileCenter(
+            next.x,
+            next.y
+        );
+
+
+    const dx =
+        target.x -
+        zombie.x;
+
+
+    const dy =
+        target.y -
+        zombie.y;
+
+
+    const distance =
+        Math.hypot(
+            dx,
+            dy
+        );
+
+
+    /*
+        Reached next tile.
+    */
+
+    if (
+        distance <=
+        zombie.speed
+    ) {
+
+        zombie.x =
+            target.x;
+
+        zombie.y =
+            target.y;
+
+        zombie.floor =
+            next.floor;
+
+        zombie.tx =
+            next.x;
+
+        zombie.ty =
+            next.y;
+
+        zombie.path.shift();
+
+
+        /*
+            If we just climbed a ladder,
+            force an immediate recalculation.
+        */
+
+        if (
+            next.floor !==
+            zombie.floor
+        ) {
+
+            zombie.path =
+                null;
+
+        }
+
+
+        return;
+
+    }
+
+
+    moveTowardPoint(
+        zombie,
+        target.x,
+        target.y
+    );
+
+}
+
+
+/* =========================================================
+   NO PATH BEHAVIOUR
+========================================================= */
+
+/*
+    This is the backup AI.
+
+    A zombie should NEVER simply freeze.
+
+    If the survivor is sealed behind walls,
+    search every door on every floor.
+
+    The zombie will move toward the nearest
+    reachable door.
+
+    Once that door is broken, the normal
+    smart pathfinder takes over.
+*/
+
+function handleNoPathZombie(
+    zombie
+) {
+
+    let bestDoor = null;
+
+    let bestDistance =
+        Infinity;
+
+
+    for (
+        const door of
+        buildings
+    ) {
+
+        if (
+            door.type !==
+            "door"
+        ) {
+
+            continue;
+
+        }
+
+
+        if (
+            door.hp <= 0
+        ) {
+
+            continue;
+
+        }
+
+
+        const distance =
+            Math.abs(
+                door.tx -
+                Math.floor(
+                    zombie.x /
+                    TILE
+                )
+            ) +
+
+            Math.abs(
+                door.ty -
+                Math.floor(
+                    zombie.y /
+                    TILE
+                )
+            ) +
+
+            Math.abs(
+                door.floor -
+                zombie.floor
+            ) *
+            8;
+
+
+        if (
+            distance <
+            bestDistance
+        ) {
+
+            bestDistance =
+                distance;
+
+            bestDoor =
+                door;
+
+        }
+
+    }
+
+
+    if (
+        !bestDoor
+    ) {
+
+        /*
+            No doors exist.
+
+            Search for the closest ladder.
+        */
+
+        const ladder =
+            findClosestLadder(
+                zombie
+            );
+
+
+        if (
+            ladder
+        ) {
+
+            moveTowardPoint(
+                zombie,
+                ladder.x,
+                ladder.y
+            );
+
+            return;
+
+        }
+
+
+        /*
+            Last resort:
+
+            wander toward the centre instead
+            of freezing permanently.
+        */
+
+        moveTowardPoint(
+            zombie,
+            WORLD_W *
+                TILE / 2,
+            WORLD_H *
+                TILE / 2
+        );
+
+        return;
+
+    }
+
+
+    /*
+        If door is on another floor,
+        first find a ladder.
+    */
+
+    if (
+        bestDoor.floor !==
+        zombie.floor
+    ) {
+
+        const ladder =
+            findBestLadderTowardFloor(
+                zombie,
+                bestDoor.floor
+            );
+
+
+        if (
+            ladder
+        ) {
+
+            moveTowardPoint(
+                zombie,
+                ladder.x,
+                ladder.y
+            );
+
+            return;
+
+        }
+
+    }
+
+
+    /*
+        Move toward the door.
+    */
+
+    const doorPosition =
+        tileCenter(
+            bestDoor.tx,
+            bestDoor.ty
+        );
+
+
+    const distance =
+        Math.hypot(
+
+            zombie.x -
+            doorPosition.x,
+
+            zombie.y -
+            doorPosition.y
+
+        );
+
+
+    if (
+        distance >
+        TILE * .65
+    ) {
+
+        moveTowardPoint(
+            zombie,
+            doorPosition.x,
+            doorPosition.y
+        );
+
+        return;
+
+    }
+
+
+    attackZombieDoor(
+        zombie,
+        bestDoor
+    );
+
+}
+
+
+/* =========================================================
+   LADDER SEARCH
+========================================================= */
+
+function findClosestLadder(
+    zombie
+) {
+
+    let best = null;
+
+    let bestDistance =
+        Infinity;
+
+
+    for (
+        const building of
+        buildings
+    ) {
+
+        if (
+            building.type !==
+            "ladder"
+        ) {
+
+            continue;
+
+        }
+
+
+        if (
+            building.floor !==
+            zombie.floor
+        ) {
+
+            continue;
+
+        }
+
+
+        const position =
+            tileCenter(
+                building.tx,
+                building.ty
+            );
+
+
+        const distance =
+            Math.hypot(
+
+                zombie.x -
+                position.x,
+
+                zombie.y -
+                position.y
+
+            );
+
+
+        if (
+            distance <
+            bestDistance
+        ) {
+
+            bestDistance =
+                distance;
+
+            best = {
+
+                x:
+                    position.x,
+
+                y:
+                    position.y,
+
+                tx:
+                    building.tx,
+
+                ty:
+                    building.ty,
+
+                floor:
+                    building.floor
+
+            };
+
+        }
+
+    }
+
+
+    return best;
+
+}
+
+
+/* =========================================================
+   BEST LADDER TO FLOOR
+========================================================= */
+
+function findBestLadderTowardFloor(
+    zombie,
+    targetFloor
+) {
+
+    let best = null;
+
+    let bestScore =
+        Infinity;
+
+
+    for (
+        const ladder of
+        buildings
+    ) {
+
+        if (
+            ladder.type !==
+            "ladder"
+        ) {
+
+            continue;
+
+        }
+
+
+        if (
+            ladder.floor !==
+            zombie.floor
+        ) {
+
+            continue;
+
+        }
+
+
+        const position =
+            tileCenter(
+                ladder.tx,
+                ladder.ty
+            );
+
+
+        const distance =
+            Math.hypot(
+
+                zombie.x -
+                position.x,
+
+                zombie.y -
+                position.y
+
+            );
+
+
+        const otherFloor =
+            targetFloor >
+            zombie.floor
+                ? zombie.floor + 1
+                : zombie.floor - 1;
+
+
+        const matching =
+            getAnyObjectAt(
+                otherFloor,
+                ladder.tx,
+                ladder.ty
+            );
+
+
+        if (
+            !isLadder(
+                matching
+            )
+        ) {
+
+            continue;
+
+        }
+
+
+        const verticalPenalty =
+            Math.abs(
+                targetFloor -
+                otherFloor
+            ) * 100;
+
+
+        const score =
+            distance +
+            verticalPenalty;
+
+
+        if (
+            score <
+            bestScore
+        ) {
+
+            bestScore =
+                score;
+
+            best = {
+
+                x:
+                    position.x,
+
+                y:
+                    position.y,
+
+                tx:
+                    ladder.tx,
+
+                ty:
+                    ladder.ty
+
+            };
+
+        }
+
+    }
+
+
+    return best;
+
+}
+
+
+/* =========================================================
+   MOVE TOWARD
+========================================================= */
+
+function moveTowardPoint(
+    object,
+    targetX,
+    targetY
+) {
+
+    const dx =
+        targetX -
+        object.x;
+
+
+    const dy =
+        targetY -
+        object.y;
+
+
+    const distance =
+        Math.hypot(
+            dx,
+            dy
+        );
+
+
+    if (
+        distance <= 0
+    ) {
+
+        return;
+
+    }
+
+
+    object.x +=
+        dx /
+        distance *
+        object.speed;
+
+
+    object.y +=
+        dy /
+        distance *
+        object.speed;
+
+}
+
+
+/* =========================================================
+   SURVIVOR DAMAGE
+========================================================= */
+
+function checkZombieSurvivorDamage(
+    zombie
+) {
+
+    if (
+        !survivor
+    ) {
+
+        return;
+
+    }
+
+
+    if (
+        zombie.floor !==
+        survivor.floor
+    ) {
+
+        return;
+
+    }
+
+
+    const survivorPosition =
+        tileCenter(
+            survivor.tx,
+            survivor.ty
+        );
+
+
+    const distance =
+        Math.hypot(
+
+            zombie.x -
+            survivorPosition.x,
+
+            zombie.y -
+            survivorPosition.y
+
+        );
+
+
+    if (
+        distance <
+        TILE * .7
+    ) {
+
+        zombie.attackTimer--;
+
+
+        if (
+            zombie.attackTimer <= 0
+        ) {
+
+            survivor.hp -=
+                zombie.damage;
+
+
+            zombie.attackTimer =
+                45;
+
+
+            createParticle(
+                survivorPosition.x,
+                survivorPosition.y,
+                "#ef4444"
+            );
+
+
+            if (
+                survivor.hp <= 0
+            ) {
+
+                endGame();
+
+            }
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   POWER
+========================================================= */
+
+function getPowerStats() {
+
+    let generation = 0;
+
+    let usage = 0;
+
+
+    for (
+        const building of
+        buildings
+    ) {
+
+        if (
+            building.type ===
+            "generator"
+        ) {
+
+            generation += 3;
+
+        }
+
+    }
+
+
+    for (
+        const building of
+        buildings
+    ) {
+
+        if (
+            building.type ===
+            "turret"
+        ) {
+
+            usage += 1;
+
+        }
+
+
+        if (
+            building.type ===
+            "heavyTurret"
+        ) {
+
+            usage += 2;
+
+        }
+
+    }
+
+
+    return {
+
+        generation,
+
+        usage
+
+    };
+
+}
+
+
+function hasPower(
+    building
+) {
+
+    const stats =
+        getPowerStats();
+
+
+    let usedBefore =
+        0;
+
+
+    for (
+        const other of
+        buildings
+    ) {
+
+        if (
+            other === building
+        ) {
+
+            break;
+
+        }
+
+
+        if (
+            other.type ===
+            "turret"
+        ) {
+
+            usedBefore += 1;
+
+        }
+
+
+        if (
+            other.type ===
+            "heavyTurret"
+        ) {
+
+            usedBefore += 2;
+
+        }
+
+    }
+
+
+    const cost =
+        building.type ===
+        "heavyTurret"
+            ? 2
+            : 1;
+
+
+    return (
+        usedBefore +
+        cost <=
+        stats.generation
+    );
+
+}
+
+
+/* =========================================================
+   TURRETS
+========================================================= */
+
+function updateTurrets() {
+
+    for (
+        const turret of
+        buildings
+    ) {
+
+        if (
+            turret.type !==
+                "turret" &&
+            turret.type !==
+                "heavyTurret"
+        ) {
+
+            continue;
+
+        }
+
+
+        if (
+            !hasPower(
+                turret
+            )
+        ) {
+
+            continue;
+
+        }
+
+
+        turret.cooldown--;
+
+
+        if (
+            turret.cooldown >
+            0
+        ) {
+
+            continue;
+
+        }
+
+
+        const data =
+            BUILDINGS[
+                turret.type
+            ];
+
+
+        let target =
+            null;
+
+
+        let bestDistance =
+            Infinity;
+
+
+        const turretPosition =
+            tileCenter(
+                turret.tx,
+                turret.ty
+            );
+
+
+        for (
+            const zombie of
+            zombies
+        ) {
+
+            if (
+                zombie.floor !==
+                turret.floor
+            ) {
+
+                continue;
+
+            }
+
+
+            const distance =
+                Math.hypot(
+
+                    zombie.x -
+                    turretPosition.x,
+
+                    zombie.y -
+                    turretPosition.y
+
+                );
+
+
+            if (
+                distance <=
+                data.range &&
+                distance <
+                    bestDistance
+            ) {
+
+                bestDistance =
+                    distance;
+
+                target =
+                    zombie;
+
+            }
+
+        }
+
+
+        if (!target) {
+
+            continue;
+
+        }
+
+
+        target.hp -=
+            data.damage;
+
+
+        createParticle(
+            target.x,
+            target.y,
+            data.color
+        );
+
+
+        turret.cooldown =
+            data.cooldown;
+
+    }
+
+}
+
+
+/* =========================================================
+   MINES
+========================================================= */
+
+function updateMines() {
+
+    for (
+        const mine of
+        [...buildings]
+    ) {
+
+        if (
+            mine.type !==
+            "mine"
+        ) {
+
+            continue;
+
+        }
+
+
+        const minePosition =
+            tileCenter(
+                mine.tx,
+                mine.ty
+            );
+
+
+        for (
+            const zombie of
+            [...zombies]
+        ) {
+
+            if (
+                zombie.floor !==
+                mine.floor
+            ) {
+
+                continue;
+
+            }
+
+
+            const distance =
+                Math.hypot(
+
+                    zombie.x -
+                    minePosition.x,
+
+                    zombie.y -
+                    minePosition.y
+
+                );
+
+
+            if (
+                distance <
+                TILE * .6
+            ) {
+
+                zombie.hp -=
+                    BUILDINGS.mine.damage;
+
+
+                createExplosion(
+                    zombie.x,
+                    zombie.y
+                );
+
+
+                buildings.splice(
+                    buildings.indexOf(
+                        mine
+                    ),
+                    1
+                );
+
+
+                break;
+
+            }
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   CLEANUP
+========================================================= */
+
+function cleanupZombies() {
+
+    zombies =
+        zombies.filter(
+            zombie => {
+
+                if (
+                    zombie.hp <= 0
+                ) {
+
+                    money +=
+                        15 +
+                        currentWave *
+                        2;
+
+
+                    createExplosion(
+                        zombie.x,
+                        zombie.y
+                    );
+
+
+                    return false;
+
+                }
+
+
+                return true;
+
+            }
+        );
+
+}
+
+
+/* =========================================================
+   WAVES
+========================================================= */
+
+function startNextWave() {
+
+    if (
+        !gameStarted
+    ) {
+
+        return;
+
+    }
+
+
+    if (
+        buildPhase
+    ) {
+
+        buildPhase =
+            false;
+
+
+        showMessage(
+            "🧟 BUILD PHASE ENDED!"
+        );
+
+    }
+
+
+    if (
+        waveActive
+    ) {
+
+        return;
+
+    }
+
+
+    if (
+        currentWave >=
+        MAX_WAVES
+    ) {
+
+        return;
+
+    }
+
+
+    currentWave++;
+
+
+    waveActive =
+        true;
+
+
+    enemiesToSpawn =
+        5 +
+        currentWave *
+        3;
+
+
+    spawnTimer = 0;
+
+
+    updateUI();
+
+}
+
+
+/* =========================================================
+   WAVE UPDATE
+========================================================= */
+
+function updateWave() {
+
+    if (
+        !waveActive
+    ) {
+
+        return;
+
+    }
+
+
+    if (
+        enemiesToSpawn > 0
+    ) {
+
+        spawnTimer--;
+
+
+        if (
+            spawnTimer <= 0
+        ) {
+
+            spawnZombie();
+
+
+            enemiesToSpawn--;
+
+
+            spawnTimer =
+                Math.max(
+                    12,
+                    32 -
+                    currentWave
+                );
+
+        }
+
+    }
+
+
+    if (
+        enemiesToSpawn <= 0 &&
+        zombies.length === 0
+    ) {
+
+        waveActive =
+            false;
+
+
+        if (
+            currentWave >=
+            MAX_WAVES
+        ) {
+
+            victory();
+
+            return;
+
+        }
+
+
+        const reward =
+            100 +
+            currentWave *
+            25;
+
+
+        money += reward;
+
+
+        showMessage(
+            `Wave ${currentWave} cleared! +$${reward}`
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   BUILD PHASE
+========================================================= */
+
+function updateBuildPhase() {
+
+    if (
+        !buildPhase ||
+        !gameStarted
+    ) {
+
+        return;
+
+    }
+
+
+    buildTime -=
+        1 / 60;
+
+
+    if (
+        buildTime <= 0
+    ) {
+
+        buildTime = 0;
+
+        buildPhase =
+            false;
+
+
+        showMessage(
+            "🧟 BUILD PHASE OVER!"
+        );
+
+
+        startNextWave();
+
+    }
+
+}
+
+
+/* =========================================================
+   PARTICLES
+========================================================= */
+
+function createParticle(
+    x,
+    y,
+    color
+) {
+
+    particles.push({
+
+        x,
+
+        y,
+
+        vx:
+            (
+                Math.random() -
+                .5
+            ) * 2,
+
+        vy:
+            (
+                Math.random() -
+                .5
+            ) * 2,
+
+        life: 25,
+
+        color
+
+    });
+
+}
+
+
+function createExplosion(
+    x,
+    y
+) {
+
+    for (
+        let i = 0;
+        i < 14;
+        i++
+    ) {
+
+        createParticle(
+            x,
+            y,
+            "#f97316"
+        );
+
+    }
+
+}
+
+
+function updateParticles() {
+
+    for (
+        const particle of
+        particles
+    ) {
+
+        particle.x +=
+            particle.vx;
+
+        particle.y +=
+            particle.vy;
+
+        particle.life--;
+
+    }
+
+
+    particles =
+        particles.filter(
+            p =>
+                p.life > 0
+        );
+
+}
+
+
+/* =========================================================
+   DRAW BACKGROUND
+========================================================= */
+
+function drawBackground() {
+
+    ctx.fillStyle =
+
+        currentFloor === 0
+
+            ? "#101820"
+
+            : currentFloor === 1
+
+                ? "#17211b"
+
+                : "#17202d";
+
+
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+}
+
+
+/* =========================================================
+   DRAW GRID
+========================================================= */
+
+function drawGrid() {
+
+    const startX =
+        Math.floor(
+            (
+                camera.x -
+                canvas.width /
+                2 /
+                camera.zoom
+            ) / TILE
+        ) - 1;
+
+
+    const endX =
+        Math.ceil(
+            (
+                camera.x +
+                canvas.width /
+                2 /
+                camera.zoom
+            ) / TILE
+        ) + 1;
+
+
+    const startY =
+        Math.floor(
+            (
+                camera.y -
+                canvas.height /
+                2 /
+                camera.zoom
+            ) / TILE
+        ) - 1;
+
+
+    const endY =
+        Math.ceil(
+            (
+                camera.y +
+                canvas.height /
+                2 /
+                camera.zoom
+            ) / TILE
+        ) + 1;
+
+
+    ctx.strokeStyle =
+        "rgba(148,163,184,.10)";
+
+
+    ctx.lineWidth = 1;
+
+
+    for (
+        let x = startX;
+        x <= endX;
+        x++
+    ) {
+
+        const p =
+            worldToScreen(
+                x * TILE,
+                0
+            );
+
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            p.x,
+            0
+        );
+
+        ctx.lineTo(
+            p.x,
+            canvas.height
+        );
+
+        ctx.stroke();
+
+    }
+
+
+    for (
+        let y = startY;
+        y <= endY;
+        y++
+    ) {
+
+        const p =
+            worldToScreen(
+                0,
+                y * TILE
+            );
+
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            0,
+            p.y
+        );
+
+        ctx.lineTo(
+            canvas.width,
+            p.y
+        );
+
+        ctx.stroke();
+
+    }
+
+}
+
+
+/* =========================================================
+   DRAW PREMADE
+========================================================= */
+
+function drawPremade() {
+
+    for (
+        const object of
+        premadeObjects
+    ) {
+
+        if (
+            object.floor !==
+            currentFloor
+        ) {
+
+            continue;
+
+        }
+
+
+        const p =
+            worldToScreen(
+                object.tx * TILE,
+                object.ty * TILE
+            );
+
+
+        const size =
+            TILE *
+            camera.zoom;
+
+
+        ctx.fillStyle =
+            "#475569";
+
+
+        ctx.fillRect(
+            p.x,
+            p.y,
+            size,
+            size
+        );
+
+
+        ctx.strokeStyle =
+            "#64748b";
+
+
+        ctx.strokeRect(
+            p.x + 2,
+            p.y + 2,
+            size - 4,
+            size - 4
+        );
+
+
+        /*
+            X markers.
+        */
+
+        ctx.fillStyle =
+            "#94a3b8";
+
+
+        ctx.font =
+            `bold ${
+                14 *
+                camera.zoom
+            }px Arial`;
+
+
+        ctx.textAlign =
+            "center";
+
+
+        ctx.textBaseline =
+            "middle";
+
+
+        ctx.fillText(
+            "X",
+            p.x +
+                size / 2,
+            p.y +
+                size / 2
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   DRAW BUILDINGS
+========================================================= */
+
+function drawBuildings() {
+
+    for (
+        const building of
+        buildings
+    ) {
+
+        if (
+            building.floor !==
+            currentFloor
+        ) {
+
+            continue;
+
+        }
+
+
+        const p =
+            worldToScreen(
+                building.tx * TILE,
+                building.ty * TILE
+            );
+
+
+        const size =
+            TILE *
+            camera.zoom;
+
+
+        let color =
+            BUILDINGS[
+                building.type
+            ].color;
+
+
+        if (
+            building.type ===
+            "door"
+        ) {
+
+            color =
+                building.hp <
+                building.maxHp *
+                .35
+
+                    ? "#dc2626"
+
+                    : "#a16207";
+
+        }
+
+
+        ctx.fillStyle =
+            color;
+
+
+        ctx.fillRect(
+            p.x + 3,
+            p.y + 3,
+            size - 6,
+            size - 6
+        );
+
+
+        ctx.strokeStyle =
+            "rgba(255,255,255,.35)";
+
+
+        ctx.lineWidth =
+            2 *
+            camera.zoom;
+
+
+        ctx.strokeRect(
+            p.x + 3,
+            p.y + 3,
+            size - 6,
+            size - 6
+        );
+
+
+        const icons = {
+
+            wall: "🧱",
+
+            door: "🚪",
+
+            ladder: "🪜",
+
+            generator: "⚡",
+
+            turret: "🔫",
+
+            heavyTurret: "💥",
+
+            mine: "💣",
+
+            survivor: "🧍"
+
+        };
+
+
+        ctx.fillStyle =
+            "white";
+
+
+        ctx.font =
+            `bold ${
+                18 *
+                camera.zoom
+            }px Arial`;
+
+
+        ctx.textAlign =
+            "center";
+
+
+        ctx.textBaseline =
+            "middle";
+
+
+        ctx.fillText(
+            icons[
+                building.type
+            ],
+            p.x +
+                size / 2,
+            p.y +
+                size / 2
+        );
+
+
+        /*
+            Door health.
+        */
+
+        if (
+            building.type ===
+            "door"
+        ) {
+
+            const ratio =
+                Math.max(
+                    0,
+                    building.hp /
+                    building.maxHp
+                );
+
+
+            ctx.fillStyle =
+                "#111827";
+
+
+            ctx.fillRect(
+                p.x + 5,
+                p.y +
+                    size -
+                    9,
+                size - 10,
+                5
+            );
+
+
+            ctx.fillStyle =
+                "#22c55e";
+
+
+            ctx.fillRect(
+                p.x + 5,
+                p.y +
+                    size -
+                    9,
+                (
+                    size - 10
+                ) *
+                ratio,
+                5
+            );
+
+        }
+
+
+        /*
+            Turret range.
+        */
+
+        if (
+            building.type ===
+                "turret" ||
+            building.type ===
+                "heavyTurret"
+        ) {
+
+            const data =
+                BUILDINGS[
+                    building.type
+                ];
+
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+                p.x +
+                    size / 2,
+                p.y +
+                    size / 2,
+                data.range *
+                    camera.zoom,
+                0,
+                Math.PI * 2
+            );
+
+
+            ctx.strokeStyle =
+                "rgba(96,165,250,.08)";
+
+
+            ctx.stroke();
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   DRAW ZOMBIES
+========================================================= */
+
+function drawZombies() {
+
+    for (
+        const zombie of
+        zombies
+    ) {
+
+        if (
+            zombie.floor !==
+            currentFloor
+        ) {
+
+            continue;
+
+        }
+
+
+        const p =
+            worldToScreen(
+                zombie.x,
+                zombie.y
+            );
+
+
+        const radius =
+            zombie.radius *
+            camera.zoom;
+
+
+        ctx.fillStyle =
+            "rgba(0,0,0,.3)";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            p.x +
+                3 *
+                camera.zoom,
+            p.y +
+                4 *
+                camera.zoom,
+            radius,
+            0,
+            Math.PI * 2
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            zombie.color;
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            p.x,
+            p.y,
+            radius,
+            0,
+            Math.PI * 2
+        );
+
+
+        ctx.fill();
+
+
+        ctx.fillStyle =
+            "#111827";
+
+
+        ctx.font =
+            `${
+                16 *
+                camera.zoom
+            }px Arial`;
+
+
+        ctx.textAlign =
+            "center";
+
+
+        ctx.textBaseline =
+            "middle";
+
+
+        ctx.fillText(
+            "🧟",
+            p.x,
+            p.y
+        );
+
+
+        /*
+            HP bar.
+        */
+
+        const width =
+            34 *
+            camera.zoom;
+
+
+        const hpRatio =
+            Math.max(
+                0,
+                zombie.hp /
+                zombie.maxHp
+            );
+
+
+        ctx.fillStyle =
+            "#111827";
+
+
+        ctx.fillRect(
+            p.x -
+                width / 2,
+            p.y -
+                radius -
+                9 *
+                camera.zoom,
+            width,
+            5 *
+                camera.zoom
+        );
+
+
+        ctx.fillStyle =
+            "#22c55e";
+
+
+        ctx.fillRect(
+            p.x -
+                width / 2,
+            p.y -
+                radius -
+                9 *
+                camera.zoom,
+            width *
+                hpRatio,
+            5 *
+                camera.zoom
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   DRAW PARTICLES
+========================================================= */
+
+function drawParticles() {
+
+    for (
+        const particle of
+        particles
+    ) {
+
+        const p =
+            worldToScreen(
+                particle.x,
+                particle.y
+            );
+
+
+        ctx.globalAlpha =
+            particle.life /
+            25;
+
+
+        ctx.fillStyle =
+            particle.color;
+
+
+        ctx.fillRect(
+            p.x,
+            p.y,
+            4 *
+                camera.zoom,
+            4 *
+                camera.zoom
+        );
+
+    }
+
+
+    ctx.globalAlpha = 1;
+
+}
+
+
+/* =========================================================
+   DRAW GHOST
+========================================================= */
+
+function drawGhost() {
+
+    if (
+        !selectedBuild ||
+        demolishMode
+    ) {
+
+        return;
+
+    }
+
+
+    const pos =
+        screenToWorld(
+            mouse.x,
+            mouse.y
+        );
+
+
+    const tx =
+        Math.floor(
+            pos.x / TILE
+        );
+
+
+    const ty =
+        Math.floor(
+            pos.y / TILE
+        );
+
+
+    if (
+        tx < 0 ||
+        ty < 0 ||
+        tx >= WORLD_W ||
+        ty >= WORLD_H
+    ) {
+
+        return;
+
+    }
+
+
+    const p =
+        worldToScreen(
+            tx * TILE,
+            ty * TILE
+        );
+
+
+    const size =
+        TILE *
+        camera.zoom;
+
+
+    ctx.fillStyle =
+        "rgba(96,165,250,.28)";
+
+
+    ctx.fillRect(
+        p.x,
+        p.y,
+        size,
+        size
+    );
+
+
+    ctx.strokeStyle =
+        "#60a5fa";
+
+
+    ctx.strokeRect(
+        p.x,
+        p.y,
+        size,
+        size
+    );
+
+}
+
+
+/* =========================================================
+   DRAW
+========================================================= */
+
+function draw() {
+
+    drawBackground();
+
+    drawGrid();
+
+    drawPremade();
+
+    drawBuildings();
+
+    drawZombies();
+
+    drawParticles();
+
+    drawGhost();
+
+}
+
+
+/* =========================================================
+   UI
+========================================================= */
+
+function updateUI() {
+
+    document.getElementById(
+        "money"
+    ).textContent =
+        Math.floor(
+            money
+        );
+
+
+    const power =
+        getPowerStats();
+
+
+    document.getElementById(
+        "power"
+    ).textContent =
+        `${power.usage} / ${power.generation}`;
+
+
+    document.getElementById(
+        "baseHP"
+    ).textContent =
+        survivor
+            ? Math.max(
+                0,
+                Math.floor(
+                    survivor.hp
+                )
+            )
+            : 0;
+
+
+    document.getElementById(
+        "wave"
+    ).textContent =
+        `${currentWave} / ${MAX_WAVES}`;
+
+
+    document.getElementById(
+        "zombieCount"
+    ).textContent =
+        zombies.length;
+
+
+    document.getElementById(
+        "timer"
+    ).textContent =
+        Math.ceil(
+            buildTime
+        );
+
+}
+
+
+/* =========================================================
+   MESSAGE
+========================================================= */
+
+let messageTimeout =
+    null;
+
+
+function showMessage(
+    text
+) {
+
+    const element =
+        document.getElementById(
+            "message"
+        );
+
+
+    element.textContent =
+        text;
+
+
+    element.style.opacity =
+        "1";
+
+
+    clearTimeout(
+        messageTimeout
+    );
+
+
+    messageTimeout =
+        setTimeout(
+            () => {
+
+                element.style.opacity =
+                    "0";
+
+            },
+            1800
+        );
+
+}
+
+
+/* =========================================================
+   GAME START
+========================================================= */
+
+function startGame() {
+
+    document.getElementById(
+        "startScreen"
+    ).style.display =
+        "none";
+
+
+    gameStarted =
+        true;
+
+
+    gameRunning =
+        true;
+
+
+    buildPhase =
+        true;
+
+
+    buildTime =
+        300;
+
+
+    currentWave =
+        0;
+
+
+    waveActive =
+        false;
+
+
+    enemiesToSpawn =
+        0;
+
+
+    zombies = [];
+
+
+    particles = [];
+
+
+    money =
+        500;
+
+
+    baseHP =
+        100;
+
+
+    buildings.length =
+        0;
+
+
+    premadeObjects.length =
+        0;
+
+
+    survivor =
+        null;
+
+
+    createPremadeMap();
+
+
+    selectBuild(
+        "survivor"
+    );
+
+
+    showMessage(
+        "🧍 Place your survivor!"
+    );
+
+
+    updateUI();
+
+}
+
+
+/* =========================================================
+   RESTART
+========================================================= */
+
+function restartGame() {
+
+    document.getElementById(
+        "gameOver"
+    ).style.display =
+        "none";
+
+
+    document.querySelector(
+        "#gameOver h1"
+    ).textContent =
+        "BASE OVERRUN";
+
+
+    document.querySelector(
+        "#gameOver h1"
+    ).style.color =
+        "#ef4444";
+
+
+    startGame();
+
+}
+
+
+/* =========================================================
+   GAME OVER
+========================================================= */
+
+function endGame() {
+
+    gameRunning =
+        false;
+
+
+    document.getElementById(
+        "gameOverText"
+    ).innerHTML =
+
+        `
+        The survivor was overrun.
+        <br><br>
+        You reached wave
+        <strong>
+            ${currentWave}
+        </strong>.
+        `;
+
+
+    document.getElementById(
+        "gameOver"
+    ).style.display =
+        "flex";
+
+}
+
+
+/* =========================================================
+   VICTORY
+========================================================= */
+
+function victory() {
+
+    gameRunning =
+        false;
+
+
+    document.querySelector(
+        "#gameOver h1"
+    ).textContent =
+        "🏆 VICTORY";
+
+
+    document.querySelector(
+        "#gameOver h1"
+    ).style.color =
+        "#22c55e";
+
+
+    document.getElementById(
+        "gameOverText"
+    ).innerHTML =
+
+        `
+        🏆 YOU SURVIVED ALL 10 WAVES!
+        <br><br>
+
+        Survivor HP:
+        <strong>
+            ${Math.max(
+                0,
+                Math.floor(
+                    survivor?.hp || 0
+                )
+            )}
+        </strong>
+
+        <br><br>
+
+        Final cash:
+        <strong>
+            $${Math.floor(
+                money
+            )}
+        </strong>
+        `;
+
+
+    document.getElementById(
+        "gameOver"
+    ).style.display =
+        "flex";
+
+}
+
+
+/* =========================================================
+   TEST MONEY
+========================================================= */
+
+function addMoney() {
+
+    money += 100;
+
+    updateUI();
+
+}
+
+
+/* =========================================================
+   UPDATE
+========================================================= */
+
+function update() {
+
+    if (
+        !gameRunning
+    ) {
+
+        return;
+
+    }
+
+
+    updateBuildPhase();
+
+    updateWave();
+
+
+    for (
+        const zombie of
+        [...zombies]
+    ) {
+
+        moveZombie(
+            zombie
+        );
+
+
+        checkZombieSurvivorDamage(
+            zombie
+        );
+
+    }
+
+
+    updateTurrets();
+
+    updateMines();
+
+    cleanupZombies();
+
+    updateParticles();
+
+    updateUI();
+
+}
+
+
+/* =========================================================
+   MAIN LOOP
+========================================================= */
+
+function loop() {
+
+    update();
+
+    draw();
+
+    requestAnimationFrame(
+        loop
+    );
+
+}
+
+
+createPremadeMap();
+
+updateUI();
+
+loop();
+
+</script>
+
+</body>
+</html>
