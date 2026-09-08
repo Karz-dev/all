@@ -1,0 +1,4243 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Fishin'</title>
+
+<style>
+*{box-sizing:border-box}
+
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#071827;
+    font-family:Arial,sans-serif;
+    user-select:none;
+}
+
+canvas{
+    display:block;
+    width:100vw;
+    height:100vh;
+    cursor:crosshair;
+}
+
+#hud{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    color:white;
+}
+
+.hud{
+    position:absolute;
+    padding:10px 14px;
+    border-radius:12px;
+    background:rgba(3,15,28,.65);
+    backdrop-filter:blur(6px);
+}
+
+#money{
+    top:16px;
+    left:16px;
+    font-size:21px;
+    font-weight:bold;
+}
+
+#locationHud{
+    top:16px;
+    left:50%;
+    transform:translateX(-50%);
+    font-weight:bold;
+}
+
+#weatherHud{
+    top:16px;
+    right:16px;
+}
+
+#boatHud{
+    bottom:16px;
+    left:16px;
+    font-size:14px;
+}
+
+#controls{
+    position:absolute;
+    bottom:16px;
+    right:16px;
+    padding:10px 14px;
+    border-radius:12px;
+    background:rgba(3,15,28,.65);
+    font-size:13px;
+    color:#cfeeff;
+}
+
+#message{
+    position:absolute;
+    left:50%;
+    top:26%;
+    transform:translate(-50%,-50%);
+    padding:12px 20px;
+    border-radius:14px;
+    background:rgba(2,12,24,.8);
+    font-size:19px;
+    font-weight:bold;
+    opacity:0;
+    transition:opacity:.15s;
+    text-align:center;
+    white-space:nowrap;
+}
+
+#bossWarning{
+    position:fixed;
+    left:50%;
+    top:32%;
+    transform:translate(-50%,-50%) scale(.8);
+    z-index:8;
+    display:none;
+    padding:16px 28px;
+    border-radius:16px;
+    background:rgba(120,0,0,.88);
+    color:white;
+    font-size:26px;
+    font-weight:bold;
+    box-shadow:0 0 45px rgba(255,0,0,.6);
+    animation:bossShake .12s infinite alternate;
+}
+
+@keyframes bossShake{
+    from{transform:translate(-50%,-50%) rotate(-2deg) scale(1)}
+    to{transform:translate(-50%,-50%) rotate(2deg) scale(1.05)}
+}
+
+#startScreen{
+    position:fixed;
+    inset:0;
+    z-index:20;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+        radial-gradient(
+            circle at 50% 35%,
+            rgba(40,170,240,.22),
+            transparent 35%
+        ),
+        linear-gradient(#061321,#0b2940);
+    color:white;
+    text-align:center;
+}
+
+.startContent h1{
+    font-size:clamp(55px,10vw,110px);
+    margin:0;
+    letter-spacing:5px;
+}
+
+.startContent p{
+    font-size:18px;
+    color:#bdeaff;
+}
+
+button{
+    border:0;
+    border-radius:10px;
+    padding:11px 16px;
+    background:#1687d9;
+    color:white;
+    font-size:15px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#27a0f2;
+}
+
+button:disabled{
+    cursor:not-allowed;
+    opacity:.4;
+}
+
+#playButton{
+    margin-top:20px;
+    padding:16px 42px;
+    font-size:22px;
+}
+
+.overlay{
+    position:fixed;
+    inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    background:rgba(0,5,12,.58);
+    z-index:10;
+}
+
+.panel{
+    width:min(760px,92vw);
+    max-height:86vh;
+    overflow-y:auto;
+    padding:28px;
+    border-radius:20px;
+    background:rgba(8,25,43,.96);
+    color:white;
+    box-shadow:0 20px 70px rgba(0,0,0,.55);
+}
+
+.panel h1{
+    margin-top:0;
+}
+
+.close{
+    float:right;
+    background:#334155;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:
+        repeat(auto-fit,minmax(190px,1fr));
+    gap:12px;
+}
+
+.card{
+    padding:15px;
+    border-radius:14px;
+    background:rgba(255,255,255,.07);
+}
+
+.card button{
+    width:100%;
+    margin-top:9px;
+}
+
+.locked{
+    opacity:.45;
+}
+
+#biteIndicator{
+    position:fixed;
+    left:50%;
+    top:42%;
+    transform:translate(-50%,-50%);
+    z-index:5;
+    display:none;
+    padding:14px 25px;
+    border-radius:14px;
+    background:#ef4444;
+    color:white;
+    font-size:24px;
+    font-weight:bold;
+    box-shadow:0 0 35px rgba(239,68,68,.55);
+    animation:bitePulse .45s infinite alternate;
+}
+
+@keyframes bitePulse{
+    from{
+        transform:translate(-50%,-50%) scale(1);
+    }
+    to{
+        transform:translate(-50%,-50%) scale(1.08);
+    }
+}
+
+#reelUI{
+    position:fixed;
+    left:50%;
+    bottom:70px;
+    transform:translateX(-50%);
+    width:min(500px,80vw);
+    display:none;
+    z-index:5;
+    text-align:center;
+    color:white;
+}
+
+#fishName{
+    font-size:17px;
+    margin-bottom:5px;
+}
+
+#reelBar{
+    position:relative;
+    height:30px;
+    margin-top:8px;
+    border-radius:15px;
+    overflow:hidden;
+    background:rgba(0,0,0,.65);
+    border:2px solid rgba(255,255,255,.5);
+}
+
+#reelTarget{
+    position:absolute;
+    top:0;
+    bottom:0;
+    width:22%;
+    left:39%;
+    background:rgba(72,211,112,.75);
+}
+
+#reelMarker{
+    position:absolute;
+    top:2px;
+    bottom:2px;
+    width:7px;
+    left:50%;
+    background:white;
+    border-radius:5px;
+    box-shadow:0 0 8px white;
+}
+
+#progressBar{
+    height:8px;
+    margin-top:7px;
+    border-radius:8px;
+    overflow:hidden;
+    background:rgba(255,255,255,.15);
+}
+
+#progressFill{
+    width:100%;
+    height:100%;
+    background:#42d77d;
+}
+
+#bossBiteFlash{
+    position:fixed;
+    inset:0;
+    z-index:4;
+    pointer-events:none;
+    display:none;
+    background:rgba(255,0,0,.18);
+}
+</style>
+
+</head>
+
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="startScreen">
+    <div class="startContent">
+        <h1>FISHIN'</h1>
+        <p>Cast. Catch. Upgrade. Explore.</p>
+        <button id="playButton">PLAY</button>
+    </div>
+</div>
+
+<div id="hud">
+
+```
+<div id="money" class="hud">
+    💰 $50
+</div>
+
+<div id="locationHud" class="hud">
+    🌊 Sunny Shore
+</div>
+
+<div id="weatherHud" class="hud">
+    ☀️ Sunny
+</div>
+
+<div id="boatHud" class="hud">
+    🚤 Boat: 0 / 10
+</div>
+
+<div id="controls">
+    SPACE / CLICK = Fish<br>
+    E = Shop &nbsp; C = Collection &nbsp;
+    Q = Quests &nbsp; L = Locations
+</div>
+
+<div id="message"></div>
+```
+
+</div>
+
+<div id="bossWarning">
+    🦈 MEGALODON BITES THE ROD!
+</div>
+
+<div id="bossBiteFlash"></div>
+
+<div id="biteIndicator">
+    🎣 FISH ON! — PRESS SPACE
+</div>
+
+<div id="reelUI">
+
+```
+<div id="fishName">
+    🐟 REEL THE FISH!
+</div>
+
+<div id="reelBar">
+
+    <div id="reelTarget"></div>
+
+    <div id="reelMarker"></div>
+
+</div>
+
+<div id="progressBar">
+
+    <div id="progressFill"></div>
+
+</div>
+```
+
+</div>
+
+<!-- SHOP -->
+
+<div id="shopOverlay" class="overlay">
+
+```
+<div class="panel">
+
+    <button class="close" onclick="closeMenus()">
+        X
+    </button>
+
+    <h1>🛠️ Shop</h1>
+
+    <div class="grid">
+
+        <div class="card">
+
+            <h2>🎣 Rod</h2>
+
+            <div id="rodInfo"></div>
+
+            <button id="rodButton">
+                Upgrade
+            </button>
+
+        </div>
+
+        <div class="card">
+
+            <h2>⚙️ Reel</h2>
+
+            <div id="reelInfo"></div>
+
+            <button id="reelButton">
+                Upgrade
+            </button>
+
+        </div>
+
+        <div class="card">
+
+            <h2>🚤 Boat</h2>
+
+            <div id="boatInfo"></div>
+
+            <button id="boatButton">
+                Upgrade
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+```
+
+</div>
+
+<!-- COLLECTION -->
+
+<div id="collectionOverlay" class="overlay">
+
+```
+<div class="panel">
+
+    <button class="close" onclick="closeMenus()">
+        X
+    </button>
+
+    <h1>🐟 Collection</h1>
+
+    <div id="collectionList" class="grid"></div>
+
+</div>
+```
+
+</div>
+
+<!-- QUESTS -->
+
+<div id="questOverlay" class="overlay">
+
+```
+<div class="panel">
+
+    <button class="close" onclick="closeMenus()">
+        X
+    </button>
+
+    <h1>📜 Quests</h1>
+
+    <div id="questList"></div>
+
+</div>
+```
+
+</div>
+
+<!-- LOCATIONS -->
+
+<div id="locationOverlay" class="overlay">
+
+```
+<div class="panel">
+
+    <button class="close" onclick="closeMenus()">
+        X
+    </button>
+
+    <h1>🗺️ Locations</h1>
+
+    <div id="locationList" class="grid"></div>
+
+</div>
+```
+
+</div>
+
+<script>
+
+"use strict";
+
+
+/* =========================================================
+   CANVAS
+========================================================= */
+
+const canvas =
+    document.getElementById("game");
+
+const ctx =
+    canvas.getContext("2d");
+
+let W = innerWidth;
+let H = innerHeight;
+
+function resize(){
+
+    W = canvas.width = innerWidth;
+    H = canvas.height = innerHeight;
+
+}
+
+addEventListener(
+    "resize",
+    resize
+);
+
+resize();
+
+
+/* =========================================================
+   UTILITIES
+========================================================= */
+
+function random(min,max){
+
+    return Math.random() *
+        (max-min)+min;
+
+}
+
+function clamp(v,min,max){
+
+    return Math.max(
+        min,
+        Math.min(max,v)
+    );
+
+}
+
+function lerp(a,b,t){
+
+    return a+(b-a)*t;
+
+}
+
+function easeOutCubic(t){
+
+    return 1-Math.pow(1-t,3);
+
+}
+
+function easeInOut(t){
+
+    return t<.5
+        ?2*t*t
+        :1-Math.pow(-2*t+2,2)/2;
+
+}
+
+
+/* =========================================================
+   FISH
+========================================================= */
+
+const fishTypes = [
+
+    {
+        name:"Minnow",
+        rarity:"Common",
+        value:5,
+        difficulty:.65,
+        strength:.6,
+        weight:1,
+        boss:false
+    },
+
+    {
+        name:"Bluegill",
+        rarity:"Common",
+        value:8,
+        difficulty:.75,
+        strength:.7,
+        weight:.8,
+        boss:false
+    },
+
+    {
+        name:"Bass",
+        rarity:"Uncommon",
+        value:18,
+        difficulty:.95,
+        strength:.9,
+        weight:.5,
+        boss:false
+    },
+
+    {
+        name:"Trout",
+        rarity:"Uncommon",
+        value:25,
+        difficulty:1.05,
+        strength:1,
+        weight:.35,
+        boss:false
+    },
+
+    {
+        name:"Pufferfish",
+        rarity:"Rare",
+        value:45,
+        difficulty:1.2,
+        strength:1.15,
+        weight:.16,
+        boss:false
+    },
+
+    {
+        name:"Golden Koi",
+        rarity:"Rare",
+        value:80,
+        difficulty:1.35,
+        strength:1.25,
+        weight:.08,
+        boss:false
+    },
+
+    {
+        name:"Squid",
+        rarity:"Very Rare",
+        value:120,
+        difficulty:1.5,
+        strength:1.45,
+        weight:.045,
+        boss:false
+    },
+
+    {
+        name:"Octopus",
+        rarity:"Legendary",
+        value:250,
+        difficulty:1.75,
+        strength:1.65,
+        weight:.015,
+        boss:false
+    },
+
+    {
+        name:"Ancient Fish",
+        rarity:"Legendary",
+        value:500,
+        difficulty:2,
+        strength:2,
+        weight:.005,
+        boss:false
+    },
+
+    {
+        name:"Megalodon",
+        rarity:"BOSS",
+        value:2500,
+        difficulty:3.1,
+        strength:3,
+        weight:.0015,
+        boss:true
+    }
+
+];
+
+
+/* =========================================================
+   LOCATIONS
+========================================================= */
+
+const locations = [
+
+    {
+        name:"Sunny Shore",
+        icon:"🌊",
+        description:
+            "A calm beginner-friendly fishing spot.",
+        unlockRod:1,
+        water:"#249bd1",
+        dark:"#1374a8",
+        sky:"#8edcff",
+        fish:[
+            "Minnow",
+            "Bluegill",
+            "Bass",
+            "Trout",
+            "Pufferfish"
+        ]
+    },
+
+    {
+        name:"Deep Blue",
+        icon:"🌌",
+        description:
+            "Deep water filled with stronger fish.",
+        unlockRod:3,
+        water:"#075985",
+        dark:"#082f49",
+        sky:"#172554",
+        fish:[
+            "Bass",
+            "Trout",
+            "Golden Koi",
+            "Squid",
+            "Octopus"
+        ]
+    },
+
+    {
+        name:"Ancient Cove",
+        icon:"🏝️",
+        description:
+            "A mysterious cove where legends hide.",
+        unlockRod:6,
+        water:"#155e75",
+        dark:"#083344",
+        sky:"#1e293b",
+        fish:[
+            "Golden Koi",
+            "Squid",
+            "Octopus",
+            "Ancient Fish",
+            "Megalodon"
+        ]
+    }
+
+];
+
+
+/* =========================================================
+   WEATHER
+========================================================= */
+
+const weatherTypes = [
+
+    {
+        name:"Sunny",
+        icon:"☀️",
+        bonus:0
+    },
+
+    {
+        name:"Cloudy",
+        icon:"☁️",
+        bonus:.08
+    },
+
+    {
+        name:"Rainy",
+        icon:"🌧️",
+        bonus:.18
+    },
+
+    {
+        name:"Stormy",
+        icon:"⛈️",
+        bonus:.30
+    }
+
+];
+
+
+/* =========================================================
+   QUESTS
+========================================================= */
+
+const quests = [
+
+    {
+        id:"common",
+        title:"First Haul",
+        description:"Catch 10 Common fish.",
+        target:10,
+        reward:100
+    },
+
+    {
+        id:"rare",
+        title:"Something Special",
+        description:"Catch 5 Rare fish.",
+        target:5,
+        reward:250
+    },
+
+    {
+        id:"legendary",
+        title:"Legend Hunter",
+        description:"Catch 1 Legendary fish.",
+        target:1,
+        reward:750
+    },
+
+    {
+        id:"money",
+        title:"Big Business",
+        description:
+            "Earn $1,000 from catching fish.",
+        target:1000,
+        reward:500
+    }
+
+];
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let gameStarted=false;
+
+let money=50;
+
+let rodLevel=1;
+let reelLevel=1;
+let boatLevel=1;
+
+let caughtFish=[];
+
+let discovered=new Set();
+
+let currentLocation=0;
+
+let fishingState="idle";
+
+let currentFish=null;
+
+let biteTimer=0;
+
+let catchProgress=1;
+
+let reelMarker=.5;
+
+let reelVelocity=.55;
+
+let combo=0;
+
+let totalCaught=0;
+
+let time=0;
+
+let weather=0;
+
+let weatherTimer=45;
+
+let messageTimer=0;
+
+let questProgress={
+    common:0,
+    rare:0,
+    legendary:0,
+    money:0
+};
+
+let completedQuests=new Set();
+
+
+/* =========================================================
+   DEBUG
+========================================================= */
+
+let debugForcedFish=null;
+
+let debugBestNext=false;
+
+let debugBuffer="";
+
+let debugBufferTimer=0;
+
+
+/* =========================================================
+   CASTING ANIMATION
+========================================================= */
+
+let castProgress=0;
+
+let bobberX=0;
+let bobberY=0;
+
+let bobberTargetX=0;
+let bobberTargetY=0;
+
+let castSide=1;
+
+let splashTimer=0;
+
+let escapeAnim=0;
+
+
+/* =========================================================
+   MEGALODON BITE
+========================================================= */
+
+/*
+    Megalodon can bite the rod while reeling.
+
+    Each bite removes 25% of the current
+    catch progress.
+
+    There is also a cooldown so it cannot
+    repeatedly hit every frame.
+*/
+
+let bossBiteTimer=0;
+
+let bossBiteCooldown=0;
+
+let bossBiteFlashTimer=0;
+
+
+/* =========================================================
+   PARTICLES
+========================================================= */
+
+const particles=[];
+
+function particle(
+    x,
+    y,
+    vx,
+    vy,
+    life,
+    size,
+    type="dot"
+){
+
+    particles.push({
+        x,
+        y,
+        vx,
+        vy,
+        life,
+        maxLife:life,
+        size,
+        type
+    });
+
+}
+
+function updateParticles(dt){
+
+    for(
+        let i=particles.length-1;
+        i>=0;
+        i--
+    ){
+
+        const p=particles[i];
+
+        p.x+=p.vx*dt;
+        p.y+=p.vy*dt;
+
+        p.vy+=30*dt;
+
+        p.life-=dt;
+
+        if(p.life<=0){
+
+            particles.splice(i,1);
+
+        }
+
+    }
+
+}
+
+function drawParticles(){
+
+    for(const p of particles){
+
+        ctx.globalAlpha=
+            clamp(
+                p.life/p.maxLife,
+                0,
+                1
+            );
+
+        ctx.beginPath();
+
+        ctx.arc(
+            p.x,
+            p.y,
+            p.size,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fillStyle=
+            p.type==="rain"
+                ?"rgba(190,230,255,.7)"
+                :"white";
+
+        ctx.fill();
+
+    }
+
+    ctx.globalAlpha=1;
+
+}
+
+
+/* =========================================================
+   UPGRADES
+========================================================= */
+
+function rodCost(){
+
+    return 100+
+        (rodLevel-1)*150;
+
+}
+
+function reelCost(){
+
+    return 90+
+        (reelLevel-1)*130;
+
+}
+
+function boatCost(){
+
+    return 120+
+        (boatLevel-1)*180;
+
+}
+
+function boatCapacity(){
+
+    return 10+
+        (boatLevel-1)*8;
+
+}
+
+function rodName(){
+
+    if(rodLevel>=7)
+        return"⚡ Storm Rod";
+
+    if(rodLevel>=5)
+        return"🟣 Deep Rod";
+
+    if(rodLevel>=3)
+        return"🔵 Blue Rod";
+
+    return"🟤 Starter Rod";
+
+}
+
+
+/* =========================================================
+   SAVE
+========================================================= */
+
+function saveGame(){
+
+    localStorage.setItem(
+        "fishinSave",
+        JSON.stringify({
+
+            money,
+            rodLevel,
+            reelLevel,
+            boatLevel,
+
+            caughtFish,
+
+            discovered:[
+                ...discovered
+            ],
+
+            currentLocation,
+
+            combo,
+            totalCaught,
+
+            questProgress,
+
+            completedQuests:[
+                ...completedQuests
+            ]
+
+        })
+    );
+
+}
+
+
+/* =========================================================
+   LOAD
+========================================================= */
+
+function loadGame(){
+
+    try{
+
+        const raw=
+            localStorage.getItem(
+                "fishinSave"
+            );
+
+        if(!raw)return;
+
+        const d=JSON.parse(raw);
+
+        money=d.money??50;
+
+        rodLevel=d.rodLevel??1;
+
+        reelLevel=d.reelLevel??1;
+
+        boatLevel=d.boatLevel??1;
+
+        caughtFish=
+            Array.isArray(d.caughtFish)
+                ?d.caughtFish
+                :[];
+
+        discovered=
+            new Set(
+                Array.isArray(d.discovered)
+                    ?d.discovered
+                    :[]
+            );
+
+        currentLocation=
+            clamp(
+                d.currentLocation??0,
+                0,
+                locations.length-1
+            );
+
+        combo=d.combo??0;
+
+        totalCaught=d.totalCaught??0;
+
+        questProgress=
+            d.questProgress||{
+                common:0,
+                rare:0,
+                legendary:0,
+                money:0
+            };
+
+        completedQuests=
+            new Set(
+                Array.isArray(
+                    d.completedQuests
+                )
+                    ?d.completedQuests
+                    :[]
+            );
+
+    }catch(e){
+
+        console.log(
+            "Could not load save."
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   UI
+========================================================= */
+
+function updateUI(){
+
+    document.getElementById(
+        "money"
+    ).textContent=
+        "💰 $"+
+        Math.floor(money);
+
+    const loc=
+        locations[currentLocation];
+
+    document.getElementById(
+        "locationHud"
+    ).textContent=
+        loc.icon+" "+loc.name;
+
+    const wt=
+        weatherTypes[weather];
+
+    document.getElementById(
+        "weatherHud"
+    ).textContent=
+        wt.icon+" "+wt.name;
+
+    document.getElementById(
+        "boatHud"
+    ).textContent=
+        "🚤 Boat: "+
+        caughtFish.length+
+        " / "+
+        boatCapacity();
+
+    document.getElementById(
+        "rodInfo"
+    ).innerHTML=
+        `
+        <div>Level: <b>${rodLevel}</b></div>
+        <div>${rodName()}</div>
+        <div>Cost: <b>$${rodCost()}</b></div>
+        `;
+
+    document.getElementById(
+        "reelInfo"
+    ).innerHTML=
+        `
+        <div>Level: <b>${reelLevel}</b></div>
+        <div>Control: <b>${reelLevel*5}%</b></div>
+        <div>Cost: <b>$${reelCost()}</b></div>
+        `;
+
+    document.getElementById(
+        "boatInfo"
+    ).innerHTML=
+        `
+        <div>Level: <b>${boatLevel}</b></div>
+        <div>Capacity: <b>${boatCapacity()}</b></div>
+        <div>Cost: <b>$${boatCost()}</b></div>
+        `;
+
+    updateCollectionUI();
+    updateQuestUI();
+    updateLocationUI();
+
+}
+
+
+/* =========================================================
+   MESSAGE
+========================================================= */
+
+function message(
+    text,
+    duration=2200
+){
+
+    const el=
+        document.getElementById(
+            "message"
+        );
+
+    el.textContent=text;
+
+    el.style.opacity="1";
+
+    messageTimer=
+        duration/1000;
+
+}
+
+function updateMessage(dt){
+
+    if(messageTimer>0){
+
+        messageTimer-=dt;
+
+        if(messageTimer<=0){
+
+            document.getElementById(
+                "message"
+            ).style.opacity="0";
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   COLLECTION
+========================================================= */
+
+function updateCollectionUI(){
+
+    const el=
+        document.getElementById(
+            "collectionList"
+        );
+
+    if(!el)return;
+
+    el.innerHTML="";
+
+    for(const fish of fishTypes){
+
+        const found=
+            discovered.has(
+                fish.name
+            );
+
+        const card=
+            document.createElement(
+                "div"
+            );
+
+        card.className=
+            "card"+
+            (found?"":" locked");
+
+        if(found){
+
+            card.innerHTML=
+                `
+                <h2>
+                    ${fish.boss
+                        ?"🦈"
+                        :"🐟"}
+                    ${fish.name}
+                </h2>
+
+                <div>
+                    ${fish.rarity}
+                </div>
+
+                <div>
+                    Value: $${fish.value}
+                </div>
+                `;
+
+        }else{
+
+            card.innerHTML=
+                `
+                <h2>❔ Unknown</h2>
+                <div>Not discovered</div>
+                `;
+
+        }
+
+        el.appendChild(card);
+
+    }
+
+}
+
+
+/* =========================================================
+   QUESTS
+========================================================= */
+
+function completeQuest(id){
+
+    if(
+        completedQuests.has(id)
+    )return;
+
+    const quest=
+        quests.find(
+            q=>q.id===id
+        );
+
+    if(!quest)return;
+
+    completedQuests.add(id);
+
+    money+=quest.reward;
+
+    message(
+        "🎉 Quest complete! +$"+
+        quest.reward+"!"
+    );
+
+}
+
+function checkAllQuests(){
+
+    for(const quest of quests){
+
+        if(
+            completedQuests.has(
+                quest.id
+            )
+        )continue;
+
+        const progress=
+            questProgress[
+                quest.id
+            ]||0;
+
+        if(
+            progress>=quest.target
+        ){
+
+            completeQuest(
+                quest.id
+            );
+
+        }
+
+    }
+
+    updateUI();
+    saveGame();
+
+}
+
+function updateQuestUI(){
+
+    const el=
+        document.getElementById(
+            "questList"
+        );
+
+    if(!el)return;
+
+    el.innerHTML="";
+
+    for(const quest of quests){
+
+        const progress=
+            Math.min(
+                quest.target,
+                questProgress[
+                    quest.id
+                ]||0
+            );
+
+        const done=
+            completedQuests.has(
+                quest.id
+            );
+
+        const card=
+            document.createElement(
+                "div"
+            );
+
+        card.className="card";
+
+        card.style.marginBottom=
+            "12px";
+
+        card.innerHTML=
+            `
+            <h2>
+                ${done?"✅":"📜"}
+                ${quest.title}
+            </h2>
+
+            <p>
+                ${quest.description}
+            </p>
+
+            <div>
+                ${progress} /
+                ${quest.target}
+            </div>
+
+            <div>
+                Reward:
+                $${quest.reward}
+            </div>
+            `;
+
+        el.appendChild(card);
+
+    }
+
+}
+
+
+/* =========================================================
+   LOCATIONS
+========================================================= */
+
+function updateLocationUI(){
+
+    const el=
+        document.getElementById(
+            "locationList"
+        );
+
+    if(!el)return;
+
+    el.innerHTML="";
+
+    locations.forEach(
+        (loc,index)=>{
+
+            const unlocked=
+                rodLevel>=
+                loc.unlockRod;
+
+            const card=
+                document.createElement(
+                    "div"
+                );
+
+            card.className=
+                "card"+
+                (unlocked
+                    ?""
+                    :" locked");
+
+            card.innerHTML=
+                `
+                <h2>
+                    ${loc.icon}
+                    ${loc.name}
+                </h2>
+
+                <p>
+                    ${loc.description}
+                </p>
+
+                <div>
+                    Required Rod:
+                    Lv ${loc.unlockRod}
+                </div>
+
+                <button
+                    ${unlocked?"":"disabled"}
+                    onclick="travel(${index})"
+                >
+                    ${
+                        index===currentLocation
+                            ?"CURRENT"
+                            :unlocked
+                                ?"TRAVEL"
+                                :"LOCKED"
+                    }
+                </button>
+                `;
+
+            el.appendChild(card);
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   MENUS
+========================================================= */
+
+function closeMenus(){
+
+    document
+        .querySelectorAll(
+            ".overlay"
+        )
+        .forEach(
+            el=>
+                el.style.display="none"
+        );
+
+}
+
+function openMenu(id){
+
+    if(!gameStarted)return;
+
+    if(
+        fishingState!=="idle"
+    ){
+
+        message(
+            "Finish fishing first!"
+        );
+
+        return;
+    }
+
+    closeMenus();
+
+    document.getElementById(
+        id
+    ).style.display="flex";
+
+}
+
+function travel(index){
+
+    if(
+        rodLevel<
+        locations[index].unlockRod
+    ){
+
+        message(
+            "🔒 Upgrade your rod first!"
+        );
+
+        return;
+    }
+
+    currentLocation=index;
+
+    closeMenus();
+
+    message(
+        locations[index].icon+
+        " Travelled to "+
+        locations[index].name
+    );
+
+    saveGame();
+    updateUI();
+
+}
+
+
+/* =========================================================
+   SHOP
+========================================================= */
+
+function buyRod(){
+
+    const cost=rodCost();
+
+    if(money<cost){
+
+        message(
+            "💸 Not enough money!"
+        );
+
+        return;
+    }
+
+    money-=cost;
+
+    rodLevel++;
+
+    message(
+        "🎣 Upgraded to "+
+        rodName()+"!"
+    );
+
+    saveGame();
+    updateUI();
+
+}
+
+function buyReel(){
+
+    const cost=reelCost();
+
+    if(money<cost){
+
+        message(
+            "💸 Not enough money!"
+        );
+
+        return;
+    }
+
+    money-=cost;
+
+    reelLevel++;
+
+    message(
+        "⚙️ Reel upgraded!"
+    );
+
+    saveGame();
+    updateUI();
+
+}
+
+function buyBoat(){
+
+    const cost=boatCost();
+
+    if(money<cost){
+
+        message(
+            "💸 Not enough money!"
+        );
+
+        return;
+    }
+
+    money-=cost;
+
+    boatLevel++;
+
+    message(
+        "🚤 Boat upgraded! Capacity: "+
+        boatCapacity()
+    );
+
+    saveGame();
+    updateUI();
+
+}
+
+document.getElementById(
+    "rodButton"
+).onclick=buyRod;
+
+document.getElementById(
+    "reelButton"
+).onclick=buyReel;
+
+document.getElementById(
+    "boatButton"
+).onclick=buyBoat;
+
+
+/* =========================================================
+   NORMAL FISH SELECTION
+========================================================= */
+
+function chooseFish(){
+
+    const available=
+        fishTypes.filter(
+            fish=>
+                locations[
+                    currentLocation
+                ].fish.includes(
+                    fish.name
+                )
+        );
+
+    let weighted=[];
+
+    const bonus=
+        weatherTypes[
+            weather
+        ].bonus;
+
+    for(
+        const fish of available
+    ){
+
+        let weight=fish.weight;
+
+        if(
+            fish.rarity==="Rare"||
+            fish.rarity==="Very Rare"||
+            fish.rarity==="Legendary"
+        ){
+
+            weight*=
+                1+bonus;
+
+        }
+
+        const amount=
+            Math.max(
+                1,
+                Math.round(
+                    weight*1000
+                )
+            );
+
+        for(
+            let i=0;
+            i<amount;
+            i++
+        ){
+
+            weighted.push(
+                fish
+            );
+
+        }
+
+    }
+
+    return weighted[
+        Math.floor(
+            Math.random()*
+            weighted.length
+        )
+    ];
+
+}
+
+
+/* =========================================================
+   BEST FISH
+========================================================= */
+
+/*
+    THIS is the important fix.
+
+    The old system used:
+        available[available.length - 1]
+
+    That depended on the order of the
+    location list.
+
+    Now we explicitly find the fish with
+    the highest value.
+
+    This means Megalodon is always the
+    best fish in Ancient Cove.
+*/
+
+function chooseBestAvailableFish(){
+
+    const available=
+        fishTypes.filter(
+            fish=>
+                locations[
+                    currentLocation
+                ].fish.includes(
+                    fish.name
+                )
+        );
+
+    if(
+        available.length===0
+    ){
+
+        return fishTypes[0];
+
+    }
+
+    return available.reduce(
+        (best,fish)=>
+            fish.value>best.value
+                ?fish
+                :best,
+        available[0]
+    );
+
+}
+
+
+/* =========================================================
+   DEBUG-AWARE FISH SELECTION
+========================================================= */
+
+function getNextFish(){
+
+    if(debugForcedFish){
+
+        return debugForcedFish;
+
+    }
+
+    if(debugBestNext){
+
+        return chooseBestAvailableFish();
+
+    }
+
+    return chooseFish();
+
+}
+
+
+/* =========================================================
+   BOAT
+========================================================= */
+
+function boatPosition(){
+
+    return{
+        x:W/2,
+        y:H*.72
+    };
+
+}
+
+function drawBoat(){
+
+    const b=
+        boatPosition();
+
+    const x=b.x;
+    const y=b.y;
+
+    ctx.save();
+
+    /* Fishing Boat */
+
+    if(boatLevel<=2){
+
+        ctx.fillStyle="#8b5a35";
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            x-125,
+            y
+        );
+
+        ctx.lineTo(
+            x-95,
+            y+58
+        );
+
+        ctx.lineTo(
+            x+95,
+            y+58
+        );
+
+        ctx.lineTo(
+            x+125,
+            y
+        );
+
+        ctx.closePath();
+
+        ctx.fill();
+
+        ctx.fillStyle="#c98245";
+
+        ctx.fillRect(
+            x-65,
+            y-42,
+            95,
+            42
+        );
+
+        ctx.fillStyle="#8dd7ff";
+
+        ctx.fillRect(
+            x-48,
+            y-31,
+            25,
+            20
+        );
+
+        ctx.fillRect(
+            x-10,
+            y-31,
+            25,
+            20
+        );
+
+    }
+
+    /* Sport Boat */
+
+    else if(boatLevel<=4){
+
+        ctx.fillStyle="#e5e7eb";
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            x-145,
+            y
+        );
+
+        ctx.lineTo(
+            x-90,
+            y+60
+        );
+
+        ctx.lineTo(
+            x+105,
+            y+60
+        );
+
+        ctx.lineTo(
+            x+145,
+            y
+        );
+
+        ctx.closePath();
+
+        ctx.fill();
+
+        ctx.fillStyle="#1d4ed8";
+
+        ctx.fillRect(
+            x-70,
+            y-46,
+            105,
+            46
+        );
+
+        ctx.fillStyle="#93c5fd";
+
+        ctx.fillRect(
+            x-55,
+            y-35,
+            35,
+            23
+        );
+
+        ctx.fillRect(
+            x-10,
+            y-35,
+            35,
+            23
+        );
+
+    }
+
+    /* Speedboat */
+
+    else if(boatLevel<=6){
+
+        ctx.fillStyle="#f8fafc";
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            x-160,
+            y
+        );
+
+        ctx.lineTo(
+            x-95,
+            y+55
+        );
+
+        ctx.lineTo(
+            x+125,
+            y+55
+        );
+
+        ctx.lineTo(
+            x+160,
+            y
+        );
+
+        ctx.closePath();
+
+        ctx.fill();
+
+        ctx.fillStyle="#7c3aed";
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            x-70,
+            y-52
+        );
+
+        ctx.lineTo(
+            x+45,
+            y-52
+        );
+
+        ctx.lineTo(
+            x+25,
+            y
+        );
+
+        ctx.lineTo(
+            x-70,
+            y
+        );
+
+        ctx.closePath();
+
+        ctx.fill();
+
+        ctx.fillStyle="#c4b5fd";
+
+        ctx.fillRect(
+            x-55,
+            y-40,
+            34,
+            22
+        );
+
+        ctx.fillRect(
+            x-12,
+            y-40,
+            34,
+            22
+        );
+
+    }
+
+    /* Ocean Cruiser */
+
+    else{
+
+        ctx.fillStyle="#e2e8f0";
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            x-175,
+            y
+        );
+
+        ctx.lineTo(
+            x-110,
+            y+65
+        );
+
+        ctx.lineTo(
+            x+135,
+            y+65
+        );
+
+        ctx.lineTo(
+            x+175,
+            y
+        );
+
+        ctx.closePath();
+
+        ctx.fill();
+
+        ctx.fillStyle="#0891b2";
+
+        ctx.fillRect(
+            x-82,
+            y-60,
+            130,
+            60
+        );
+
+        ctx.fillStyle="#67e8f9";
+
+        ctx.fillRect(
+            x-67,
+            y-45,
+            38,
+            25
+        );
+
+        ctx.fillRect(
+            x-20,
+            y-45,
+            38,
+            25
+        );
+
+        ctx.fillRect(
+            x+25,
+            y-45,
+            12,
+            25
+        );
+
+    }
+
+    /* Motor */
+
+    ctx.fillStyle="#334155";
+
+    ctx.fillRect(
+        x+100,
+        y+25,
+        28,
+        45
+    );
+
+    ctx.restore();
+
+    drawFishingRig();
+
+}
+
+
+/* =========================================================
+   ROD TIP
+========================================================= */
+
+function rodTip(){
+
+    const b=
+        boatPosition();
+
+    return{
+
+        x:
+            b.x+
+            76*castSide,
+
+        y:
+            b.y-100
+
+    };
+
+}
+
+
+/* =========================================================
+   DRAW FISHING RIG
+========================================================= */
+
+function drawFishingRig(){
+
+    if(
+        fishingState==="idle"
+    )return;
+
+    const tip=
+        rodTip();
+
+    let rodColor=
+        rodLevel>=7
+            ?"#22d3ee"
+            :rodLevel>=5
+                ?"#a855f7"
+                :rodLevel>=3
+                    ?"#2563eb"
+                    :"#8b5a35";
+
+    let angle=
+        -Math.PI/2;
+
+
+    /* Casting */
+
+    if(
+        fishingState==="casting"
+    ){
+
+        if(
+            castProgress<.35
+        ){
+
+            const t=
+                castProgress/.35;
+
+            angle=
+                lerp(
+                    -Math.PI/2,
+                    -Math.PI/2-.72,
+                    easeInOut(t)
+                );
+
+        }else{
+
+            const t=
+                (castProgress-.35)/.65;
+
+            angle=
+                lerp(
+                    -Math.PI/2-.72,
+                    -Math.PI/2+.12,
+                    easeOutCubic(t)
+                );
+
+        }
+
+    }
+
+
+    /* Bite */
+
+    else if(
+        fishingState==="bite"
+    ){
+
+        angle=
+            -Math.PI/2+
+            Math.sin(time*20)*.08;
+
+    }
+
+
+    /* Escaping */
+
+    else if(
+        fishingState==="escaping"
+    ){
+
+        angle=
+            -Math.PI/2+
+            escapeAnim*.3;
+
+    }
+
+
+    /* Megalodon biting */
+
+    if(
+        bossBiteFlashTimer>0
+    ){
+
+        angle+=
+            Math.sin(
+                bossBiteFlashTimer*80
+            )*.15;
+
+    }
+
+
+    ctx.save();
+
+    ctx.strokeStyle=
+        rodColor;
+
+    ctx.lineWidth=6;
+
+    ctx.lineCap="round";
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        tip.x,
+        tip.y+115
+    );
+
+    ctx.lineTo(
+        tip.x+
+        Math.cos(angle)*115,
+
+        tip.y+
+        Math.sin(angle)*115
+    );
+
+    ctx.stroke();
+
+
+    let endX=bobberX;
+    let endY=bobberY;
+
+
+    /* Casting line */
+
+    if(
+        fishingState==="casting"
+    ){
+
+        const p=
+            easeOutCubic(
+                castProgress
+            );
+
+        endX=
+            lerp(
+                tip.x,
+                bobberTargetX,
+                p
+            );
+
+        endY=
+            lerp(
+                tip.y,
+                bobberTargetY,
+                p
+            )-
+            Math.sin(
+                castProgress*Math.PI
+            )*90;
+
+    }
+
+
+    /* Escaping line */
+
+    if(
+        fishingState==="escaping"
+    ){
+
+        endX=
+            lerp(
+                bobberX,
+                tip.x,
+                escapeAnim
+            );
+
+        endY=
+            lerp(
+                bobberY,
+                tip.y,
+                escapeAnim
+            );
+
+    }
+
+
+    /* Line */
+
+    ctx.strokeStyle=
+        "rgba(245,250,255,.8)";
+
+    ctx.lineWidth=2;
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        tip.x,
+        tip.y
+    );
+
+    ctx.quadraticCurveTo(
+        (tip.x+endX)/2,
+        (tip.y+endY)/2+30,
+        endX,
+        endY
+    );
+
+    ctx.stroke();
+
+
+    /* Bobber */
+
+    if(
+        fishingState!=="escaping"||
+        escapeAnim<.75
+    ){
+
+        let bx=endX;
+        let by=endY;
+
+        if(
+            fishingState==="waiting"
+        ){
+
+            by+=
+                Math.sin(
+                    time*2.5
+                )*4;
+
+        }
+
+        if(
+            fishingState==="bite"
+        ){
+
+            by+=
+                Math.abs(
+                    Math.sin(
+                        time*13
+                    )
+                )*25;
+
+        }
+
+        if(
+            fishingState==="reeling"
+        ){
+
+            by+=
+                Math.sin(
+                    time*8
+                )*7;
+
+        }
+
+        drawBobber(
+            bx,
+            by
+        );
+
+    }
+
+    ctx.restore();
+
+}
+
+
+/* =========================================================
+   BOBBER
+========================================================= */
+
+function drawBobber(x,y){
+
+    ctx.save();
+
+    ctx.strokeStyle=
+        "rgba(255,255,255,.35)";
+
+    ctx.lineWidth=2;
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        x,
+        y+5,
+        10+
+            Math.sin(time*4)*2,
+        3,
+        0,
+        0,
+        Math.PI*2
+    );
+
+    ctx.stroke();
+
+    ctx.beginPath();
+
+    ctx.arc(
+        x,
+        y,
+        8,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fillStyle="#ef4444";
+
+    ctx.fill();
+
+    ctx.beginPath();
+
+    ctx.arc(
+        x,
+        y+3,
+        5,
+        0,
+        Math.PI
+    );
+
+    ctx.fillStyle="white";
+
+    ctx.fill();
+
+    ctx.restore();
+
+}
+
+
+/* =========================================================
+   WORLD
+========================================================= */
+
+function drawSkyAndWater(){
+
+    const loc=
+        locations[currentLocation];
+
+    ctx.fillStyle=
+        loc.sky;
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H*.43
+    );
+
+    const gradient=
+        ctx.createLinearGradient(
+            0,
+            H*.43,
+            0,
+            H
+        );
+
+    gradient.addColorStop(
+        0,
+        loc.water
+    );
+
+    gradient.addColorStop(
+        1,
+        loc.dark
+    );
+
+    ctx.fillStyle=
+        gradient;
+
+    ctx.fillRect(
+        0,
+        H*.43,
+        W,
+        H*.57
+    );
+
+}
+
+function drawSun(){
+
+    if(weather>=2)return;
+
+    ctx.save();
+
+    ctx.shadowBlur=40;
+
+    ctx.shadowColor=
+        "#fff2a8";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        W-110,
+        100,
+        42,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fillStyle=
+        "#ffe082";
+
+    ctx.fill();
+
+    ctx.restore();
+
+}
+
+function drawCloud(
+    x,
+    y,
+    s,
+    alpha
+){
+
+    ctx.save();
+
+    ctx.globalAlpha=alpha;
+
+    ctx.fillStyle="white";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        x,
+        y,
+        25*s,
+        0,
+        Math.PI*2
+    );
+
+    ctx.arc(
+        x+28*s,
+        y-12*s,
+        35*s,
+        0,
+        Math.PI*2
+    );
+
+    ctx.arc(
+        x+65*s,
+        y,
+        25*s,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.restore();
+
+}
+
+function drawClouds(){
+
+    const count=
+        weather===0
+            ?2
+            :weather===1
+                ?5
+                :7;
+
+    for(
+        let i=0;
+        i<count;
+        i++
+    ){
+
+        const x=
+            (
+                i*230+
+                time*(5+i)
+            )%
+            (W+300)-150;
+
+        const y=
+            70+
+            (i%3)*60;
+
+        drawCloud(
+            x,
+            y,
+            .8+
+                (i%2)*.3,
+            weather===0
+                ?.45
+                :.7
+        );
+
+    }
+
+}
+
+function drawWaves(){
+
+    ctx.save();
+
+    ctx.strokeStyle=
+        "rgba(255,255,255,.13)";
+
+    ctx.lineWidth=2;
+
+    for(
+        let y=H*.45;
+        y<H;
+        y+=45
+    ){
+
+        ctx.beginPath();
+
+        for(
+            let x=0;
+            x<=W;
+            x+=35
+        ){
+
+            const yy=
+                y+
+                Math.sin(
+                    x*.035+
+                    time*1.5+
+                    y
+                )*3;
+
+            if(x===0)
+                ctx.moveTo(
+                    x,
+                    yy
+                );
+            else
+                ctx.lineTo(
+                    x,
+                    yy
+                );
+
+        }
+
+        ctx.stroke();
+
+    }
+
+    ctx.restore();
+
+}
+
+function drawWeather(){
+
+    if(weather<2)return;
+
+    ctx.save();
+
+    ctx.strokeStyle=
+        "rgba(190,230,255,.3)";
+
+    ctx.lineWidth=1;
+
+    for(
+        let i=0;
+        i<80;
+        i++
+    ){
+
+        const x=
+            (i*97+
+            time*130)%W;
+
+        const y=
+            (i*53+
+            time*350)%H;
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            x,
+            y
+        );
+
+        ctx.lineTo(
+            x-5,
+            y+18
+        );
+
+        ctx.stroke();
+
+    }
+
+    ctx.restore();
+
+}
+
+
+/* =========================================================
+   WEATHER
+========================================================= */
+
+function updateWeather(dt){
+
+    weatherTimer-=dt;
+
+    if(
+        weatherTimer<=0
+    ){
+
+        weather=
+            Math.floor(
+                Math.random()*
+                weatherTypes.length
+            );
+
+        weatherTimer=
+            random(
+                35,
+                65
+            );
+
+        updateUI();
+
+    }
+
+}
+
+
+/* =========================================================
+   START FISHING
+========================================================= */
+
+function startFishing(){
+
+    if(!gameStarted)return;
+
+    if(
+        fishingState!=="idle"
+    )return;
+
+    if(
+        caughtFish.length>=
+        boatCapacity()
+    ){
+
+        message(
+            "🚤 Boat full! Empty your boat first."
+        );
+
+        return;
+
+    }
+
+    currentFish=
+        getNextFish();
+
+    fishingState="casting";
+
+    castProgress=0;
+
+    castSide=
+        Math.random()<.5
+            ?-1
+            :1;
+
+    const tip=
+        rodTip();
+
+    bobberX=tip.x;
+
+    bobberY=tip.y;
+
+    bobberTargetX=
+        W/2+
+        castSide*
+        random(70,190);
+
+    bobberTargetY=
+        H*.56+
+        random(-10,65);
+
+    bossBiteTimer=0;
+
+    bossBiteCooldown=0;
+
+    document.getElementById(
+        "biteIndicator"
+    ).style.display="none";
+
+    document.getElementById(
+        "reelUI"
+    ).style.display="none";
+
+    message(
+        currentFish.boss
+            ?"🦈 Something HUGE grabbed the bait..."
+            :"🎣 Casting...",
+        1000
+    );
+
+}
+
+
+/* =========================================================
+   FINISH CAST
+========================================================= */
+
+function finishCast(){
+
+    fishingState="waiting";
+
+    bobberX=
+        bobberTargetX;
+
+    bobberY=
+        bobberTargetY;
+
+    biteTimer=
+        random(
+            1.5,
+            currentFish.boss
+                ?2.5
+                :3.5
+        );
+
+    splashTimer=.35;
+
+    for(
+        let i=0;
+        i<12;
+        i++
+    ){
+
+        particle(
+            bobberX,
+            bobberY,
+            random(-70,70),
+            random(-110,-30),
+            random(.35,.7),
+            random(2,4)
+        );
+
+    }
+
+    message(
+        currentFish.boss
+            ?"🦈 The water goes strangely quiet..."
+            :"🎣 Cast! Wait for a bite...",
+        1500
+    );
+
+}
+
+
+/* =========================================================
+   BITE
+========================================================= */
+
+function fishBites(){
+
+    if(
+        fishingState!=="waiting"
+    )return;
+
+    fishingState="bite";
+
+    document.getElementById(
+        "biteIndicator"
+    ).style.display="block";
+
+    for(
+        let i=0;
+        i<18;
+        i++
+    ){
+
+        particle(
+            bobberX,
+            bobberY,
+            random(-100,100),
+            random(-150,-50),
+            random(.4,.9),
+            random(2,5)
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   REEL INPUT
+========================================================= */
+
+function reel(){
+
+    if(!gameStarted)return;
+
+    if(
+        fishingState==="casting"
+    )return;
+
+    if(
+        fishingState==="waiting"
+    ){
+
+        fishEscapes(
+            "💨 Too early! The fish swam away!"
+        );
+
+        return;
+
+    }
+
+    if(
+        fishingState==="bite"
+    ){
+
+        startReeling();
+
+        return;
+
+    }
+
+    if(
+        fishingState==="reeling"
+    ){
+
+        reelMarker=
+            clamp(
+                reelMarker+
+                .055*
+                (
+                    1+
+                    reelLevel*.08
+                ),
+                0,
+                1
+            );
+
+    }
+
+}
+
+
+/* =========================================================
+   START REELING
+========================================================= */
+
+function startReeling(){
+
+    fishingState="reeling";
+
+    catchProgress=
+        currentFish.boss
+            ?0.35
+            :.35;
+
+    reelMarker=.5;
+
+    reelVelocity=
+        .55+
+        currentFish.strength*.15;
+
+    bossBiteTimer=
+        currentFish.boss
+            ?random(1.2,2.7)
+            :9999;
+
+    bossBiteCooldown=0;
+
+    document.getElementById(
+        "biteIndicator"
+    ).style.display="none";
+
+    document.getElementById(
+        "reelUI"
+    ).style.display="block";
+
+    document.getElementById(
+        "fishName"
+    ).textContent=
+        currentFish.boss
+            ?"🦈 MEGALODON — REEL IT IN!"
+            :"🐟 "+
+                currentFish.name+
+                " — REEL IT IN!";
+
+    message(
+        currentFish.boss
+            ?"🦈 IT'S A MEGALODON! WATCH THE ROD!"
+            :"🐟 FISH ON! Keep the marker in the green!",
+        2000
+    );
+
+}
+
+
+/* =========================================================
+   MEGALODON BITE
+========================================================= */
+
+function megalodonBite(){
+
+    if(
+        !currentFish||
+        !currentFish.boss||
+        fishingState!=="reeling"
+    )return;
+
+    /*
+        Lose 25% of the CURRENT bar.
+
+        Example:
+        100% -> 75%
+        60%  -> 45%
+        30%  -> 22.5%
+    */
+
+    catchProgress*=.75;
+
+    catchProgress=
+        clamp(
+            catchProgress,
+            0,
+            1
+        );
+
+    bossBiteCooldown=1.6;
+
+    bossBiteTimer=
+        random(
+            1.3,
+            3
+        );
+
+    bossBiteFlashTimer=.5;
+
+    const warning=
+        document.getElementById(
+            "bossWarning"
+        );
+
+    warning.style.display="block";
+
+    setTimeout(
+        ()=>{
+            warning.style.display="none";
+        },
+        700
+    );
+
+    const flash=
+        document.getElementById(
+            "bossBiteFlash"
+        );
+
+    flash.style.display="block";
+
+    setTimeout(
+        ()=>{
+            flash.style.display="none";
+        },
+        180
+    );
+
+    message(
+        "🦈 CHOMP! Megalodon knocked off 25%!",
+        1300
+    );
+
+    /*
+        Big splash around the bobber.
+    */
+
+    for(
+        let i=0;
+        i<35;
+        i++
+    ){
+
+        particle(
+            bobberX,
+            bobberY,
+            random(-220,220),
+            random(-250,-60),
+            random(.4,.9),
+            random(2,6)
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   FISHING UPDATE
+========================================================= */
+
+function updateFishing(dt){
+
+    /* CASTING */
+
+    if(
+        fishingState==="casting"
+    ){
+
+        castProgress+=
+            dt/.75;
+
+        castProgress=
+            clamp(
+                castProgress,
+                0,
+                1
+            );
+
+        if(
+            castProgress>=1
+        ){
+
+            finishCast();
+
+        }
+
+        return;
+
+    }
+
+
+    /* WAITING */
+
+    if(
+        fishingState==="waiting"
+    ){
+
+        biteTimer-=dt;
+
+        if(
+            biteTimer<=0
+        ){
+
+            fishBites();
+
+        }
+
+        return;
+
+    }
+
+
+    /* BITE */
+
+    if(
+        fishingState==="bite"
+    ){
+
+        bobberX+=
+            Math.sin(
+                time*15
+            )*
+            7*
+            dt;
+
+        return;
+
+    }
+
+
+    /* REELING */
+
+    if(
+        fishingState==="reeling"
+    ){
+
+        reelMarker+=
+            reelVelocity*dt;
+
+        if(
+            reelMarker>1
+        ){
+
+            reelMarker=1;
+
+            reelVelocity*=-1;
+
+        }
+
+        if(
+            reelMarker<0
+        ){
+
+            reelMarker=0;
+
+            reelVelocity*=-1;
+
+        }
+
+
+        /*
+            Green target.
+        */
+
+        const targetMin=.39;
+        const targetMax=.61;
+
+        if(
+            reelMarker>=targetMin&&
+            reelMarker<=targetMax
+        ){
+
+            catchProgress+=
+                dt*
+                (
+                    .34+
+                    reelLevel*.035
+                );
+
+        }else{
+
+            catchProgress-=
+                dt*
+                (
+                    .16+
+                    currentFish.difficulty*.12
+                );
+
+        }
+
+
+        /*
+            MEGALODON SYSTEM
+        */
+
+        if(
+            currentFish.boss
+        ){
+
+            bossBiteTimer-=dt;
+
+            bossBiteCooldown-=dt;
+
+            if(
+                bossBiteTimer<=0&&
+                bossBiteCooldown<=0
+            ){
+
+                megalodonBite();
+
+            }
+
+        }
+
+
+        catchProgress=
+            clamp(
+                catchProgress,
+                0,
+                1
+            );
+
+
+        bobberX+=
+            Math.sin(
+                time*8
+            )*
+            currentFish.strength*
+            8*
+            dt;
+
+
+        if(
+            catchProgress>=1
+        ){
+
+            catchFish();
+
+            return;
+
+        }
+
+        if(
+            catchProgress<=0
+        ){
+
+            fishEscapes(
+                currentFish.boss
+                    ?"💨 The Megalodon broke away!"
+                    :"💨 The fish escaped!"
+            );
+
+        }
+
+        return;
+
+    }
+
+
+    /* ESCAPING */
+
+    if(
+        fishingState==="escaping"
+    ){
+
+        escapeAnim+=
+            dt/.7;
+
+        escapeAnim=
+            clamp(
+                escapeAnim,
+                0,
+                1
+            );
+
+        if(
+            escapeAnim>=1
+        ){
+
+            fishingState="idle";
+
+            currentFish=null;
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   ESCAPE
+========================================================= */
+
+function fishEscapes(text){
+
+    if(
+        fishingState==="escaping"
+    )return;
+
+    fishingState="escaping";
+
+    escapeAnim=0;
+
+    document.getElementById(
+        "biteIndicator"
+    ).style.display="none";
+
+    document.getElementById(
+        "reelUI"
+    ).style.display="none";
+
+    document.getElementById(
+        "bossWarning"
+    ).style.display="none";
+
+    combo=0;
+
+    message(text);
+
+    for(
+        let i=0;
+        i<10;
+        i++
+    ){
+
+        particle(
+            bobberX,
+            bobberY,
+            random(-70,70),
+            random(-120,-30),
+            random(.3,.7),
+            random(2,4)
+        );
+
+    }
+
+    saveGame();
+
+}
+
+
+/* =========================================================
+   CATCH
+========================================================= */
+
+function catchFish(){
+
+    const fish=
+        currentFish;
+
+    if(!fish)return;
+
+    combo++;
+
+    const comboBonus=
+        Math.min(
+            .50,
+            (combo-1)*.05
+        );
+
+    const actualValue=
+        Math.floor(
+            fish.value*
+            (1+comboBonus)
+        );
+
+    money+=actualValue;
+
+    caughtFish.push({
+
+        name:fish.name,
+
+        value:actualValue,
+
+        baseValue:fish.value
+
+    });
+
+    discovered.add(
+        fish.name
+    );
+
+    totalCaught++;
+
+    if(
+        fish.rarity==="Common"
+    ){
+
+        questProgress.common++;
+
+    }
+
+    if(
+        fish.rarity==="Rare"
+    ){
+
+        questProgress.rare++;
+
+    }
+
+    if(
+        fish.rarity==="Legendary"
+    ){
+
+        questProgress.legendary++;
+
+    }
+
+    questProgress.money+=
+        actualValue;
+
+    checkAllQuests();
+
+    debugForcedFish=null;
+
+    for(
+        let i=0;
+        i<35;
+        i++
+    ){
+
+        particle(
+            bobberX,
+            bobberY,
+            random(-150,150),
+            random(-200,-50),
+            random(.4,1),
+            random(2,6)
+        );
+
+    }
+
+    document.getElementById(
+        "reelUI"
+    ).style.display="none";
+
+    document.getElementById(
+        "biteIndicator"
+    ).style.display="none";
+
+    document.getElementById(
+        "bossWarning"
+    ).style.display="none";
+
+    message(
+        fish.boss
+            ?"🦈 MEGALODON CAUGHT! +$"+
+                actualValue+
+                "!"
+            :"🎉 Caught "+
+                fish.name+
+                "! +$"+
+                actualValue+
+                (
+                    comboBonus>0
+                        ?" ("+
+                            Math.floor(
+                                comboBonus*100
+                            )+
+                            "% combo)"
+                        :""
+                )
+    );
+
+    fishingState="escaping";
+
+    escapeAnim=0;
+
+    currentFish=null;
+
+    saveGame();
+    updateUI();
+
+}
+
+
+/* =========================================================
+   EMPTY BOAT
+========================================================= */
+
+function emptyBoat(){
+
+    if(
+        caughtFish.length===0
+    ){
+
+        message(
+            "🚤 Your boat is already empty."
+        );
+
+        return;
+
+    }
+
+    caughtFish=[];
+
+    message(
+        "🚤 Boat emptied."
+    );
+
+    saveGame();
+    updateUI();
+
+}
+
+
+/* =========================================================
+   DEBUG MENU
+========================================================= */
+
+function debugMenu(){
+
+    const choice=
+        prompt(
+            "DEBUG MENU\n\n"+
+            "1 = Toggle Best Next Fish\n"+
+            "2 = Force Ancient Fish\n"+
+            "3 = Force Megalodon\n"+
+            "4 = Give $10,000\n"+
+            "5 = Max Upgrades\n"+
+            "6 = Empty Boat\n"+
+            "7 = Reset Debug\n"+
+            "8 = Reset Save\n\n"+
+            "Best fish now: "+
+            (
+                debugBestNext
+                    ?"ON"
+                    :"OFF"
+            )
+        );
+
+
+    if(choice==="1"){
+
+        debugBestNext=
+            !debugBestNext;
+
+        debugForcedFish=null;
+
+        message(
+            debugBestNext
+                ?"🐟 Best next fish ENABLED!"
+                :"🐟 Best next fish disabled."
+        );
+
+    }
+
+    else if(choice==="2"){
+
+        debugForcedFish=
+            fishTypes.find(
+                f=>
+                    f.name==="Ancient Fish"
+            );
+
+        debugBestNext=false;
+
+        message(
+            "🐉 Ancient Fish forced!"
+        );
+
+    }
+
+    else if(choice==="3"){
+
+        debugForcedFish=
+            fishTypes.find(
+                f=>
+                    f.name==="Megalodon"
+            );
+
+        debugBestNext=false;
+
+        message(
+            "🦈 MEGALODON FORCED!"
+        );
+
+    }
+
+    else if(choice==="4"){
+
+        money+=10000;
+
+        message(
+            "💰 +$10,000"
+        );
+
+    }
+
+    else if(choice==="5"){
+
+        rodLevel=7;
+
+        reelLevel=10;
+
+        boatLevel=10;
+
+        message(
+            "⚡ Upgrades maxed!"
+        );
+
+    }
+
+    else if(choice==="6"){
+
+        emptyBoat();
+
+    }
+
+    else if(choice==="7"){
+
+        debugBestNext=false;
+
+        debugForcedFish=null;
+
+        message(
+            "🧹 Debug reset."
+        );
+
+    }
+
+    else if(choice==="8"){
+
+        if(
+            confirm(
+                "Delete your Fishin' save?"
+            )
+        ){
+
+            localStorage.removeItem(
+                "fishinSave"
+            );
+
+            location.reload();
+
+        }
+
+        return;
+
+    }
+
+    saveGame();
+
+    updateUI();
+
+}
+
+
+/* =========================================================
+   FIXED DEBUG TYPING
+========================================================= */
+
+/*
+    Typing:
+
+        d
+        de
+        deb
+        debu
+        debug
+
+    opens the menu.
+
+    The old broken system tried checking:
+
+        e.key === "debug"
+
+    which can never happen because a key event
+    only contains one key at a time.
+*/
+
+function handleDebugInput(key){
+
+    if(
+        typeof key!=="string"
+    )return;
+
+    if(
+        key.length!==1
+    )return;
+
+    if(
+        !/^[a-z]$/i.test(key)
+    )return;
+
+    debugBuffer+=
+        key.toLowerCase();
+
+    debugBufferTimer=2.5;
+
+    if(
+        debugBuffer.length>20
+    ){
+
+        debugBuffer=
+            debugBuffer.slice(-20);
+
+    }
+
+    if(
+        debugBuffer.endsWith(
+            "debug"
+        )
+    ){
+
+        debugBuffer="";
+
+        debugBufferTimer=0;
+
+        debugMenu();
+
+    }
+
+}
+
+function updateDebugBuffer(dt){
+
+    if(
+        debugBufferTimer>0
+    ){
+
+        debugBufferTimer-=dt;
+
+        if(
+            debugBufferTimer<=0
+        ){
+
+            debugBuffer="";
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+canvas.addEventListener(
+    "click",
+    ()=>{
+
+        if(!gameStarted)return;
+
+        if(
+            fishingState==="idle"
+        ){
+
+            startFishing();
+
+        }else{
+
+            reel();
+
+        }
+
+    }
+);
+
+canvas.addEventListener(
+    "touchstart",
+    e=>{
+
+        e.preventDefault();
+
+        if(!gameStarted)return;
+
+        if(
+            fishingState==="idle"
+        ){
+
+            startFishing();
+
+        }else{
+
+            reel();
+
+        }
+
+    },
+    {
+        passive:false
+    }
+);
+
+
+addEventListener(
+    "keydown",
+    e=>{
+
+        /*
+            DEBUG INPUT ALWAYS RUNS.
+        */
+
+        handleDebugInput(
+            e.key
+        );
+
+
+        if(
+            e.code==="Space"
+        ){
+
+            e.preventDefault();
+
+            if(!gameStarted)return;
+
+            if(
+                fishingState==="idle"
+            ){
+
+                startFishing();
+
+            }else{
+
+                reel();
+
+            }
+
+        }
+
+
+        const key=
+            e.key.toLowerCase();
+
+
+        if(key==="e"){
+
+            openMenu(
+                "shopOverlay"
+            );
+
+        }
+
+        if(key==="c"){
+
+            openMenu(
+                "collectionOverlay"
+            );
+
+        }
+
+        if(key==="q"){
+
+            openMenu(
+                "questOverlay"
+            );
+
+        }
+
+        if(key==="l"){
+
+            openMenu(
+                "locationOverlay"
+            );
+
+        }
+
+        if(key==="escape"){
+
+            closeMenus();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   START
+========================================================= */
+
+function startGame(){
+
+    gameStarted=true;
+
+    document.getElementById(
+        "startScreen"
+    ).style.display="none";
+
+    loadGame();
+
+    updateUI();
+
+    message(
+        "🎣 Click or press SPACE to cast!"
+    );
+
+}
+
+document.getElementById(
+    "playButton"
+).onclick=startGame;
+
+
+/* =========================================================
+   UPDATE
+========================================================= */
+
+let lastTime=
+    performance.now();
+
+function update(dt){
+
+    time+=dt;
+
+    updateMessage(dt);
+
+    updateWeather(dt);
+
+    updateFishing(dt);
+
+    updateParticles(dt);
+
+    updateDebugBuffer(dt);
+
+
+    if(
+        bossBiteFlashTimer>0
+    ){
+
+        bossBiteFlashTimer-=dt;
+
+    }
+
+
+    const marker=
+        document.getElementById(
+            "reelMarker"
+        );
+
+    const fill=
+        document.getElementById(
+            "progressFill"
+        );
+
+
+    if(
+        marker&&
+        fishingState==="reeling"
+    ){
+
+        marker.style.left=
+            `calc(${reelMarker*100}% - 3px)`;
+
+    }
+
+
+    if(
+        fill&&
+        fishingState==="reeling"
+    ){
+
+        fill.style.width=
+            `${catchProgress*100}%`;
+
+    }
+
+}
+
+
+/* =========================================================
+   DRAW
+========================================================= */
+
+function draw(){
+
+    ctx.clearRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+    drawSkyAndWater();
+
+    drawSun();
+
+    drawClouds();
+
+    drawWaves();
+
+    drawWeather();
+
+
+    ctx.fillStyle=
+        "rgba(255,255,255,.12)";
+
+    ctx.fillRect(
+        0,
+        H*.43-2,
+        W,
+        4
+    );
+
+
+    ctx.save();
+
+    ctx.strokeStyle=
+        "rgba(255,255,255,.18)";
+
+    for(
+        let i=0;
+        i<30;
+        i++
+    ){
+
+        const x=
+            (i*137)%W;
+
+        const y=
+            H*.48+
+            ((i*71)%(H*.42));
+
+        const len=
+            12+
+            Math.sin(
+                time*2+i
+            )*5;
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            x,
+            y
+        );
+
+        ctx.lineTo(
+            x+len,
+            y
+        );
+
+        ctx.stroke();
+
+    }
+
+    ctx.restore();
+
+
+    drawBoat();
+
+    drawParticles();
+
+}
+
+
+/* =========================================================
+   GAME LOOP
+========================================================= */
+
+function loop(now){
+
+    const dt=
+        Math.min(
+            (now-lastTime)/1000,
+            .033
+        );
+
+    lastTime=now;
+
+    if(gameStarted){
+
+        update(dt);
+
+    }else{
+
+        time+=dt;
+
+    }
+
+    draw();
+
+    requestAnimationFrame(
+        loop
+    );
+
+}
+
+
+/* =========================================================
+   INIT
+========================================================= */
+
+loadGame();
+
+updateUI();
+
+requestAnimationFrame(
+    loop
+);
+
+</script>
+
+</body>
+</html>
