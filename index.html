@@ -1,1 +1,960 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Games</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    min-height: 100%;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #07130e;
+    color: #e8f5ec;
+}
+
+body {
+    min-height: 100vh;
+}
+
+/* =========================
+   HEADER
+========================= */
+
+header {
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 32px;
+
+    background: #0a1b13;
+    border-bottom: 1px solid #183d2b;
+
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.logo-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo {
+    width: 40px;
+    height: 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    background: #163b29;
+    color: #9be7b5;
+
+    font-size: 21px;
+    font-weight: bold;
+}
+
+.site-title {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.site-subtitle {
+    font-size: 12px;
+    color: #769c83;
+    margin-top: 2px;
+}
+
+/* =========================
+   HIDE BUTTON
+========================= */
+
+#hideButton {
+    border: 1px solid #28563d;
+    background: #10281b;
+    color: #b8eac7;
+
+    padding: 9px 14px;
+
+    border-radius: 9px;
+
+    cursor: pointer;
+
+    font-size: 13px;
+    font-weight: bold;
+
+    transition: .15s;
+}
+
+#hideButton:hover {
+    background: #173824;
+}
+
+/* =========================
+   MAIN
+========================= */
+
+main {
+    max-width: 1100px;
+    margin: auto;
+
+    padding: 55px 25px 70px;
+}
+
+/* =========================
+   HERO
+========================= */
+
+.hero {
+    margin-bottom: 32px;
+}
+
+.hero h1 {
+    margin: 0;
+
+    font-size: 42px;
+    letter-spacing: -1px;
+}
+
+.hero p {
+    margin: 9px 0 0;
+
+    color: #87a994;
+    font-size: 15px;
+}
+
+/* =========================
+   SEARCH
+========================= */
+
+.search-wrap {
+    margin-bottom: 30px;
+}
+
+#search {
+    width: 100%;
+
+    padding: 15px 17px;
+
+    border-radius: 11px;
+    border: 1px solid #214d35;
+
+    outline: none;
+
+    background: #0c2116;
+    color: white;
+
+    font-size: 15px;
+
+    transition: .15s;
+}
+
+#search::placeholder {
+    color: #648271;
+}
+
+#search:focus {
+    border-color: #3c8159;
+    box-shadow: 0 0 0 3px rgba(70, 150, 100, .12);
+}
+
+/* =========================
+   GAME GRID
+========================= */
+
+#appGrid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fit, minmax(220px, 1fr));
+
+    gap: 16px;
+}
+
+/* =========================
+   GAME CARD
+========================= */
+
+.app-card {
+    display: flex;
+    flex-direction: column;
+
+    min-height: 175px;
+
+    padding: 22px;
+
+    border-radius: 14px;
+
+    text-decoration: none;
+    color: inherit;
+
+    background: #0b2115;
+    border: 1px solid #1b402c;
+
+    transition:
+        transform .15s,
+        border-color .15s,
+        background .15s;
+
+    cursor: pointer;
+}
+
+.app-card:hover {
+    transform: translateY(-3px);
+
+    background: #10291a;
+
+    border-color: #3b7651;
+}
+
+/* =========================
+   DISABLED CARD
+========================= */
+
+.app-card.disabled {
+    background: #101613;
+
+    border-color: #202823;
+
+    color: #657069;
+
+    cursor: not-allowed;
+
+    opacity: .62;
+}
+
+.app-card.disabled:hover {
+    transform: none;
+
+    background: #101613;
+
+    border-color: #202823;
+}
+
+.app-card.disabled .app-icon {
+    background: #1b211e;
+    filter: grayscale(1);
+}
+
+.app-card.disabled .app-name {
+    color: #747e77;
+}
+
+.app-card.disabled .app-description {
+    color: #59635d;
+}
+
+/* =========================
+   COMING SOON
+========================= */
+
+.coming-soon {
+    display: inline-block;
+
+    width: fit-content;
+
+    margin-top: 14px;
+
+    padding: 5px 9px;
+
+    border-radius: 7px;
+
+    background: #1b211e;
+
+    color: #7a847d;
+
+    font-size: 11px;
+
+    font-weight: bold;
+
+    letter-spacing: .4px;
+}
+
+.app-icon {
+    width: 46px;
+    height: 46px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 11px;
+
+    background: #153823;
+
+    font-size: 23px;
+
+    margin-bottom: 17px;
+}
+
+.app-name {
+    font-size: 18px;
+    font-weight: bold;
+
+    margin-bottom: 7px;
+}
+
+.app-description {
+    color: #799887;
+
+    font-size: 13px;
+
+    line-height: 1.45;
+}
+
+/* =========================
+   NO RESULTS
+========================= */
+
+#noResults {
+    display: none;
+
+    text-align: center;
+
+    padding: 40px;
+
+    color: #6f8e7b;
+}
+
+/* =========================
+   HIDDEN MODE
+========================= */
+
+body.hidden-mode .site-title {
+    color: #d8f2df;
+}
+
+body.hidden-mode .site-subtitle {
+    color: #769c83;
+}
+
+body.hidden-mode .hero h1 {
+    color: #d8f2df;
+}
+
+body.hidden-mode .hero p {
+    color: #789985;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 600px) {
+
+    header {
+        padding: 0 18px;
+    }
+
+    main {
+        padding: 38px 17px 50px;
+    }
+
+    .hero h1 {
+        font-size: 34px;
+    }
+
+    #appGrid {
+        grid-template-columns: 1fr;
+    }
+
+}
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+```
+<div class="logo-area">
+
+    <div class="logo">
+        S
+    </div>
+
+    <div>
+        <div
+            class="site-title"
+            id="siteTitle"
+        >
+            Games
+        </div>
+
+        <div
+            class="site-subtitle"
+            id="siteSubtitle"
+        >
+            Your games in one place
+        </div>
+    </div>
+
+</div>
+
+<button id="hideButton">
+    H
+</button>
+```
+
+</header>
+
+<main>
+
+```
+<section class="hero">
+
+    <h1 id="heroTitle">
+        Welcome back.
+    </h1>
+
+    <p id="heroDescription">
+        Pick a game and start playing.
+    </p>
+
+</section>
+
+<div class="search-wrap">
+
+    <input
+        id="search"
+        type="text"
+        placeholder="Search games..."
+        autocomplete="off"
+    >
+
+</div>
+
+<div id="appGrid"></div>
+
+<div id="noResults">
+    No games found.
+</div>
+```
+
+</main>
+
+<script>
+
+/* =====================================================
+   APPS
+===================================================== */
+
+const apps = [
+
+    {
+        name: "GDWAV",
+
+        description:
+            "Ride the wave, dodge obstacles and try to survive as long as possible.",
+
+        icon: "🌊",
+
+        url:
+            "gdwav.html",
+
+        available: true,
+
+        hiddenName:
+            "School Portal",
+
+        hiddenDescription:
+            "Open the school portal and access your school resources.",
+
+        keywords:
+            "gdwav wave rush waves dodge arcade",
+
+        hiddenKeywords:
+            "school portal school resources"
+    },
+
+
+    {
+        name: "Block Defense",
+
+        description:
+            "Build your defences, place towers and stop waves of enemies.",
+
+        icon: "🛡️",
+
+        url:
+            "block-defence.html",
+
+        available: true,
+
+        hiddenName:
+            "Documents",
+
+        hiddenDescription:
+            "Access your important school documents and files.",
+
+        keywords:
+            "block defense tower defence tower defense td",
+
+        hiddenKeywords:
+            "documents files school work"
+    },
+
+
+    {
+        name: "Neon Salvage",
+
+        description:
+            "Fight through dangerous sectors, collect loot and make it to extraction.",
+
+        icon: "⚡",
+
+        url:
+            "neon-salvage.html",
+
+        available: false,
+
+        hiddenName:
+            "Calculator",
+
+        hiddenDescription:
+            "A useful school calculator for working through calculations.",
+
+        keywords:
+            "neon salvage action shooter loot extraction",
+
+        hiddenKeywords:
+            "calculator maths math calculations"
+    },
+
+
+    {
+        name: "Zombie Defense",
+
+        description:
+            "Build a base, manage electricity and survive increasingly dangerous zombie waves.",
+
+        icon: "🧟",
+
+        url:
+            "zombie-defense.html",
+
+        available: false,
+
+        hiddenName:
+            "Study",
+
+        hiddenDescription:
+            "A place for focusing on your studies and school work.",
+
+        keywords:
+            "zombie defense survival base electricity waves",
+
+        hiddenKeywords:
+            "study studying revision school work"
+    },
+
+
+    {
+        name: "Agar.io",
+
+        description:
+            "Grow your cell by collecting smaller cells while avoiding bigger ones.",
+
+        icon: "🔵",
+
+        url:
+            "agario/",
+
+        available: false,
+
+        hiddenName:
+            "Study",
+
+        hiddenDescription:
+            "A place for focusing on your studies and school work.",
+
+        keywords:
+            "agar io agario cell cells grow",
+
+        hiddenKeywords:
+            "study studying revision school work"
+    },
+
+
+    {
+        name: "Fishin'",
+
+        description:
+            "Cast your line, catch fish, upgrade your gear and explore new waters.",
+
+        icon: "🎣",
+
+        url:
+            "fishin/",
+
+        available: false,
+
+        hiddenName:
+            "Attendance",
+
+        hiddenDescription:
+            "Check your school attendance and keep track of your timetable.",
+
+        keywords:
+            "fishin fishing fish boat rod reel ocean",
+
+        hiddenKeywords:
+            "attendance timetable register school"
+    }
+
+];
+
+
+/* =====================================================
+   STATE
+===================================================== */
+
+let hiddenMode = false;
+
+
+/* =====================================================
+   ELEMENTS
+===================================================== */
+
+const appGrid =
+    document.getElementById("appGrid");
+
+const search =
+    document.getElementById("search");
+
+const noResults =
+    document.getElementById("noResults");
+
+const siteTitle =
+    document.getElementById("siteTitle");
+
+const siteSubtitle =
+    document.getElementById("siteSubtitle");
+
+const heroTitle =
+    document.getElementById("heroTitle");
+
+const heroDescription =
+    document.getElementById("heroDescription");
+
+const hideButton =
+    document.getElementById("hideButton");
+
+
+/* =====================================================
+   RENDER
+===================================================== */
+
+function renderApps() {
+
+    const query =
+        search.value
+            .toLowerCase()
+            .trim();
+
+
+    appGrid.innerHTML = "";
+
+
+    let visibleCount = 0;
+
+
+    for (const app of apps) {
+
+        const normalSearchText = (
+
+            app.name +
+            " " +
+            app.description +
+            " " +
+            app.keywords
+
+        ).toLowerCase();
+
+
+        const hiddenSearchText = (
+
+            app.hiddenName +
+            " " +
+            app.hiddenDescription +
+            " " +
+            app.hiddenKeywords
+
+        ).toLowerCase();
+
+
+        const searchText =
+            hiddenMode
+                ? hiddenSearchText
+                : normalSearchText;
+
+
+        if (
+            query &&
+            !searchText.includes(query)
+        ) {
+
+            continue;
+
+        }
+
+
+        visibleCount++;
+
+
+        let card;
+
+
+        /* =========================
+           AVAILABLE GAME
+        ========================= */
+
+        if (app.available) {
+
+            card =
+                document.createElement("a");
+
+            card.className =
+                "app-card";
+
+            card.href =
+                app.url;
+
+            card.target =
+                "_blank";
+
+            card.rel =
+                "noopener noreferrer";
+
+        }
+
+
+        /* =========================
+           UNAVAILABLE GAME
+        ========================= */
+
+        else {
+
+            card =
+                document.createElement("div");
+
+            card.className =
+                "app-card disabled";
+
+        }
+
+
+        const name =
+            hiddenMode
+                ? app.hiddenName
+                : app.name;
+
+
+        const description =
+            hiddenMode
+                ? app.hiddenDescription
+                : app.description;
+
+
+        card.innerHTML = `
+
+            <div class="app-icon">
+                ${app.icon}
+            </div>
+
+            <div class="app-name">
+                ${name}
+            </div>
+
+            <div class="app-description">
+                ${description}
+            </div>
+
+            ${
+                app.available
+                    ? ""
+                    : `<div class="coming-soon">COMING SOON</div>`
+            }
+
+        `;
+
+
+        appGrid.appendChild(card);
+
+    }
+
+
+    noResults.style.display =
+        visibleCount === 0
+            ? "block"
+            : "none";
+
+}
+
+
+/* =====================================================
+   MODE
+===================================================== */
+
+function updateMode() {
+
+    if (hiddenMode) {
+
+        document.body.classList.add(
+            "hidden-mode"
+        );
+
+
+        siteTitle.textContent =
+            "School Organiser";
+
+
+        siteSubtitle.textContent =
+            "Your school apps in one place";
+
+
+        heroTitle.textContent =
+            "Welcome back.";
+
+
+        heroDescription.textContent =
+            "Access your school resources.";
+
+
+        search.placeholder =
+            "Search school resources...";
+
+
+        hideButton.textContent =
+            "H";
+
+    }
+
+    else {
+
+        document.body.classList.remove(
+            "hidden-mode"
+        );
+
+
+        siteTitle.textContent =
+            "Games";
+
+
+        siteSubtitle.textContent =
+            "Your games in one place";
+
+
+        heroTitle.textContent =
+            "Welcome back.";
+
+
+        heroDescription.textContent =
+            "Pick a game and start playing.";
+
+
+        search.placeholder =
+            "Search games...";
+
+
+        hideButton.textContent =
+            "H";
+
+    }
+
+
+    renderApps();
+
+}
+
+
+/* =====================================================
+   TOGGLE HIDDEN MODE
+===================================================== */
+
+function toggleHiddenMode() {
+
+    hiddenMode =
+        !hiddenMode;
+
+
+    search.value =
+        "";
+
+
+    updateMode();
+
+}
+
+
+/* =====================================================
+   SEARCH
+===================================================== */
+
+search.addEventListener(
+    "input",
+    renderApps
+);
+
+
+/* =====================================================
+   H BUTTON
+===================================================== */
+
+hideButton.addEventListener(
+    "click",
+    toggleHiddenMode
+);
+
+
+/* =====================================================
+   H KEY
+===================================================== */
+
+document.addEventListener(
+    "keydown",
+    function(event) {
+
+        /*
+           Don't activate the shortcut while
+           typing into the search box.
+        */
+
+        if (
+            event.key.toLowerCase() === "h" &&
+            document.activeElement !== search
+        ) {
+
+            toggleHiddenMode();
+
+        }
+
+    }
+);
+
+
+/* =====================================================
+   START
+===================================================== */
+
+updateMode();
+
+</script>
+
+</body>
+</html>
 
