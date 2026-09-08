@@ -1,0 +1,1629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wave Rush</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    overflow: hidden;
+    background: #070711;
+    font-family: Arial, sans-serif;
+    user-select: none;
+    touch-action: none;
+}
+
+canvas {
+    display: block;
+}
+
+/* ================= UI ================= */
+
+#ui {
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    color: white;
+    z-index: 10;
+    pointer-events: none;
+    text-shadow: 0 0 10px #00eaff;
+}
+
+#score {
+    font-size: 32px;
+    font-weight: bold;
+}
+
+#best {
+    margin-top: 4px;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+#sectionText {
+    position: fixed;
+    top: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #00eaff;
+    font-size: 21px;
+    font-weight: bold;
+    letter-spacing: 6px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 10;
+    text-shadow:
+        0 0 10px #00eaff,
+        0 0 25px #00eaff;
+    transition: opacity 0.25s;
+}
+
+#noclipText {
+    position: fixed;
+    top: 125px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #00ff88;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 10;
+    text-shadow:
+        0 0 8px #00ff88,
+        0 0 20px #00ff88;
+}
+
+/* ================= SCREENS ================= */
+
+#startScreen,
+#gameOver {
+    position: fixed;
+    inset: 0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    text-align: center;
+    color: white;
+
+    background: rgba(5, 5, 15, 0.86);
+
+    z-index: 20;
+}
+
+#gameOver {
+    display: none;
+}
+
+h1 {
+    font-size: 56px;
+    color: #00eaff;
+    margin-bottom: 15px;
+
+    text-shadow:
+        0 0 10px #00eaff,
+        0 0 30px #008cff,
+        0 0 60px #0066ff;
+}
+
+.subtitle {
+    font-size: 18px;
+    line-height: 1.6;
+    opacity: 0.8;
+    margin-bottom: 25px;
+}
+
+button {
+    padding: 14px 38px;
+
+    border: 2px solid #00eaff;
+    border-radius: 10px;
+
+    background: #101025;
+    color: white;
+
+    font-size: 18px;
+    cursor: pointer;
+
+    box-shadow:
+        0 0 15px rgba(0, 234, 255, 0.4);
+}
+
+button:hover {
+    background: #17203d;
+
+    box-shadow:
+        0 0 30px rgba(0, 234, 255, 0.8);
+}
+
+#finalScore {
+    font-size: 25px;
+    margin-bottom: 8px;
+}
+
+#newBest {
+    color: #00ff88;
+    font-weight: bold;
+    height: 25px;
+    margin-bottom: 15px;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="ui">
+    <div id="score">0</div>
+    <div id="best">Best: 0</div>
+</div>
+
+<div id="sectionText"></div>
+<div id="noclipText">NOCLIP</div>
+
+<div id="startScreen">
+
+    <h1>WAVE RUSH</h1>
+
+    <div class="subtitle">
+        Hold SPACE / CLICK to go UP<br>
+        Release to go DOWN
+    </div>
+
+    <button id="startButton">
+        START
+    </button>
+
+</div>
+
+<div id="gameOver">
+
+    <h1>CRASHED!</h1>
+
+    <div id="finalScore">
+        Score: 0
+    </div>
+
+    <div id="newBest"></div>
+
+    <button id="restartButton">
+        TRY AGAIN
+    </button>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   CANVAS SETUP
+========================================================= */
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let W = 0;
+let H = 0;
+
+function resize() {
+
+    W = window.innerWidth;
+    H = window.innerHeight;
+
+    canvas.width = W;
+    canvas.height = H;
+
+    if (!running) {
+        wave.y = H / 2;
+    }
+}
+
+window.addEventListener("resize", resize);
+
+
+/* =========================================================
+   GAME STATE
+========================================================= */
+
+let running = false;
+let dead = false;
+
+let score = 0;
+let best = Number(localStorage.getItem("waveRushBest")) || 0;
+
+let frame = 0;
+
+let speed = 5;
+
+let holding = false;
+
+let noclip = false;
+
+let particles = [];
+
+// Solid wave trail history.
+let waveTrail = [];
+
+
+/* =========================================================
+   WAVE
+========================================================= */
+
+const wave = {
+
+    x: 180,
+
+    y: 0,
+
+    size: 10,
+
+    angle: 0,
+
+    mini: false
+
+};
+
+const NORMAL_WAVE_SPEED = 4;
+const MINI_WAVE_SPEED = 8;
+
+
+/* =========================================================
+   LEVEL
+========================================================= */
+
+let tunnels = [];
+
+/*
+    This counts actual obstacles,
+    NOT individual pieces of a
+    sharp tunnel.
+*/
+
+let tunnelNumber = 0;
+
+let passedTunnels = 0;
+
+const NORMAL_WIDTH = 90;
+const NORMAL_SPACING = 450;
+
+
+/* =========================================================
+   UI ELEMENTS
+========================================================= */
+
+const scoreDisplay =
+    document.getElementById("score");
+
+const bestDisplay =
+    document.getElementById("best");
+
+const sectionText =
+    document.getElementById("sectionText");
+
+const noclipText =
+    document.getElementById("noclipText");
+
+bestDisplay.textContent =
+    "Best: " + formatNumber(best);
+
+
+/* =========================================================
+   NUMBER FORMAT
+========================================================= */
+
+function formatNumber(number) {
+
+    if (number < 1000) {
+        return Math.floor(number);
+    }
+
+    if (number < 1000000) {
+        return (number / 1000).toFixed(1) + "K";
+    }
+
+    if (number < 1000000000) {
+        return (number / 1000000).toFixed(1) + "M";
+    }
+
+    return (number / 1000000000).toFixed(1) + "B";
+}
+
+
+function updateScore() {
+
+    scoreDisplay.textContent =
+        formatNumber(score);
+
+    bestDisplay.textContent =
+        "Best: " + formatNumber(best);
+}
+
+
+/* =========================================================
+   NORMAL TUNNEL
+========================================================= */
+
+function createNormalTunnel(x) {
+
+    const gapHeight =
+        180 + Math.random() * 80;
+
+    const margin = 70;
+
+    const gapY =
+        margin +
+        Math.random() *
+        (H - gapHeight - margin * 2);
+
+    tunnelNumber++;
+
+    tunnels.push({
+
+        type: "normal",
+
+        x: x,
+
+        gapY: gapY,
+
+        gapHeight: gapHeight,
+
+        width: NORMAL_WIDTH,
+
+        number: tunnelNumber,
+
+        passed: false
+
+    });
+}
+
+
+/* =========================================================
+   SHARP TUNNEL
+========================================================= */
+
+function createSharpTunnel(
+    x,
+    pieces,
+    gapHeight,
+    directionLength,
+    verticalStep
+) {
+
+    let center = H / 2;
+
+    let direction = -1;
+
+    const pieceWidth = 65;
+
+    /*
+        One logical tunnel section.
+    */
+
+    tunnelNumber++;
+
+    const sectionNumber =
+        tunnelNumber;
+
+
+    for (let i = 0; i < pieces; i++) {
+
+        if (
+            i > 0 &&
+            i % directionLength === 0
+        ) {
+
+            direction *= -1;
+        }
+
+        center +=
+            direction *
+            verticalStep;
+
+
+        const topLimit =
+            gapHeight / 2 + 30;
+
+        const bottomLimit =
+            H -
+            gapHeight / 2 -
+            30;
+
+
+        if (center <= topLimit) {
+
+            center = topLimit;
+
+            direction = 1;
+        }
+
+
+        if (center >= bottomLimit) {
+
+            center = bottomLimit;
+
+            direction = -1;
+        }
+
+
+        tunnels.push({
+
+            type: "sharp",
+
+            x:
+                x +
+                i * pieceWidth,
+
+            gapY:
+                center -
+                gapHeight / 2,
+
+            gapHeight:
+                gapHeight,
+
+            width:
+                pieceWidth,
+
+            number:
+                sectionNumber,
+
+            passed:
+                false
+        });
+    }
+}
+
+
+/* =========================================================
+   LEVEL RESET
+========================================================= */
+
+function resetLevel() {
+
+    tunnels = [];
+
+    tunnelNumber = 0;
+
+    passedTunnels = 0;
+
+    let x = W + 250;
+
+
+    /*
+        FIRST 20 NORMAL TUNNELS
+    */
+
+    for (let i = 0; i < 20; i++) {
+
+        createNormalTunnel(x);
+
+        x += NORMAL_SPACING;
+    }
+
+
+    /*
+        Sharp section begins
+        after the first 20.
+    */
+
+    x += 100;
+
+    createSharpTunnel(
+        x,
+        70,
+        145,
+        7,
+        40
+    );
+
+
+    /*
+        Generate some mini-wave
+        content already.
+    */
+
+    const last =
+        tunnels[tunnels.length - 1];
+
+    createSharpTunnel(
+        last.x + last.width + 300,
+        70,
+        125,
+        4,
+        48
+    );
+}
+
+
+/* =========================================================
+   DYNAMIC LEVEL GENERATION
+========================================================= */
+
+function generateLevel() {
+
+    if (tunnels.length === 0) {
+        return;
+    }
+
+
+    let last =
+        tunnels[tunnels.length - 1];
+
+
+    let lastRight =
+        last.x +
+        last.width;
+
+
+    /*
+        Keep roughly 3000px
+        of level ahead.
+    */
+
+    while (lastRight < W + 3000) {
+
+        /*
+            Before tunnel 20:
+            normal obstacles.
+        */
+
+        if (tunnelNumber < 20) {
+
+            createNormalTunnel(
+                lastRight +
+                NORMAL_SPACING
+            );
+
+        }
+
+        /*
+            20 → 80:
+            sharp tunnel.
+        */
+
+        else if (tunnelNumber < 80) {
+
+            createSharpTunnel(
+                lastRight + 5,
+                25,
+                145,
+                7,
+                40
+            );
+
+        }
+
+        /*
+            80+:
+            mini wave.
+        */
+
+        else {
+
+            createSharpTunnel(
+                lastRight + 5,
+                25,
+                125,
+                4,
+                48
+            );
+        }
+
+
+        last =
+            tunnels[tunnels.length - 1];
+
+        lastRight =
+            last.x +
+            last.width;
+    }
+}
+
+
+/* =========================================================
+   START GAME
+========================================================= */
+
+function startGame(startHolding = false) {
+
+    score = 0;
+
+    speed = 5;
+
+    frame = 0;
+
+    dead = false;
+
+    running = true;
+
+    holding = startHolding;
+
+    wave.y = H / 2;
+
+    wave.size = 10;
+
+    wave.angle = 0;
+
+    wave.mini = false;
+
+    particles = [];
+
+    resetLevel();
+
+
+    document.getElementById("startScreen")
+        .style.display = "none";
+
+    document.getElementById("gameOver")
+        .style.display = "none";
+
+
+    sectionText.style.opacity = 0;
+
+    noclip = false;
+
+    noclipText.style.opacity = 0;
+
+    updateScore();
+}
+
+
+/* =========================================================
+   GAME OVER
+========================================================= */
+
+function gameOver() {
+
+    if (dead) {
+        return;
+    }
+
+    dead = true;
+
+    running = false;
+
+    holding = false;
+
+
+    createExplosion(
+        wave.x,
+        wave.y
+    );
+
+
+    if (score > best) {
+
+        best = Math.floor(score);
+
+        localStorage.setItem(
+            "waveRushBest",
+            best
+        );
+
+        document.getElementById("newBest")
+            .textContent = "NEW BEST!";
+
+    } else {
+
+        document.getElementById("newBest")
+            .textContent = "";
+    }
+
+
+    document.getElementById("finalScore")
+        .textContent =
+        "Score: " +
+        formatNumber(score);
+
+
+    document.getElementById("gameOver")
+        .style.display = "flex";
+}
+
+
+/* =========================================================
+   KEYBOARD CONTROLS
+========================================================= */
+
+window.addEventListener("keydown", function(e) {
+
+    /*
+        Wave control.
+    */
+
+    if (
+        e.code === "Space" ||
+        e.code === "ArrowUp"
+    ) {
+
+        e.preventDefault();
+
+
+        if (!running && !dead) {
+
+            startGame(true);
+
+        } else {
+
+            holding = true;
+        }
+    }
+
+
+    /*
+        SECRET NOCLIP
+
+        Press N during gameplay.
+    */
+
+    if (
+        e.code === "KeyN" &&
+        running
+    ) {
+
+        noclip = !noclip;
+
+        noclipText.style.opacity =
+            noclip ? 1 : 0;
+    }
+
+});
+
+
+window.addEventListener("keyup", function(e) {
+
+    if (
+        e.code === "Space" ||
+        e.code === "ArrowUp"
+    ) {
+
+        holding = false;
+    }
+
+});
+
+
+/* =========================================================
+   MOUSE CONTROLS
+========================================================= */
+
+canvas.addEventListener(
+    "mousedown",
+    function() {
+
+        if (!running && !dead) {
+
+            startGame(true);
+
+        } else {
+
+            holding = true;
+        }
+
+    }
+);
+
+
+window.addEventListener(
+    "mouseup",
+    function() {
+
+        holding = false;
+
+    }
+);
+
+
+/* =========================================================
+   TOUCH CONTROLS
+========================================================= */
+
+canvas.addEventListener(
+    "touchstart",
+    function(e) {
+
+        e.preventDefault();
+
+
+        if (!running && !dead) {
+
+            startGame(true);
+
+        } else {
+
+            holding = true;
+        }
+
+    },
+    { passive: false }
+);
+
+
+canvas.addEventListener(
+    "touchend",
+    function(e) {
+
+        e.preventDefault();
+
+        holding = false;
+
+    },
+    { passive: false }
+);
+
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+document
+    .getElementById("startButton")
+    .addEventListener(
+        "click",
+        function() {
+
+            startGame(false);
+
+        }
+    );
+
+
+document
+    .getElementById("restartButton")
+    .addEventListener(
+        "click",
+        function() {
+
+            startGame(false);
+
+        }
+    );
+
+
+/* =========================================================
+   WAVE UPDATE
+========================================================= */
+
+function updateWave() {
+
+    const waveSpeed =
+        wave.mini
+            ? MINI_WAVE_SPEED
+            : NORMAL_WAVE_SPEED;
+
+
+    if (holding) {
+
+        wave.y -= waveSpeed;
+
+        wave.angle =
+            wave.mini
+                ? -0.95
+                : -0.7;
+
+    } else {
+
+        wave.y += waveSpeed;
+
+        wave.angle =
+            wave.mini
+                ? 0.95
+                : 0.7;
+    }
+
+
+    // Record the exact path of the wave.
+    // This is separate from particles, so it stays solid.
+    waveTrail.unshift({
+        x: wave.x,
+        y: wave.y
+    });
+
+    // Move old trail points backwards with the scrolling level.
+    for (let i = 1; i < waveTrail.length; i++) {
+        waveTrail[i].x -= waveSpeed;
+    }
+
+    // Keep a long but finite trail.
+    while (waveTrail.length > 1 && waveTrail[waveTrail.length - 1].x < wave.x - 260) {
+        waveTrail.pop();
+    }
+}
+
+
+/* =========================================================
+   COUNT PASSED SECTIONS
+========================================================= */
+
+function updateProgress() {
+
+    /*
+        Look for the highest
+        logical tunnel section
+        that has passed.
+    */
+
+    let highestPassed = passedTunnels;
+
+
+    for (const tunnel of tunnels) {
+
+        if (
+            !tunnel.passed &&
+            tunnel.x +
+            tunnel.width <
+            wave.x
+        ) {
+
+            tunnel.passed = true;
+
+            if (
+                tunnel.number >
+                highestPassed
+            ) {
+
+                highestPassed =
+                    tunnel.number;
+            }
+        }
+    }
+
+
+    if (
+        highestPassed >
+        passedTunnels
+    ) {
+
+        passedTunnels =
+            highestPassed;
+    }
+
+
+    /*
+        MINI WAVE AT 80.
+    */
+
+    if (
+        passedTunnels >= 80 &&
+        !wave.mini
+    ) {
+
+        wave.mini = true;
+
+        wave.size = 6;
+
+        speed += 1.5;
+
+        showSectionText(
+            "MINI WAVE"
+        );
+    }
+}
+
+
+/* =========================================================
+   TUNNEL UPDATE
+========================================================= */
+
+function updateTunnels() {
+
+    for (const tunnel of tunnels) {
+
+        tunnel.x -= speed;
+    }
+
+
+    updateProgress();
+
+    generateLevel();
+
+
+    /*
+        Remove old obstacles.
+    */
+
+    tunnels =
+        tunnels.filter(
+            function(tunnel) {
+
+                return (
+                    tunnel.x +
+                    tunnel.width >
+                    -400
+                );
+
+            }
+        );
+}
+
+
+/* =========================================================
+   COLLISION
+========================================================= */
+
+function checkCollision() {
+
+    /*
+        Noclip completely disables
+        collision testing.
+    */
+
+    if (noclip) {
+        return;
+    }
+
+
+    /*
+        Screen edges.
+    */
+
+    if (
+        wave.y -
+        wave.size <= 0 ||
+
+        wave.y +
+        wave.size >= H
+    ) {
+
+        gameOver();
+
+        return;
+    }
+
+
+    /*
+        Tunnel collision.
+    */
+
+    for (const tunnel of tunnels) {
+
+        const left =
+            tunnel.x;
+
+        const right =
+            tunnel.x +
+            tunnel.width;
+
+
+        if (
+            wave.x +
+            wave.size >
+            left &&
+
+            wave.x -
+            wave.size <
+            right
+        ) {
+
+            const gapTop =
+                tunnel.gapY;
+
+            const gapBottom =
+                tunnel.gapY +
+                tunnel.gapHeight;
+
+
+            if (
+                wave.y -
+                wave.size <
+                gapTop ||
+
+                wave.y +
+                wave.size >
+                gapBottom
+            ) {
+
+                gameOver();
+
+                return;
+            }
+        }
+    }
+}
+
+
+/* =========================================================
+   PARTICLES
+========================================================= */
+
+function createParticle(x, y) {
+
+    particles.push({
+
+        x: x,
+
+        y: y,
+
+        vx:
+            -1 -
+            Math.random() * 2,
+
+        vy:
+            (Math.random() - 0.5) *
+            1.5,
+
+        life: 1,
+
+        size:
+            2 +
+            Math.random() * 3
+    });
+}
+
+
+function createExplosion(x, y) {
+
+    for (let i = 0; i < 35; i++) {
+
+        particles.push({
+
+            x: x,
+
+            y: y,
+
+            vx:
+                (Math.random() - 0.5) *
+                10,
+
+            vy:
+                (Math.random() - 0.5) *
+                10,
+
+            life: 1,
+
+            size:
+                3 +
+                Math.random() * 5
+        });
+    }
+}
+
+
+function updateParticles() {
+
+    for (
+        let i = particles.length - 1;
+        i >= 0;
+        i--
+    ) {
+
+        const p =
+            particles[i];
+
+        p.x += p.vx;
+
+        p.y += p.vy;
+
+        p.life -= 0.012;
+
+
+        if (p.life <= 0) {
+
+            particles.splice(i, 1);
+        }
+    }
+}
+
+
+function drawParticles() {
+
+    if (waveTrail.length < 2) {
+        return;
+    }
+
+    ctx.save();
+
+    ctx.beginPath();
+
+    // Draw from the oldest point to the newest point.
+    const oldest = waveTrail[waveTrail.length - 1];
+    ctx.moveTo(oldest.x, oldest.y);
+
+    for (let i = waveTrail.length - 2; i >= 0; i--) {
+        ctx.lineTo(waveTrail[i].x, waveTrail[i].y);
+    }
+
+    ctx.lineWidth = wave.mini ? 4 : 6;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    ctx.shadowBlur = 22;
+    ctx.shadowColor = noclip ? "#00ff88" : "#00eaff";
+    ctx.strokeStyle = noclip ? "#00ff88" : "#00eaff";
+
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+
+/* =========================================================
+   BACKGROUND
+========================================================= */
+
+function drawBackground() {
+
+    const gradient =
+        ctx.createLinearGradient(
+            0,
+            0,
+            0,
+            H
+        );
+
+
+    gradient.addColorStop(
+        0,
+        "#050512"
+    );
+
+    gradient.addColorStop(
+        1,
+        "#12122d"
+    );
+
+
+    ctx.fillStyle =
+        gradient;
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    /*
+        Grid.
+    */
+
+    ctx.strokeStyle =
+        "rgba(0,234,255,0.07)";
+
+    ctx.lineWidth = 1;
+
+
+    const gridSize = 50;
+
+
+    const offset =
+        -(frame * speed * 0.2)
+        % gridSize;
+
+
+    for (
+        let x = offset;
+        x < W;
+        x += gridSize
+    ) {
+
+        ctx.beginPath();
+
+        ctx.moveTo(x, 0);
+
+        ctx.lineTo(x, H);
+
+        ctx.stroke();
+    }
+
+
+    for (
+        let y = 0;
+        y < H;
+        y += gridSize
+    ) {
+
+        ctx.beginPath();
+
+        ctx.moveTo(0, y);
+
+        ctx.lineTo(W, y);
+
+        ctx.stroke();
+    }
+}
+
+
+/* =========================================================
+   DRAW TUNNELS
+========================================================= */
+
+function drawTunnels() {
+
+    for (const tunnel of tunnels) {
+
+        const x =
+            tunnel.x;
+
+        const width =
+            tunnel.width;
+
+        const gapTop =
+            tunnel.gapY;
+
+        const gapBottom =
+            tunnel.gapY +
+            tunnel.gapHeight;
+
+
+        /*
+            Tunnel body.
+        */
+
+        ctx.shadowBlur = 18;
+
+        ctx.shadowColor =
+            "#00eaff";
+
+        ctx.fillStyle =
+            "#101f38";
+
+
+        ctx.fillRect(
+            x,
+            0,
+            width,
+            gapTop
+        );
+
+
+        ctx.fillRect(
+            x,
+            gapBottom,
+            width,
+            H - gapBottom
+        );
+
+
+        /*
+            Glowing edges.
+        */
+
+        ctx.fillStyle =
+            "#00eaff";
+
+
+        ctx.fillRect(
+            x,
+            gapTop - 5,
+            width,
+            5
+        );
+
+
+        ctx.fillRect(
+            x,
+            gapBottom,
+            width,
+            5
+        );
+
+
+        ctx.shadowBlur = 0;
+    }
+}
+
+
+/* =========================================================
+   DRAW WAVE
+========================================================= */
+
+function drawWave() {
+
+    ctx.save();
+
+
+    ctx.translate(
+        wave.x,
+        wave.y
+    );
+
+
+    ctx.rotate(
+        wave.angle
+    );
+
+
+    ctx.shadowBlur =
+        wave.mini
+            ? 30
+            : 25;
+
+
+    ctx.shadowColor =
+        noclip
+            ? "#00ff88"
+            : "#00eaff";
+
+
+    ctx.fillStyle =
+        noclip
+            ? "#00ff88"
+            : "#00eaff";
+
+
+    const scale =
+        wave.mini
+            ? 0.65
+            : 1;
+
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+        16 * scale,
+        0
+    );
+
+
+    ctx.lineTo(
+        -12 * scale,
+        -10 * scale
+    );
+
+
+    ctx.lineTo(
+        -7 * scale,
+        0
+    );
+
+
+    ctx.lineTo(
+        -12 * scale,
+        10 * scale
+    );
+
+
+    ctx.closePath();
+
+    ctx.fill();
+
+
+    ctx.restore();
+
+
+    ctx.shadowBlur = 0;
+}
+
+
+/* =========================================================
+   SECTION MESSAGE
+========================================================= */
+
+let sectionTimeout = null;
+
+function showSectionText(text) {
+
+    sectionText.textContent =
+        text;
+
+    sectionText.style.opacity = 1;
+
+
+    clearTimeout(sectionTimeout);
+
+
+    sectionTimeout =
+        setTimeout(
+            function() {
+
+                sectionText.style.opacity = 0;
+
+            },
+            1600
+        );
+}
+
+
+/* =========================================================
+   GAME LOOP
+========================================================= */
+
+function gameLoop() {
+
+    requestAnimationFrame(
+        gameLoop
+    );
+
+
+    /*
+        Background.
+    */
+
+    drawBackground();
+
+
+    /*
+        Particles.
+    */
+
+    updateParticles();
+
+
+    /*
+        Gameplay.
+    */
+
+    if (running) {
+
+        frame++;
+
+
+        updateWave();
+
+        updateTunnels();
+
+        checkCollision();
+
+
+        /*
+            Score.
+        */
+
+        score += 0.03;
+
+
+        /*
+            Gradually increase speed.
+        */
+
+        if (wave.mini) {
+
+            speed += 0.0012;
+
+        } else {
+
+            speed += 0.0007;
+        }
+
+
+        updateScore();
+    }
+
+
+    /*
+        Render.
+    */
+
+    drawTunnels();
+
+    drawParticles();
+
+    drawWave();
+}
+
+
+/* =========================================================
+   INITIALIZE
+========================================================= */
+
+resize();
+
+updateScore();
+
+gameLoop();
+
+</script>
+
+</body>
+</html>
