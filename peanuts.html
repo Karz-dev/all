@@ -4348,13 +4348,40 @@
 
         function returnToMenu() {
 
+            // Fully clear the active run so the old game cannot remain
+            // painted behind the main menu.
+            gameRunning = false;
+            gamePaused = false;
+            finalHuntMode = false;
+
             selectedTower = null;
             selectedShopTower = null;
             selectedHero = null;
             heroPlacing = false;
             bountySelecting = false;
             bountyTarget = null;
-            gameRunning = false;
+            hero = null;
+
+            enemies = [];
+            towers = [];
+            projectiles = [];
+            particles = [];
+            floatingTexts = [];
+            waterZones = [];
+            levelPath = [];
+            levelRoutes = [];
+            enemiesToSpawn = 0;
+            spawnTimer = 0;
+            waveDelay = 0;
+
+            cameraX = 0;
+            cameraY = 0;
+            cameraZoom = 1;
+
+            // Paint a completely clean canvas before showing the menu.
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#101810";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             const towerPanel = document.getElementById("towerPanel");
             const heroPanel = document.getElementById("heroPanel");
@@ -4378,21 +4405,16 @@
 
         function nextLevel() {
 
-            if (
-                currentLevel < 6
-            ) {
-
-                loadLevel(
-                    currentLevel + 1
-                );
-
+            // Campaign levels 1-6 have a real next level.
+            if (currentLevel >= 1 && currentLevel < 6) {
+                loadLevel(currentLevel + 1);
+                return;
             }
 
-            else {
-
-                openLevelSelect();
-
-            }
+            // The final campaign level, Abyss, and any endless mode do not
+            // have another linear level, so return to the level selector
+            // instead of leaving the victory screen looking frozen.
+            openLevelSelect();
 
         }
 
@@ -9497,8 +9519,17 @@ if (
 
         function completeLevel() {
 
-            gameRunning =
-                false;
+            // Stop the simulation immediately. The victory screen is the
+            // result of the run, so the finished run must no longer update.
+            gameRunning = false;
+            gamePaused = false;
+
+            // Freeze the result visually without leaving towers/enemies
+            // underneath the victory overlay or when returning to the menu.
+            enemies = [];
+            projectiles = [];
+            particles = [];
+            floatingTexts = [];
 
 
             const bestKey = `blockDefenseBest_${currentLevel}`;
@@ -9564,6 +9595,13 @@ if (
 
                         specialTime++;
                         updateWaveLogic();
+
+                        // A completed mode stops the simulation immediately.
+                        // Without this guard, the rest of the current simulation
+                        // step could still move enemies / fire towers after victory.
+                        if (!gameRunning) {
+                            break;
+                        }
 
 
                         for (
