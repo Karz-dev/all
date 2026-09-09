@@ -6015,6 +6015,29 @@
             enemy.hp = Math.floor(enemy.hp * variant.enemyHp);
             enemy.maxHp = Math.floor(enemy.maxHp * variant.enemyHp);
             enemy.speed *= variant.enemySpeed;
+
+            // The Abyss gets progressively harder instead of simply ending
+            // because the old 40-wave controller was treated like Endless.
+            // HP scaling is deliberately steep in the second half, with a
+            // smaller speed increase so the challenge comes from durability
+            // and composition rather than unavoidable leaks.
+            if (isAbyssMap() && !finalHuntMode) {
+                const abyssHpScale =
+                    1.10 +
+                    currentWave * 0.032 +
+                    Math.max(0, currentWave - 20) * 0.018;
+                const abyssSpeedScale =
+                    1 + currentWave * 0.006;
+
+                enemy.hp = Math.floor(enemy.hp * abyssHpScale);
+                enemy.maxHp = Math.floor(enemy.maxHp * abyssHpScale);
+                enemy.speed *= abyssSpeedScale;
+
+                if (enemy.shield !== undefined) {
+                    enemy.shield = Math.floor(enemy.shield * abyssHpScale);
+                    enemy.maxShield = enemy.shield;
+                }
+            }
             if (dailyMode && !getDailyChallenge().finalHunt) enemy.speed *= (getDailyChallenge().speed || 1);
 
             if (currentWave >= 12 && Math.random() < Math.min(.08 + currentWave * .002, .22) && !["boss", "shielded"].includes(enemy.type)) {
@@ -6053,6 +6076,10 @@
 
         function startWave(manual = false) {
 
+            // The Abyss is a finite challenge, even when launched with the
+            // endless flag for compatibility with the old selector. Wave 40
+            // is the finale and must never roll over into Wave 41.
+            if (isAbyssMap() && !finalHuntMode && currentWave >= levels[currentLevel].waves) return;
             if (!endlessMode && currentWave >= levels[currentLevel].waves) return;
             if (enemiesToSpawn > 0 || enemies.length > 0) return;
 
@@ -6078,7 +6105,8 @@
                 enemiesToSpawn = 1;
                 waveBossActive = true;
                 waveBossType = "government";
-            } else if (isAbyssMap() && currentWave === 40) {
+            } else if (isAbyssMap() && !finalHuntMode && currentWave === 40) {
+                // Wave 40 is The Abyss finale: one bespoke Void encounter.
                 enemiesToSpawn = 1;
                 waveBossActive = true;
                 waveBossType = "voidBoss";
@@ -6086,6 +6114,14 @@
                 enemiesToSpawn = 1;
                 waveBossActive = true;
                 waveBossType = "boss";
+            } else if (isAbyssMap() && !finalHuntMode) {
+                // The Abyss now ramps like a real 40-wave challenge.
+                // Enemy count rises throughout the run, while spawn timing
+                // stays controlled so later waves remain playable.
+                enemiesToSpawn =
+                    5 +
+                    Math.floor(currentWave * 1.2) +
+                    Math.floor(currentWave / 8);
             } else {
 
                 enemiesToSpawn =
@@ -6227,11 +6263,14 @@
 
                     spawnEnemy(type);
 
-                    // Boss waves contain exactly one boss.  Mark the spawn
-                    // complete immediately so the controller waits only for
-                    // that boss to be defeated.
-                    enemiesToSpawn = 0;
-                    spawnTimer = 28;
+                    // Normal Abyss waves contain multiple enemies. Boss
+                    // encounters contain exactly one special enemy.
+                    if (waveBossActive) {
+                        enemiesToSpawn = 0;
+                    } else {
+                        enemiesToSpawn--;
+                    }
+                    spawnTimer = isAbyssMap() && !finalHuntMode ? 22 : 28;
 
                 }
 
@@ -6242,6 +6281,11 @@
                 enemiesToSpawn === 0 &&
                 enemies.length === 0
             ) {
+
+                if (isAbyssMap() && !finalHuntMode && currentWave >= levels[currentLevel].waves) {
+                    completeAbyss();
+                    return;
+                }
 
                 if (!endlessMode && currentWave >= levels[currentLevel].waves) {
                     completeLevel();
@@ -9789,7 +9833,7 @@ if (
 
             if (finalHuntMode && currentWave === 49) {
                 nextWave.textContent = " • NEXT: THE GOVERNMENT";
-            } else if (isAbyssMap() && !endlessMode && currentWave === 39) {
+            } else if (isAbyssMap() && !finalHuntMode && currentWave === 39) {
                 nextWave.textContent = " • FINAL: THE VOID";
             } else if (!endlessMode && currentWave >= levels[currentLevel].waves) {
                 nextWave.textContent = " • Final";
@@ -9959,6 +10003,43 @@ if (
 
 
         /* =========================
+           ABYSS FINALE
+        ========================= */
+
+        function completeAbyss() {
+
+            // Beating Wave 40 is now the intended way to earn The God.
+            // Keep the unlock persistent so it survives reloads and exports.
+            godUnlocked = true;
+            localStorage.setItem("blockDefenseGodUnlocked", "1");
+
+            const abyssReward = 10000;
+            money += abyssReward;
+            totalMoneyEarned += abyssReward;
+            waveRewardsEarned += abyssReward;
+            score += 50000;
+
+            messageToast("✦ THE ABYSS HAS BEEN CONQUERED — THE GOD UNLOCKED!");
+            createFloatingText(
+                cameraX + canvas.width / cameraZoom / 2,
+                cameraY + 120,
+                "✦ THE GOD UNLOCKED! +$10,000",
+                "#e9d5ff"
+            );
+
+            // Mark the Abyss as completed just like a campaign level.
+            campaignCompleted = JSON.parse(localStorage.getItem("blockDefenseCompletedLevels") || "[]");
+            if (!campaignCompleted.includes(7)) campaignCompleted.push(7);
+            localStorage.setItem("blockDefenseCompletedLevels", JSON.stringify(campaignCompleted));
+
+            updateCampaignInfo();
+            checkAchievements();
+            updateUI();
+            completeLevel();
+        }
+
+
+        /* =========================
            COMPLETE
         ========================= */
 
@@ -10002,6 +10083,7 @@ if (
                 "completeText"
             ).innerHTML =
                 `You finished <strong>${levels[currentLevel].name}</strong> with ${lives} lives remaining.<br><br>
+                ${currentLevel === 7 ? "✦ <strong>THE GOD UNLOCKED!</strong><br>🎁 Abyss Finale Reward: <strong>$10,000</strong><br><br>" : ""}
                 ⭐ Score: <strong>${Math.floor(score)}</strong><br>
                 🏆 Best Score: <strong>${bestScore}</strong>${score >= previousBest && score > 0 ? " — NEW BEST!" : ""}<br>
                 👾 Enemies Defeated: <strong>${enemiesDefeated}</strong><br>
