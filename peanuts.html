@@ -7340,6 +7340,15 @@
                             .45 *
                             (1 - (other.armor || 0));
 
+                        // Splash damage can hit an enemy without going
+                        // through the normal death/reward handler below.
+                        // Never leave a secondary target at 0 HP, or it can
+                        // remain in the enemy array and render as an invisible
+                        // ghost. Let the normal direct-hit death path finish it.
+                        if (other.hp <= 0 && !other.dead) {
+                            other.hp = 1;
+                        }
+
                     }
 
                 }
@@ -7394,6 +7403,13 @@
                             projectile.damage *
                             .55 *
                             (1 - (other.armor || 0));
+
+                        // Chain damage has the same secondary-target issue as
+                        // splash damage: clamp a non-primary target to 1 HP so
+                        // the normal hitEnemy death handler can remove it.
+                        if (other.hp <= 0 && !other.dead) {
+                            other.hp = 1;
+                        }
 
 
                         if (
