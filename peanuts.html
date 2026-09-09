@@ -2886,6 +2886,8 @@
         let waveStartBonus = 0;
         let waveStartedThisCycle = false;
         let endlessMode = false;
+        let waveBossActive = false;
+        let waveBossType = null;
         let currentMapVariant = 0;
         let selectedHeroType = "commander";
         let hero = null;
@@ -4710,6 +4712,8 @@
             spawnTimer = 0;
             waveDelay = 0;
             currentWave = 0;
+            waveBossActive = false;
+            waveBossType = null;
 
             cameraX = 0;
             cameraY = 0;
@@ -6063,26 +6067,26 @@
             currentWave++;
             playSfx("wave");
 
+            // Every boss encounter is represented by exactly one special
+            // enemy.  Keeping this state explicit prevents the normal wave
+            // controller from accidentally treating the final boss as a
+            // regular 40-wave campaign endpoint.
+            waveBossActive = false;
+            waveBossType = null;
 
             if (finalHuntMode && currentWave === 50) {
                 enemiesToSpawn = 1;
+                waveBossActive = true;
+                waveBossType = "government";
             } else if (isAbyssMap() && currentWave === 40) {
                 enemiesToSpawn = 1;
-            } else if (
-                currentWave %
-                5 ===
-                0
-            ) {
-
-                // Boss waves are intentionally ONE boss.
-                // Previously endless mode spawned 1 + floor(wave / 10) bosses
-                // at once, so Wave 40 spawned 5 bosses and their phase
-                // summons could snowball into a massive simulation freeze.
+                waveBossActive = true;
+                waveBossType = "voidBoss";
+            } else if (currentWave % 5 === 0) {
                 enemiesToSpawn = 1;
-
-            }
-
-            else {
+                waveBossActive = true;
+                waveBossType = "boss";
+            } else {
 
                 enemiesToSpawn =
                     7 +
@@ -6134,26 +6138,16 @@
                     spawnTimer <= 0
                 ) {
 
-                    let type =
-                        "normal";
+                    // The wave controller chooses the enemy type once, when
+                    // the wave begins.  This makes Wave 40 deterministic and
+                    // avoids the old stack of overlapping boss conditions.
+                    let type = waveBossActive ? waveBossType : "normal";
 
-                    if (finalHuntMode && currentWave === 50) {
-                        type = "government";
-                    } else if (isAbyssMap() && currentWave === 40) {
-                        type = "voidBoss";
-                    } else if (dailyMode && !getDailyChallenge().finalHunt && getDailyChallenge().bossRush && currentWave % 4 === 0) {
+                    if (!waveBossActive && dailyMode && !getDailyChallenge().finalHunt && getDailyChallenge().bossRush && currentWave % 4 === 0) {
                         type = "boss";
                     }
 
-
-                    if (!((finalHuntMode && currentWave === 50) || (isAbyssMap() && currentWave === 40)) &&
-                        currentWave % 5 === 0) {
-
-                        type = "boss";
-
-                    }
-
-                    else if (!((finalHuntMode && currentWave === 50) || (isAbyssMap() && currentWave === 40))) {
+                    if (!waveBossActive && type === "normal") {
 
                         const roll =
                             Math.random();
@@ -6231,14 +6225,12 @@
                     }
 
 
-                    spawnEnemy(
-                        type
-                    );
+                    spawnEnemy(type);
 
-
-                    enemiesToSpawn--;
-
-
+                    // Boss waves contain exactly one boss.  Mark the spawn
+                    // complete immediately so the controller waits only for
+                    // that boss to be defeated.
+                    enemiesToSpawn = 0;
                     spawnTimer = 28;
 
                 }
@@ -7162,6 +7154,11 @@
             projectile
         ) {
 
+            // A boss can be hit by several projectiles during one frame.
+            // Once its death has been handled, ignore any stale projectile
+            // references so rewards/phases cannot fire multiple times.
+            if (!enemy || enemy.dead || enemy.hp <= 0) return;
+
             let rawDamage = projectile.damage;
 
             if (projectile.tower) {
@@ -7389,6 +7386,12 @@
                 enemy.hp <= 0
             ) {
 
+                enemy.dead = true;
+                if (enemy.type === waveBossType) {
+                    waveBossActive = false;
+                    waveBossType = null;
+                }
+
                 playSfx(enemy.type === "boss" || enemy.type === "voidBoss" || enemy.type === "government" ? "victory" : "death");
                 let killReward = enemy.reward;
                 if (dailyMode) {
@@ -7478,28 +7481,57 @@
 
 
         function updateBossPhase(enemy) {
-            if (!["boss","voidBoss"].includes(enemy.type)) return;
-            const ratio = enemy.hp / enemy.maxHp;
+            if (!enemy || enemy.dead || !["boss", "voidBoss"].includes(enemy.type)) return;
+
+            const ratio = enemy.maxHp > 0 ? enemy.hp / enemy.maxHp : 0;
             const nextPhase = ratio <= .25 ? 4 : ratio <= .50 ? 3 : ratio <= .75 ? 2 : 1;
-            if (nextPhase <= enemy.phase) return;
+            if (nextPhase <= (enemy.phase || 1)) return;
+
             enemy.phase = nextPhase;
+
+            if (enemy.type === "voidBoss") {
+                // The Void is a bespoke final boss.  Its phases are powerful,
+                // but they never spawn extra enemies.  That is important on
+                // Wave 40 because the old generic boss phase system could
+                // create extra runners while the final-wave controller was
+                // trying to resolve the encounter.
+                if (nextPhase === 2) {
+                    enemy.speed *= 1.10;
+                    enemy.shield = Math.max(enemy.shield || 0, enemy.maxHp * .10);
+                    enemy.maxShield = enemy.shield;
+                    spawnSpecialBurst("voidPulse", enemy.x, enemy.y, 32);
+                } else if (nextPhase === 3) {
+                    enemy.speed *= 1.14;
+                    enemy.voidPulse = 150;
+                    spawnSpecialBurst("voidPulse", enemy.x, enemy.y, 42);
+                } else if (nextPhase === 4) {
+                    enemy.speed *= 1.18;
+                    enemy.enraged = true;
+                    enemy.voidPulse = 90;
+                    spawnSpecialBurst("voidPulse", enemy.x, enemy.y, 55);
+                }
+
+                createFloatingText(enemy.x, enemy.y - 55, `◉ VOID PHASE ${nextPhase}`, "#d8b4fe");
+                return;
+            }
+
             if (nextPhase === 2) {
                 enemy.speed *= 1.12;
                 enemy.shield = Math.max(enemy.shield || 0, enemy.maxHp * .08);
                 enemy.maxShield = enemy.shield;
-            }
-            if (nextPhase === 3) {
+            } else if (nextPhase === 3) {
                 enemy.speed *= 1.15;
+                // Normal bosses may summon two runners, but only once.
+                // The final Void boss deliberately does not enter this branch.
                 for (let i = 0; i < 2; i++) spawnEnemy("runner");
-            }
-            if (nextPhase === 4) {
+            } else if (nextPhase === 4) {
                 enemy.speed *= 1.25;
                 enemy.enraged = true;
             }
+
             createFloatingText(enemy.x, enemy.y - 55, `☠ PHASE ${nextPhase}!`, "#f87171");
             createBurst(enemy.x, enemy.y, "#ef4444");
         }
-
 
         function updateGovernmentBoss(enemy) {
             if (enemy.type !== "government") return;
