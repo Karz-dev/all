@@ -1331,6 +1331,20 @@
 
     
 
+        /* ABYSS / SECRET UPDATE */
+        #levelSelect .panel { position:relative; }
+        #abyssSecretButton {
+            position:absolute; right:14px; top:14px; width:30px; height:30px; border-radius:50%;
+            border:2px solid #a855f7; background:rgba(49,12,74,.75); color:#e9d5ff;
+            font-size:17px; line-height:26px; font-weight:900; cursor:pointer; box-shadow:0 0 18px rgba(168,85,247,.35);
+        }
+        #abyssSecretButton:hover { background:#581c87; border-color:#e9d5ff; transform:scale(1.08); }
+        .abyssLevelButton { background:linear-gradient(135deg,#241044,#4c1d95)!important; border-color:#a855f7!important; box-shadow:0 0 20px rgba(168,85,247,.18); }
+        .abyssLevelButton:hover { background:linear-gradient(135deg,#3b176d,#6d28d9)!important; border-color:#e9d5ff!important; }
+        #finalHuntButton { display:none; background:linear-gradient(135deg,#2e1065,#581c87); border-color:#c084fc; }
+        .abyssModeText { color:#d8b4fe!important; }
+        @keyframes abyssPulse { 0%,100%{box-shadow:0 0 8px rgba(168,85,247,.25)} 50%{box-shadow:0 0 28px rgba(168,85,247,.65)} }
+        .abyssLevelButton { animation:abyssPulse 2.4s ease-in-out infinite; }
         /* FINAL UPDATE UI */
         .finalOverlay {
             position:fixed; inset:0; z-index:1000; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(0,0,0,.72); backdrop-filter:blur(7px);
@@ -1696,6 +1710,9 @@
             <div class="shopInfo">Turns kills into extra cash • Transmute ability</div>
         </button>
 
+        <button class="shopButton specialShopButton" id="shop-testSubject" onclick="selectShopTower('testSubject')">⚠ Test Subject — $10,000<div class="shopInfo">Tiny range • enormous damage • long cooldown • Crash Test colors</div></button>
+        <button class="shopButton specialShopButton" id="shop-god" onclick="selectShopTower('god')">✦ The God — $5,000<div class="shopInfo">SECRET TOWER • Lightning • God's Wrath</div></button>
+
         <div class="shopSectionLabel">★ HEROES — ONE PER GAME</div>
 
         <button
@@ -1903,6 +1920,14 @@
 
         <div class="panel">
 
+            <button
+                id="abyssSecretButton"
+                type="button"
+                onclick="openAbyssSecret()"
+                aria-label="Open The Abyss"
+                title="???"
+            >? </button>
+
             <h1>
                 LEVEL SELECT
             </h1>
@@ -1920,6 +1945,7 @@
             <div id="levelGrid"></div>
 
             <button class="bigButton" onclick="selectLevel(6, true)">♾ ENDLESS MODE</button>
+            <button id="finalHuntButton" class="bigButton" onclick="startFinalHunt()">☠ THE FINAL HUNT — ABYSS</button>
 
             <button class="bigButton secondaryButton" onclick="openAchievements()">🏆 ACHIEVEMENTS</button>
             <button class="bigButton secondaryButton" onclick="openCodex()">📖 CODEX</button>
@@ -2672,6 +2698,10 @@
         let bountyTarget = null;
         let heroPlacing = false;
         let selectedHero = null;
+        let finalHuntMode = false;
+        let abyssSecretUnlocked = localStorage.getItem("blockDefenseAbyssSecret") === "1";
+        let governmentDefeated = localStorage.getItem("blockDefenseGovernmentDefeated") === "1";
+        let godUnlocked = localStorage.getItem("blockDefenseGodUnlocked") === "1";
         let campaignCompleted = JSON.parse(localStorage.getItem("blockDefenseCompletedLevels") || "[]");
 
         /* =========================
@@ -2703,10 +2733,33 @@
             ["shielded","Shielded","Starts with a separate energy shield.","🔷"],
             ["boss","Boss","Massive enemy with multiple phases.","☠️"],
             ["stealth","Stealth","Late-game enemies can hide until revealed by suitable effects.","👻"],
-            ["regen","Regenerator","Late-game enemies can slowly recover health.","♻️"]
+            ["regen","Regenerator","Late-game enemies can slowly recover health.","♻️"],
+            ["voidBoss","The Void","A reality-bending boss hidden at the end of The Abyss.","◉"],
+            ["government","The Government","A secret boss that taxes your economy and seizes towers.","🏛"]
         ];
 
+        function isBountyMasteryComplete() {
+            // Bounty Hunter is considered fully mastered at 250 mastery kills.
+            return getMasteryKills("bounty") >= 250;
+        }
+
+        function isFinalHuntDailyUnlocked() {
+            // Final Hunt ONLY replaces the normal daily challenge after BOTH
+            // the Abyss secret and Bounty Hunter mastery are completed.
+            return abyssSecretUnlocked && isBountyMasteryComplete();
+        }
+
         function getDailyChallenge() {
+            if (isFinalHuntDailyUnlocked()) {
+                return {
+                    id:"finalhunt",
+                    name:"The Final Hunt",
+                    desc:"THE SECRET DAILY CHALLENGE. Survive the endless Abyss until Wave 50 and defeat THE GOVERNMENT. No modifiers. No mercy.",
+                    reward:5000,
+                    score:2.5,
+                    finalHunt:true
+                };
+            }
             const d = new Date();
             const key = d.getUTCFullYear() * 372 + (d.getUTCMonth()+1) * 31 + d.getUTCDate();
             return dailyChallenges[key % dailyChallenges.length];
@@ -2763,7 +2816,8 @@
                 equippedSkins: JSON.parse(localStorage.getItem("blockDefenseEquippedSkins") || "{}"),
                 prestige: getPrestigeData(),
                 gamesPlayed: Number(localStorage.getItem("blockDefenseGamesPlayed") || 0),
-                fastestWin: Number(localStorage.getItem("blockDefenseFastestWin") || 0)
+                fastestWin: Number(localStorage.getItem("blockDefenseFastestWin") || 0),
+                abyssSecretUnlocked, governmentDefeated, godUnlocked
             };
             const blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
             const url = URL.createObjectURL(blob);
@@ -2794,6 +2848,9 @@
                     if (data.prestige && typeof data.prestige === "object") localStorage.setItem("blockDefensePrestige", JSON.stringify(data.prestige));
                     if (typeof data.gamesPlayed === "number") localStorage.setItem("blockDefenseGamesPlayed", String(data.gamesPlayed));
                     if (typeof data.fastestWin === "number") localStorage.setItem("blockDefenseFastestWin", String(data.fastestWin));
+                    if (data.abyssSecretUnlocked) { abyssSecretUnlocked=true; localStorage.setItem("blockDefenseAbyssSecret","1"); }
+                    if (data.governmentDefeated) { governmentDefeated=true; localStorage.setItem("blockDefenseGovernmentDefeated","1"); }
+                    if (data.godUnlocked) { godUnlocked=true; localStorage.setItem("blockDefenseGodUnlocked","1"); }
                     campaignCompleted = JSON.parse(localStorage.getItem("blockDefenseCompletedLevels") || "[]");
                     loadEquippedSkins();
                     updateCampaignInfo();
@@ -2813,7 +2870,7 @@
             const keys = [
                 "blockDefenseCompletedLevels","blockDefenseLevelsWon","blockDefenseAchievements",
                 "blockDefenseMastery","blockDefenseEquippedSkins","blockDefensePrestige",
-                "blockDefenseGamesPlayed","blockDefenseFastestWin"
+                "blockDefenseGamesPlayed","blockDefenseFastestWin","blockDefenseAbyssSecret","blockDefenseGovernmentDefeated","blockDefenseGodUnlocked"
             ];
             keys.forEach(k => localStorage.removeItem(k));
             campaignCompleted = [];
@@ -2881,7 +2938,7 @@
         function renderCodex() {
             const list=document.getElementById("codexList"); if(!list) return;
             const mastery=JSON.parse(localStorage.getItem("blockDefenseMastery")||"{}");
-            list.innerHTML = `<h3>🗼 Towers</h3>` + Object.entries(towerData).map(([id,t])=>{
+            list.innerHTML = `<h3>🗼 Towers</h3>` + Object.entries(towerData).filter(([id])=>id !== "god" || godUnlocked).map(([id,t])=>{
                 const p=getPrestigeCount(id);
                 return `<div class="codexCard"><div class="codexIcon" style="background:${t.color}">${towerLetters[id]||"?"}</div><div><b>${t.name}</b><br><span>${t.damage ? `Base damage ${t.damage}` : "Utility tower"} • Range ${t.range || "—"}</span><br><small>⭐ ${mastery[id]||0} kills • Prestige ${p}</small></div></div>`;
             }).join("") + `<h3>👾 Enemies</h3>` + codexEnemies.map(e=>`<div class="codexCard enemyCodex"><div class="codexIcon">${e[3]}</div><div><b>${e[1]}</b><br><span>${e[2]}</span></div></div>`).join("");
@@ -2892,7 +2949,10 @@
             const c=getDailyChallenge();
             const panel=document.getElementById("dailyPanel");
             panel.hidden=false; panel.style.display="flex"; panel.style.visibility="visible"; panel.style.pointerEvents="auto";
-            document.getElementById("dailyContent").innerHTML=`<div class="dailyBadge">📅 TODAY'S CHALLENGE</div><h2>${c.name}</h2><p>${c.desc}</p><div class="dailyReward">🏆 Reward: <b>$${c.reward}</b> + score multiplier</div><p>${dailyChallengeCompleted ? "✅ Completed today! Come back tomorrow." : "Not completed yet."}</p><button class="bigButton" onclick="startDailyChallenge()" ${dailyChallengeCompleted?"disabled":""}>▶ PLAY DAILY</button>`;
+            const lockedHint = !isFinalHuntDailyUnlocked()
+                ? `<p style="color:#a1a1aa;font-size:12px;">☠ <b>The Final Hunt</b> replaces the normal daily only after <b>The Abyss secret</b> is unlocked AND <b>Bounty Hunter reaches Mastery 3 (250 kills)</b>.</p>`
+                : `<p style="color:#c084fc;font-size:12px;">☠ SECRET DAILY ACTIVE — Abyss endless, no modifiers. Reach Wave 50.</p>`;
+            document.getElementById("dailyContent").innerHTML=`<div class="dailyBadge">📅 TODAY'S CHALLENGE</div><h2>${c.name}</h2><p>${c.desc}</p><div class="dailyReward">🏆 Reward: <b>$${c.reward}</b> + score multiplier</div>${lockedHint}<p>${dailyChallengeCompleted ? "✅ Completed today! Come back tomorrow." : "Not completed yet."}</p><button class="bigButton" onclick="startDailyChallenge()" ${dailyChallengeCompleted?"disabled":""}>▶ PLAY DAILY</button>`;
         }
 
         function closeDaily() {
@@ -2900,9 +2960,21 @@
         }
 
         function startDailyChallenge() {
-            refreshDailyState(); if(dailyChallengeCompleted) return;
+            refreshDailyState();
+            if(dailyChallengeCompleted) return;
             dailyMode=true;
-            dailyChallengeId=getDailyChallenge().id;
+            const challenge = getDailyChallenge();
+            dailyChallengeId=challenge.id;
+
+            if (challenge.finalHunt) {
+                // The Final Hunt daily is a pure Abyss endless run: no daily
+                // cash/speed/lives/tower modifiers are applied.
+                finalHuntMode=true;
+                selectLevel(7,true);
+                return;
+            }
+
+            finalHuntMode=false;
             selectLevel(Math.min(6, Math.max(1, Math.min(campaignCompleted.length+1,6))), false);
         }
 
@@ -3016,6 +3088,15 @@
                 money: 1100,
                 lives: 15,
                 waves: 35
+            }
+,
+
+            7: {
+                name: "The Abyss...",
+                difficulty: "???",
+                money: 12000,
+                lives: 25,
+                waves: 40
             }
 
         };
@@ -3194,8 +3275,13 @@
                 [174,25],
                 [195,25]
 
-            ]
+            ],
 
+            7: [
+                [0,24], [7,24], [7,10], [18,10], [18,38], [31,38],
+                [31,18], [45,18], [45,32], [59,32], [59,8],
+                [74,8], [74,40], [91,40], [91,20], [108,20], [108,30], [122,30]
+            ]
         };
 
 
@@ -3215,6 +3301,8 @@
 
 
             const sets = {
+
+                7: [],
 
                 2: [
 
@@ -3655,6 +3743,28 @@
                 emoji: "✧"
             },
 
+            testSubject: {
+                name: "Test Subject",
+                cost: 10000,
+                damage: 420,
+                range: 95,
+                cooldown: 180,
+                color: "#facc15",
+                special: "test",
+                emoji: "⚠"
+            },
+
+            god: {
+                name: "The God",
+                cost: 5000,
+                damage: 1450,
+                range: 1100,
+                cooldown: 34,
+                color: "#e5e7eb",
+                special: "godsWrath",
+                emoji: "✦"
+            },
+
             economy: {
 
                 name:
@@ -3730,7 +3840,9 @@
             chrono: "◷",
             tesla: "ϟ",
             drone: "✦",
-            alchemist: "✧"
+            alchemist: "✧",
+            testSubject: "⚠",
+            god: "✦"
         };
 
         const skinTowerTypes = Object.keys(towerData);
@@ -3957,11 +4069,16 @@
             currentLevel =
                 level;
 
+            if (level === 7) currentMapVariant = 0;
+            // Refresh secret/tower visibility after currentLevel changes so the
+            // Test Subject actually appears when The Abyss is loaded.
+            updateSecretUI();
+            finalHuntMode = level === 7 && endless;
             endlessMode = endless;
             bountySelecting = false;
             bountyTarget = null;
 
-            const variant = mapVariants[currentMapVariant];
+            const variant = isAbyssMap() ? { name:"Abyss", icon:"☠", money:1, lives:1, enemySpeed:1, enemyHp:1, bg:"#17052b", water:"#35105f", path:"#6b21a8" } : mapVariants[currentMapVariant];
 
 
             const data =
@@ -3977,8 +4094,11 @@
 
             if (dailyMode) {
                 const challenge = getDailyChallenge();
-                money = Math.floor(money * (challenge.cash || 1));
-                lives = Math.max(1, Math.floor(lives * (challenge.lives || 1)));
+                // Final Hunt is deliberately modifier-free.
+                if (!challenge.finalHunt) {
+                    money = Math.floor(money * (challenge.cash || 1));
+                    lives = Math.max(1, Math.floor(lives * (challenge.lives || 1)));
+                }
             }
 
             totalGamesPlayed++;
@@ -4062,7 +4182,7 @@
             document.getElementById(
                 "levelName"
             ).textContent =
-                data.name + (endlessMode ? " — ENDLESS" : "") + ` — ${mapVariants[currentMapVariant].name}`;
+                data.name + (endlessMode ? " — ENDLESS" : "") + (isAbyssMap() ? " — ABYSS" : ` — ${mapVariants[currentMapVariant].name}`);
 
 
             document.getElementById(
@@ -4092,6 +4212,38 @@
 
         }
 
+
+        function isAbyssMap() { return currentLevel === 7; }
+
+        function unlockAbyssSecret(tower) {
+            if (abyssSecretUnlocked) return;
+            abyssSecretUnlocked = true;
+            finalHuntMode = false;
+            localStorage.setItem("blockDefenseAbyssSecret","1");
+            messageToast("☠ THE ABYSS SECRET HAS STARTED — FINAL HUNT UNLOCKED!");
+            createFloatingText(tower.x,tower.y-70,"☠ THE SECRET HAS STARTED", "#e9d5ff");
+            createBurst(tower.x, tower.y, "#a855f7");
+            renderSkins(); updateCampaignInfo(); updateSecretUI(); updateUI();
+        }
+
+        function openAbyssSecret() {
+            selectLevel(7,false);
+        }
+
+        function startFinalHunt() {
+            if (!abyssSecretUnlocked) { messageToast("☠ Max the Test Subject in The Abyss first."); return; }
+            finalHuntMode = true;
+            selectLevel(7,true);
+        }
+
+        function updateSecretUI() {
+            const b=document.getElementById("finalHuntButton");
+            if (b) b.style.display=abyssSecretUnlocked ? "inline-block" : "none";
+            const god=document.getElementById("shop-god");
+            if (god) { god.style.display=godUnlocked ? "block" : "none"; god.disabled=!godUnlocked; god.style.opacity="1"; }
+            const test=document.getElementById("shop-testSubject");
+            if (test) test.style.display=isAbyssMap()?"block":"none";
+        }
 
         /* =========================
            MENU
@@ -4150,6 +4302,7 @@
             levelSelect.style.setProperty("pointer-events", "auto", "important");
 
             updateCampaignInfo();
+            updateSecretUI();
 
         }
 
@@ -4215,7 +4368,8 @@
         function restartLevel() {
 
             loadLevel(
-                currentLevel
+                currentLevel,
+                finalHuntMode
             );
 
         }
@@ -4411,6 +4565,9 @@
             type
         ) {
 
+            if (type === "testSubject" && !isAbyssMap()) { messageToast("⚠ Test Subject can only be deployed in The Abyss..."); return; }
+            if (type === "god" && !godUnlocked) { messageToast("✦ The God is locked. Defeat The Government first."); return; }
+
             selectedShopTower =
                 type;
 
@@ -4565,7 +4722,7 @@
 
             totalTowersPlaced++;
             totalTowerSpent += data.cost;
-            if (["void","chrono","tesla","drone","alchemist"].includes(selectedShopTower)) {
+            if (["void","chrono","tesla","drone","alchemist","testSubject","god"].includes(selectedShopTower)) {
                 specialTowersPlaced.add(selectedShopTower);
             }
 
@@ -4643,7 +4800,9 @@
                 droneCount: 0,
                 droneTimer: 0,
                 transmuteBonus: selectedShopTower === "alchemist" ? .35 : 0,
-                specialCharge: 0
+                specialCharge: 0,
+                masteryHat: false,
+                godLightning: 0
 
             });
 
@@ -4760,6 +4919,16 @@
                 [{name:"Quick Mix",cost:300,effects:{cooldown:-7}},{name:"Rapid Reaction",cost:460,effects:{cooldown:-8,damage:18}},{name:"Master Formula",cost:700,effects:{cooldown:-7,transmuteBonus:.12}}],
                 [{name:"Long Flask",cost:280,effects:{range:45}},{name:"Golden Flask",cost:440,effects:{range:50,damage:18}},{name:"Philosopher Stone",cost:680,effects:{range:60,transmuteBonus:.20}}]
             ],
+            testSubject: [
+                [{name:"Reinforced Dummy",cost:450,effects:{damage:500}},{name:"Impact Core",cost:750,effects:{damage:850}},{name:"Catastrophe",cost:1200,effects:{damage:1400,splash:45}}],
+                [{name:"Extended Arms",cost:350,effects:{range:25}},{name:"Hazard Radius",cost:600,effects:{range:35}},{name:"Containment Breach",cost:900,effects:{range:45,stun:45}}],
+                [{name:"Overbuilt",cost:400,effects:{cooldown:-20}},{name:"Hyper Test",cost:650,effects:{cooldown:-25,damage:500}},{name:"FINAL PROTOTYPE",cost:1000,effects:{cooldown:-20,damage:1000,splash:55}}]
+            ],
+            god: [
+                [{name:"Divine Reach",cost:650,effects:{range:250}},{name:"Heaven Piercer",cost:900,effects:{damage:900}},{name:"Judgement",cost:1400,effects:{damage:1500,stun:35}}],
+                [{name:"Thunderhead",cost:600,effects:{chain:3}},{name:"Storm Crown",cost:900,effects:{chain:4,damage:500}},{name:"Celestial Storm",cost:1300,effects:{chain:6,damage:900}}],
+                [{name:"Divine Tempo",cost:550,effects:{cooldown:-7}},{name:"Infinite Pulse",cost:850,effects:{cooldown:-7,damage:450}},{name:"ETERNAL",cost:1250,effects:{cooldown:-6,damage:800,range:200}}]
+            ],
             economy: [
                 [{name:"Cash Payout",cost:150,effects:{income:12}},{name:"Investor",cost:240,effects:{income:20}},{name:"Mega Investor",cost:380,effects:{income:30}}],
                 [{name:"Faster Banking",cost:170,effects:{incomeInterval:-50}},{name:"Compound Interest",cost:260,effects:{income:25,incomeInterval:-40}},{name:"Turbo Banking",cost:420,effects:{income:35,incomeInterval:-35}}],
@@ -4814,6 +4983,10 @@
             }
         }
 
+        function isTestSubjectFullyMaxed(tower) {
+            return tower && tower.type === "testSubject" && Array.isArray(tower.upgradeLevels) && tower.upgradeLevels.length === 3 && tower.upgradeLevels.every(level => level >= 3);
+        }
+
         function upgradeTower(path) {
             if (!selectedTower) return;
             const tower = selectedTower;
@@ -4830,6 +5003,7 @@
             tower.upgradeLevels[path - 1] = tier + 1;
             tower.level = tower.upgradeLevels.reduce((a,b) => a + b, 0);
             applyUpgradeEffects(tower, upgrade.effects);
+            if (isAbyssMap() && isTestSubjectFullyMaxed(tower) && !abyssSecretUnlocked) unlockAbyssSecret(tower);
             createFloatingText(tower.x, tower.y - 35, `${upgrade.name}!`, "#facc15");
             createBurst(tower.x, tower.y, "#facc15");
                 spawnSpecialBurst("teslaBurst", tower.x, tower.y, 48);
@@ -5008,6 +5182,9 @@
                 tesla: ["ϟ OVERLOAD — Q", "ϟ Overload"],
                 drone: ["✦ SWARM — Q", "✦ Swarm"],
                 alchemist: ["✧ TRANSMUTE — Q", "✧ Transmute"]
+,
+                testSubject: ["⚠ IMPACT — Q", "⚠ Impact"],
+                god: ["✦ GOD'S WRATH — Q", "✦ God's Wrath"]
             };
 
             const abilityInfo = abilityNames[tower.type] || ["ABILITY — Q", "Ability"];
@@ -5296,6 +5473,14 @@
             }
 
 
+            else if (type === "voidBoss") {
+                enemy = { type:"voidBoss", x:start.x, y:start.y, pathIndex:0, stun:0, hp:26000 + currentWave*900, maxHp:26000 + currentWave*900, speed:.48 + currentWave*.006, radius:38, reward:1800, color:"#581c87", emoji:"◉", phase:1, enraged:false, shield:5000, maxShield:5000, voidPulse:240 };
+            }
+
+            else if (type === "government") {
+                enemy = { type:"government", x:start.x, y:start.y, pathIndex:0, stun:0, hp:65000, maxHp:65000, speed:.36, radius:44, reward:5000, color:"#111827", emoji:"$", phase:1, taxTimer:300, sellTimer:480, auditTimer:720 };
+            }
+
             else if (
                 type ===
                 "boss"
@@ -5398,7 +5583,7 @@
             enemy.hp = Math.floor(enemy.hp * variant.enemyHp);
             enemy.maxHp = Math.floor(enemy.maxHp * variant.enemyHp);
             enemy.speed *= variant.enemySpeed;
-            if (dailyMode) enemy.speed *= (getDailyChallenge().speed || 1);
+            if (dailyMode && !getDailyChallenge().finalHunt) enemy.speed *= (getDailyChallenge().speed || 1);
 
             if (currentWave >= 12 && Math.random() < Math.min(.08 + currentWave * .002, .22) && !["boss", "shielded"].includes(enemy.type)) {
                 enemy.regen = true;
@@ -5450,7 +5635,11 @@
             currentWave++;
 
 
-            if (
+            if (finalHuntMode && currentWave === 50) {
+                enemiesToSpawn = 1;
+            } else if (isAbyssMap() && currentWave === 40) {
+                enemiesToSpawn = 1;
+            } else if (
                 currentWave %
                 5 ===
                 0
@@ -5520,23 +5709,23 @@
                     let type =
                         "normal";
 
-                    if (dailyMode && getDailyChallenge().bossRush && currentWave % 4 === 0) {
+                    if (finalHuntMode && currentWave === 50) {
+                        type = "government";
+                    } else if (isAbyssMap() && currentWave === 40) {
+                        type = "voidBoss";
+                    } else if (dailyMode && !getDailyChallenge().finalHunt && getDailyChallenge().bossRush && currentWave % 4 === 0) {
                         type = "boss";
                     }
 
 
-                    if (
-                        currentWave %
-                        5 ===
-                        0
-                    ) {
+                    if (!((finalHuntMode && currentWave === 50) || (isAbyssMap() && currentWave === 40)) &&
+                        currentWave % 5 === 0) {
 
-                        type =
-                            "boss";
+                        type = "boss";
 
                     }
 
-                    else {
+                    else if (!((finalHuntMode && currentWave === 50) || (isAbyssMap() && currentWave === 40))) {
 
                         const roll =
                             Math.random();
@@ -6004,6 +6193,23 @@
                 const p = worldToScreen(tower.x, tower.y);
                 const t = specialTime;
 
+                if (tower.type === "god") {
+                    const pulse = (Math.sin(t * .08) + 1) * .5;
+                    ctx.strokeStyle = `rgba(250,250,250,${.35 + pulse*.3})`;
+                    ctx.lineWidth = 2.5 * cameraZoom;
+                    ctx.beginPath(); ctx.arc(p.x,p.y,(34+pulse*8)*cameraZoom,0,Math.PI*2); ctx.stroke();
+                    for (let i=0;i<4;i++) {
+                        const a=t*.025+i*Math.PI/2; const r=(30+pulse*5)*cameraZoom;
+                        ctx.strokeStyle="rgba(168,85,247,.65)"; ctx.lineWidth=2*cameraZoom;
+                        ctx.beginPath(); ctx.moveTo(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r); ctx.lineTo(p.x+Math.cos(a+.35)*r*1.55,p.y+Math.sin(a+.35)*r*1.55); ctx.stroke();
+                    }
+                }
+
+                if (tower.type === "testSubject") {
+                    ctx.strokeStyle = "rgba(250,204,21,.45)"; ctx.lineWidth = 2*cameraZoom;
+                    ctx.setLineDash([5*cameraZoom,4*cameraZoom]); ctx.beginPath(); ctx.arc(p.x,p.y,28*cameraZoom,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+                }
+
                 if (tower.type === "drone") {
                     const count = Math.min(tower.droneCount || 0, 5);
                     for (let i = 0; i < count; i++) {
@@ -6180,6 +6386,17 @@
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, 10 * scale, progress * Math.PI * 2, progress * Math.PI * 2 + Math.PI * 1.5);
                     ctx.stroke();
+                }
+
+                if (fx.type === "godWrath") {
+                    ctx.strokeStyle=`rgba(255,255,255,${alpha})`; ctx.lineWidth=4*scale;
+                    for(let i=0;i<10;i++){ const a=i*Math.PI*2/10+specialTime*.02; const r=(25+progress*170)*scale; ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r); ctx.stroke(); }
+                    ctx.strokeStyle=`rgba(168,85,247,${alpha*.9})`; ctx.beginPath(); ctx.arc(p.x,p.y,(20+progress*150)*scale,0,Math.PI*2); ctx.stroke();
+                }
+
+                if (fx.type === "governmentTax") {
+                    ctx.strokeStyle=`rgba(250,204,21,${alpha})`; ctx.lineWidth=3*scale; ctx.beginPath(); ctx.arc(p.x,p.y,(30+progress*130)*scale,0,Math.PI*2); ctx.stroke();
+                    ctx.fillStyle=`rgba(248,113,113,${alpha})`; ctx.font=`bold ${16*scale}px Arial`; ctx.textAlign="center"; ctx.fillText("$",p.x,p.y);
                 }
 
                 if (fx.type === "voidBurst") {
@@ -6398,6 +6615,8 @@
             if (tower.type === "chrono") spawnSpecialEffect("chronoProjectile", {x:tower.x,y:tower.y}, 16);
             if (tower.type === "tesla") spawnSpecialEffect("teslaProjectile", {x:tower.x,y:tower.y}, 14);
             if (tower.type === "alchemist") spawnSpecialEffect("goldProjectile", {x:tower.x,y:tower.y}, 16);
+            if (tower.type === "god") spawnSpecialEffect("godProjectile", {x:tower.x,y:tower.y}, 16);
+            if (tower.type === "testSubject") spawnSpecialEffect("testProjectile", {x:tower.x,y:tower.y}, 18);
 
             tower.flash = 5;
             createBurst(tower.x, tower.y, towerData[tower.type].color);
@@ -6513,7 +6732,8 @@
 
             if (projectile.tower) {
                 rawDamage *= 1 + getPrestigeCount(projectile.tower.type) * .05;
-                if (dailyMode && getDailyChallenge().towerDamage) rawDamage *= getDailyChallenge().towerDamage;
+                if (abyssSecretUnlocked && projectile.tower.type !== "testSubject" && getMasteryKills(projectile.tower.type) >= 25) rawDamage *= 1.20;
+                if (dailyMode && !getDailyChallenge().finalHunt && getDailyChallenge().towerDamage) rawDamage *= getDailyChallenge().towerDamage;
             }
 
             if (enemy.shield > 0) {
@@ -6557,7 +6777,8 @@
                 createFloatingText(enemy.x, enemy.y - enemy.radius - 40, `🔥❄ THERMAL SHOCK +${combo}`, "#facc15");
             }
 
-            if (enemy.type === "boss") updateBossPhase(enemy);
+            if (["boss","voidBoss"].includes(enemy.type)) updateBossPhase(enemy);
+            if (enemy.type === "government") updateGovernmentBoss(enemy);
 
 
             if (
@@ -6765,7 +6986,18 @@
                     mastery[projectile.tower.type] = (mastery[projectile.tower.type] || 0) + 1;
                     localStorage.setItem("blockDefenseMastery", JSON.stringify(mastery));
                 }
-                if (enemy.type === "boss") totalBossesDefeated++;
+                if (["boss","voidBoss","government"].includes(enemy.type)) totalBossesDefeated++;
+                if (enemy.type === "government") {
+                    governmentDefeated = true; godUnlocked = true;
+                    localStorage.setItem("blockDefenseGovernmentDefeated","1");
+                    localStorage.setItem("blockDefenseGodUnlocked","1");
+                    messageToast("✦ THE GOVERNMENT HAS FALLEN — THE GOD UNLOCKED!");
+                    createFloatingText(enemy.x, enemy.y-70, "✦ THE GOD IS NOW AVAILABLE", "#e9d5ff");
+                    if (dailyMode && getDailyChallenge().finalHunt) {
+                        finishDailyChallenge();
+                    }
+                    updateUI();
+                }
                 createFloatingText(enemy.x, enemy.y - enemy.radius - 8, `+$${Math.floor(killReward)}`, "#facc15");
 
 
@@ -6811,7 +7043,7 @@
 
 
         function updateBossPhase(enemy) {
-            if (enemy.type !== "boss") return;
+            if (!["boss","voidBoss"].includes(enemy.type)) return;
             const ratio = enemy.hp / enemy.maxHp;
             const nextPhase = ratio <= .25 ? 4 : ratio <= .50 ? 3 : ratio <= .75 ? 2 : 1;
             if (nextPhase <= enemy.phase) return;
@@ -6833,6 +7065,40 @@
             createBurst(enemy.x, enemy.y, "#ef4444");
         }
 
+
+        function updateGovernmentBoss(enemy) {
+            if (enemy.type !== "government") return;
+            enemy.taxTimer--; enemy.sellTimer--; enemy.auditTimer--;
+            if (enemy.taxTimer <= 0) {
+                const tax = Math.max(250, Math.floor(money * .12));
+                money = Math.max(0, money - tax);
+                enemy.taxTimer = 300;
+                createFloatingText(enemy.x, enemy.y-enemy.radius-20, `🏛 TAXED -$${tax}`, "#f87171");
+                spawnSpecialBurst("governmentTax", enemy.x, enemy.y, 38);
+                updateUI();
+            }
+            if (enemy.sellTimer <= 0 && towers.length) {
+                const candidates = towers.filter(t=>t.type!=="god");
+                if (candidates.length) {
+                    const victim = candidates[Math.floor(Math.random()*candidates.length)];
+                    const refund = Math.floor(victim.totalSpent*.45);
+                    money += refund; totalMoneyEarned += refund;
+                    towers = towers.filter(t=>t!==victim);
+                    if (selectedTower === victim) { selectedTower=null; document.getElementById("towerPanel").style.display="none"; }
+                    createFloatingText(enemy.x, enemy.y-enemy.radius-42, `🏛 SEIZED ${towerData[victim.type].name} +$${refund}`, "#fbbf24");
+                    enemy.sellTimer = 480; updateUI();
+                }
+            }
+            if (enemy.auditTimer <= 0) {
+                for (const t of towers) t.timer = Math.max(t.timer, 75);
+                enemy.auditTimer = 720;
+                createFloatingText(enemy.x, enemy.y-enemy.radius-62, "🏛 GOVERNMENT AUDIT", "#fbbf24");
+                spawnSpecialBurst("governmentTax", enemy.x, enemy.y, 45);
+            }
+            const ratio=enemy.hp/enemy.maxHp;
+            const next=ratio<=.33?3:ratio<=.66?2:1;
+            if(next>enemy.phase){ enemy.phase=next; enemy.speed*=1.16; enemy.taxTimer=Math.min(enemy.taxTimer,180); createFloatingText(enemy.x,enemy.y-70,`🏛 PHASE ${next}`,"#fbbf24"); }
+        }
 
         function updateEnemyModifiers() {
             for (const enemy of enemies) {
@@ -7280,8 +7546,9 @@
                 GRID_SIZE;
 
 
-            ctx.strokeStyle =
-                "rgba(60,130,70,.22)";
+            ctx.strokeStyle = isAbyssMap()
+                ? "rgba(168,85,247,.18)"
+                : "rgba(60,130,70,.22)";
 
 
             ctx.lineWidth =
@@ -7381,13 +7648,13 @@
                 ctx.lineCap = "round";
                 ctx.lineJoin = "round";
                 ctx.lineWidth = 76 * cameraZoom;
-                ctx.strokeStyle = "#4b2d1c";
+                ctx.strokeStyle = isAbyssMap() ? "#24063d" : "#4b2d1c";
                 ctx.stroke();
                 ctx.lineWidth = 58 * cameraZoom;
-                ctx.strokeStyle = "#704323";
+                ctx.strokeStyle = isAbyssMap() ? "#4c1d95" : "#704323";
                 ctx.stroke();
                 ctx.lineWidth = 46 * cameraZoom;
-                ctx.strokeStyle = "#a06a38";
+                ctx.strokeStyle = isAbyssMap() ? "#7e22ce" : "#a06a38";
                 ctx.stroke();
 
                 const start = route[0];
@@ -7592,6 +7859,24 @@
                     y
 
                 );
+
+                if (abyssSecretUnlocked && getMasteryKills(tower.type) >= 25 && tower.type !== "testSubject") {
+                    ctx.save();
+                    ctx.fillStyle = "#111827";
+                    ctx.fillRect(x - 9 * cameraZoom, y - 28 * cameraZoom, 18 * cameraZoom, 5 * cameraZoom);
+                    ctx.fillRect(x - 6 * cameraZoom, y - 33 * cameraZoom, 12 * cameraZoom, 6 * cameraZoom);
+                    ctx.fillStyle = "#a855f7";
+                    ctx.fillRect(x - 9 * cameraZoom, y - 25 * cameraZoom, 18 * cameraZoom, 3 * cameraZoom);
+                    ctx.restore();
+                }
+                if (tower.type === "testSubject") {
+                    ctx.save();
+                    ctx.strokeStyle = "#111827"; ctx.lineWidth = 4 * cameraZoom;
+                    for (let k=-1;k<=1;k++) {
+                        ctx.beginPath(); ctx.moveTo(x-17*cameraZoom+k*12*cameraZoom,y-17*cameraZoom); ctx.lineTo(x-5*cameraZoom+k*12*cameraZoom,y-5*cameraZoom); ctx.stroke();
+                    }
+                    ctx.restore();
+                }
 
 
                 
@@ -7879,6 +8164,19 @@ if (
 
                 ctx.fill();
 
+                if (enemy.type === "voidBoss") {
+                    ctx.save();
+                    ctx.shadowBlur=30*cameraZoom; ctx.shadowColor="#a855f7";
+                    ctx.strokeStyle="#d8b4fe"; ctx.lineWidth=3*cameraZoom;
+                    for(let k=0;k<3;k++){ const a=specialTime*.018+k*Math.PI/3; ctx.beginPath(); ctx.ellipse(x,y,(radius+10+k*8)*Math.cos(a), (radius+10+k*8)*Math.sin(a), a,0,Math.PI*2); ctx.stroke(); }
+                    ctx.fillStyle="#020617"; ctx.beginPath(); ctx.arc(x,y,radius*.55,0,Math.PI*2); ctx.fill();
+                    ctx.fillStyle="#f5d0fe"; ctx.font=`bold ${20*cameraZoom}px Arial`; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText("◉",x,y);
+                    ctx.restore();
+                }
+                if (enemy.type === "government") {
+                    ctx.save(); ctx.fillStyle="#facc15"; ctx.font=`bold ${18*cameraZoom}px Arial`; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText("$",x,y); ctx.strokeStyle="#facc15"; ctx.lineWidth=3*cameraZoom; ctx.strokeRect(x-radius*.7,y-radius*.7,radius*1.4,radius*1.4); ctx.restore();
+                }
+
                 if (bountyTarget === enemy) {
                     ctx.beginPath();
                     ctx.arc(x, y, radius + 11 * cameraZoom, 0, Math.PI * 2);
@@ -7898,11 +8196,12 @@ if (
                     ctx.stroke();
                 }
 
-                const hpWidth = enemy.type === "boss" ? 100 * cameraZoom : enemy.radius * 2.5 * cameraZoom;
-                const barY = y - radius - (enemy.type === "boss" ? 18 : 10) * cameraZoom;
+                const isBigBoss = ["boss","voidBoss","government"].includes(enemy.type);
+                const hpWidth = isBigBoss ? 120 * cameraZoom : enemy.radius * 2.5 * cameraZoom;
+                const barY = y - radius - (isBigBoss ? 18 : 10) * cameraZoom;
                 ctx.fillStyle = "#17220f";
                 ctx.fillRect(x - hpWidth/2, barY, hpWidth, 5 * cameraZoom);
-                ctx.fillStyle = enemy.type === "boss" ? "#ef4444" : "#22c55e";
+                ctx.fillStyle = enemy.type === "voidBoss" ? "#a855f7" : enemy.type === "government" ? "#facc15" : enemy.type === "boss" ? "#ef4444" : "#22c55e";
                 ctx.fillRect(x - hpWidth/2, barY, hpWidth * Math.max(0, enemy.hp/enemy.maxHp), 5 * cameraZoom);
                 if (enemy.shield > 0) {
                     ctx.fillStyle = "#38bdf8";
@@ -7953,6 +8252,37 @@ if (
             for (const projectile of projectiles) {
                 const p = worldToScreen(projectile.x, projectile.y);
                 const s = cameraZoom;
+
+                if (projectile.specialType === "god") {
+                    ctx.save();
+                    ctx.fillStyle="#fff"; ctx.shadowBlur=26*s; ctx.shadowColor="#a855f7";
+                    ctx.beginPath(); ctx.arc(p.x,p.y,7*s,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+                    ctx.strokeStyle="#c084fc"; ctx.lineWidth=2*s;
+                    for(let k=0;k<4;k++){const a=specialTime*.12+k*Math.PI/2;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+Math.cos(a)*16*s,p.y+Math.sin(a)*16*s);ctx.stroke();}
+                    ctx.restore(); continue;
+                }
+
+                if (projectile.specialType === "testSubject") {
+                    ctx.save();
+                    ctx.fillStyle = "#facc15";
+                    ctx.shadowBlur = 20 * s;
+                    ctx.shadowColor = "#facc15";
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 6 * s, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = "#111827";
+                    ctx.lineWidth = 2 * s;
+                    for (let k = 0; k < 4; k++) {
+                        const a = specialTime * .10 + k * Math.PI / 2;
+                        ctx.beginPath();
+                        ctx.moveTo(p.x + Math.cos(a) * 4 * s, p.y + Math.sin(a) * 4 * s);
+                        ctx.lineTo(p.x + Math.cos(a) * 11 * s, p.y + Math.sin(a) * 11 * s);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                    continue;
+                }
 
                 if (projectile.specialType === "void") {
                     ctx.save();
@@ -8880,6 +9210,17 @@ if (
                 spawnSpecialBurst("droneBurst", tower.x, tower.y, 58);
             }
 
+            else if (tower.type === "god") {
+                const targets = [...enemies];
+                for (const enemy of targets) {
+                    hitEnemy(enemy, {tower, damage:tower.damage*4.5, splash:90, burn:0, chain:8, stun:90, slow:0, slowDuration:0, color:"#ffffff"});
+                }
+                tower.abilityCooldown=1200;
+                createFloatingText(tower.x,tower.y-40,"✦ GOD'S WRATH!","#ffffff");
+                createBurst(tower.x,tower.y,"#c084fc");
+                spawnSpecialBurst("godWrath",tower.x,tower.y,72);
+            }
+
             else if (tower.type === "alchemist") {
                 let bonus = 0;
                 for (const enemy of enemies.filter(inRange)) {
@@ -8978,7 +9319,11 @@ if (
             const nextWave =
                 document.getElementById("nextWave");
 
-            if (!endlessMode && currentWave >= levels[currentLevel].waves) {
+            if (finalHuntMode && currentWave === 49) {
+                nextWave.textContent = " • NEXT: THE GOVERNMENT";
+            } else if (isAbyssMap() && !endlessMode && currentWave === 39) {
+                nextWave.textContent = " • FINAL: THE VOID";
+            } else if (!endlessMode && currentWave >= levels[currentLevel].waves) {
                 nextWave.textContent = " • Final";
             }
             else if (currentWave === 0) {
@@ -9075,7 +9420,7 @@ if (
                 return `<div class="achievementItem ${done ? "" : "locked"}"><span>${done ? "🏆" : "🔒"} <strong>${name}</strong><br>${desc}</span><span>${done ? "UNLOCKED" : "LOCKED"}</span></div>`;
             }).join("");
             const mastery = JSON.parse(localStorage.getItem("blockDefenseMastery") || "{}");
-            list.innerHTML += `<div id="masteryPanel"><h3>⭐ Tower Mastery & Skins</h3>${Object.entries(towerData).map(([id,data]) => { const kills = mastery[id] || 0; const level = kills >= 250 ? 3 : kills >= 100 ? 2 : kills >= 25 ? 1 : 0; const skin = level >= 3 ? "👑 Golden Skin" : level >= 2 ? "✨ Elite Skin" : level >= 1 ? "🎨 Veteran Skin" : "Locked"; return `<div class="masteryRow"><span><strong>${data.name}</strong><br>${kills} kills • Mastery ${level} • ${skin}</span><span>${level >= 3 ? "MAX" : `${Math.min(kills, 250)} / ${level === 0 ? 25 : level === 1 ? 100 : 250}`}</span></div>`; }).join("")}</div>`;
+            list.innerHTML += `<div id="masteryPanel"><h3>⭐ Tower Mastery & Skins</h3><p style="color:#c084fc;font-size:12px;margin:6px 0 10px;">${abyssSecretUnlocked ? "☠ Abyss Mastery active: Mastery 1+ towers gain a purple hat and +20% damage." : "🔒 Hidden mastery bonus: discover the Abyss secret."}</p>${Object.entries(towerData).map(([id,data]) => { const kills = mastery[id] || 0; const level = kills >= 250 ? 3 : kills >= 100 ? 2 : kills >= 25 ? 1 : 0; const skin = level >= 3 ? "👑 Golden Skin" : level >= 2 ? "✨ Elite Skin" : level >= 1 ? "🎨 Veteran Skin" : "Locked"; return `<div class="masteryRow"><span><strong>${data.name}</strong><br>${kills} kills • Mastery ${level} • ${skin}</span><span>${level >= 3 ? "MAX" : `${Math.min(kills, 250)} / ${level === 0 ? 25 : level === 1 ? 100 : 250}`}</span></div>`; }).join("")}</div>`;
         }
 
         function closeAchievements() {
@@ -9291,6 +9636,7 @@ if (
         loadEquippedSkins();
         refreshDailyState();
         updateProfile();
+        updateSecretUI();
 
         gameRunning =
             false;
