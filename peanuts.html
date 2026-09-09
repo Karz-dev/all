@@ -1369,6 +1369,152 @@
         @media(max-width:700px){ .profileGrid,.saveButtons{grid-template-columns:1fr 1fr;} .finalBox{padding:22px 16px;} }
         @media(max-width:480px){ .profileGrid,.saveButtons{grid-template-columns:1fr;} }
 
+        /* =========================
+           SETTINGS
+        ========================= */
+
+        #settingsPanel {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(5,15,7,.90);
+            z-index: 190;
+        }
+
+        #settingsBox {
+            position: relative;
+            width: min(620px, 92vw);
+            max-height: 88vh;
+            overflow: auto;
+            padding: 28px;
+            background: #173b20;
+            border: 3px solid #3fa34d;
+            border-radius: 8px;
+            box-shadow: 0 10px 50px rgba(0,0,0,.65);
+        }
+
+        #settingsBox h2 {
+            margin: 0 0 8px;
+            color: #b8f5bd;
+            font-size: 28px;
+        }
+
+        #settingsIntro {
+            color: #b9d8bd;
+            font-size: 13px;
+            margin-bottom: 18px;
+        }
+
+        #closeSettings {
+            position: absolute;
+            top: 7px;
+            right: 12px;
+            border: none;
+            background: transparent;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+        }
+
+        .settingsSection {
+            margin: 12px 0;
+            padding: 15px;
+            background: rgba(0,0,0,.16);
+            border: 1px solid #356d3d;
+            border-radius: 7px;
+        }
+
+        .settingsSection h3 {
+            margin: 0 0 11px;
+            color: #e7ffe9;
+        }
+
+        .settingRow {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin: 10px 0;
+            color: #d7f0da;
+            font-size: 14px;
+        }
+
+        .settingRow input[type="range"] {
+            width: 190px;
+            accent-color: #3fa34d;
+        }
+
+        .settingToggle {
+            width: 58px;
+            padding: 6px 8px;
+            border: 2px solid #3fa34d;
+            border-radius: 5px;
+            background: #24572d;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .settingToggle.off {
+            background: #3a2525;
+            border-color: #9f4a4a;
+            color: #ffcaca;
+        }
+
+        .speedOptions {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 7px;
+        }
+
+        .speedOption {
+            padding: 10px 5px;
+            border: 2px solid #356d3d;
+            border-radius: 5px;
+            background: #24572d;
+            color: white;
+            text-align: center;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .speedOption.disabled {
+            opacity: .35;
+            cursor: not-allowed;
+        }
+
+        .speedOption.enabled {
+            border-color: #facc15;
+            box-shadow: 0 0 0 1px #facc15;
+        }
+
+        .settingNote {
+            margin-top: 8px;
+            color: #9fc8a7;
+            font-size: 11px;
+            line-height: 1.45;
+        }
+
+        #testSoundButton {
+            margin-top: 8px;
+            width: 100%;
+            padding: 9px;
+            border: 2px solid #3fa34d;
+            border-radius: 5px;
+            background: #286b34;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        @media(max-width:560px) {
+            .speedOptions { grid-template-columns: repeat(3, 1fr); }
+            .settingRow { align-items: flex-start; flex-direction: column; }
+            .settingRow input[type="range"] { width: 100%; }
+        }
+
 </style>
 
 </head>
@@ -1893,6 +2039,7 @@
             <button class="bigButton secondaryButton" onclick="openCodex()">📖 CODEX</button>
             <button class="bigButton secondaryButton" onclick="openDaily()">📅 DAILY CHALLENGE</button>
             <button class="bigButton secondaryButton" onclick="openProfile()">👤 PROFILE / SAVES</button>
+            <button class="bigButton secondaryButton" onclick="openSettings()">⚙ SETTINGS</button>
             <button
                 class="bigButton secondaryButton"
                 onclick="openHelp()"
@@ -1989,6 +2136,54 @@
 
 
     <!-- =========================
+         SETTINGS
+    ========================= -->
+
+    <div id="settingsPanel">
+        <div id="settingsBox">
+            <button id="closeSettings" onclick="closeSettings()">×</button>
+            <h2>⚙ Settings</h2>
+            <p id="settingsIntro">Sound, music and experimental game-speed controls.</p>
+
+            <div class="settingsSection">
+                <h3>🔊 Audio</h3>
+                <div class="settingRow">
+                    <span>Sound Effects</span>
+                    <button id="sfxToggle" class="settingToggle" onclick="toggleSfx()">ON</button>
+                </div>
+                <div class="settingRow">
+                    <span>Music</span>
+                    <button id="musicToggle" class="settingToggle" onclick="toggleMusic()">ON</button>
+                </div>
+                <div class="settingRow">
+                    <span>Master Volume <strong id="volumeValue">60%</strong></span>
+                    <input id="volumeSlider" type="range" min="0" max="100" value="60" oninput="setMasterVolume(this.value)">
+                </div>
+                <button id="testSoundButton" onclick="testSound()">🔔 TEST SOUND</button>
+            </div>
+
+            <div class="settingsSection">
+                <h3>⚡ Game Speed</h3>
+                <div class="settingRow">
+                    <span>Current Speed</span>
+                    <strong id="settingsSpeedValue">1x</strong>
+                </div>
+                <div class="speedOptions">
+                    <button class="speedOption" data-speed="1" onclick="setGameSpeed(1)">1x</button>
+                    <button class="speedOption" data-speed="2" onclick="setGameSpeed(2)">2x</button>
+                    <button class="speedOption" data-speed="3" onclick="setGameSpeed(3)">3x</button>
+                    <button class="speedOption" data-speed="5" onclick="toggleSpeedOption(5)">5x</button>
+                    <button class="speedOption" data-speed="10" onclick="toggleSpeedOption(10)">10x</button>
+                </div>
+                <div class="settingNote">1x, 2x and 3x are always available. Click 5x or 10x to enable/disable them. Enabled speeds can then be cycled with the in-game speed button.</div>
+            </div>
+
+            <button class="bigButton" onclick="closeSettings()">✓ DONE</button>
+        </div>
+    </div>
+
+
+    <!-- =========================
          HELP
     ========================= -->
 
@@ -2047,7 +2242,7 @@
 
                 <br><br>
 
-                ⏸ Pause the game or use 2x / 3x speed.
+                ⏸ Pause the game or use 2x / 3x / 5x / 10x speed (if enabled in Settings).
 
                 <br><br>
 
@@ -3021,6 +3216,201 @@
 
         let gameSpeed =
             1;
+
+        // Settings are persisted so the testing/audio setup survives reloads.
+        let sfxEnabled = localStorage.getItem("blockDefenseSfx") !== "off";
+        let musicEnabled = localStorage.getItem("blockDefenseMusic") !== "off";
+        let masterVolume = Math.max(0, Math.min(1, Number(localStorage.getItem("blockDefenseVolume") ?? 0.60)));
+        let speed5xEnabled = localStorage.getItem("blockDefenseSpeed5x") === "on";
+        let speed10xEnabled = localStorage.getItem("blockDefenseSpeed10x") === "on";
+
+        let audioContext = null;
+        let musicTimer = null;
+        let musicStep = 0;
+
+        function ensureAudio() {
+            if (!audioContext) {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (!AC) return null;
+                audioContext = new AC();
+            }
+            if (audioContext.state === "suspended") audioContext.resume().catch(() => {});
+            return audioContext;
+        }
+
+        function playTone(freq, duration = 0.08, type = "sine", volume = 0.08, when = 0) {
+            if (!sfxEnabled) return;
+            const ac = ensureAudio();
+            if (!ac) return;
+            const osc = ac.createOscillator();
+            const gain = ac.createGain();
+            const start = ac.currentTime + when;
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, start);
+            gain.gain.setValueAtTime(0.0001, start);
+            gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, volume * masterVolume), start + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+            osc.connect(gain);
+            gain.connect(ac.destination);
+            osc.start(start);
+            osc.stop(start + duration + 0.02);
+        }
+
+        function playSfx(name) {
+            if (!sfxEnabled) return;
+            const patterns = {
+                click: [[520,.045,"square",.035]],
+                place: [[330,.06,"sine",.06],[495,.08,"sine",.045,.055]],
+                upgrade: [[440,.07,"triangle",.06],[660,.09,"triangle",.055,.08],[880,.12,"triangle",.045,.17]],
+                sell: [[620,.07,"square",.05],[420,.12,"square",.04,.07]],
+                wave: [[262,.08,"square",.05],[392,.08,"square",.05,.09],[523,.14,"square",.055,.18]],
+                ability: [[740,.07,"sawtooth",.05],[1040,.12,"triangle",.05,.08]],
+                death: [[150,.045,"sine",.018]],
+                victory: [[523,.12,"triangle",.07],[659,.12,"triangle",.07,.13],[784,.18,"triangle",.075,.26],[1047,.28,"triangle",.08,.45]],
+                defeat: [[220,.14,"sawtooth",.055],[165,.22,"sawtooth",.05,.15],[110,.28,"sawtooth",.045,.38]]
+            };
+            (patterns[name] || patterns.click).forEach(([f,d,t,v,w]) => playTone(f,d,t,v,w || 0));
+        }
+
+        function startMusic() {
+            if (!musicEnabled || musicTimer) return;
+            const ac = ensureAudio();
+            if (!ac) return;
+            musicStep = 0;
+            const notes = [261.63,329.63,392,329.63,293.66,349.23,440,349.23,261.63,329.63,392,493.88,220,293.66,349.23,440];
+            musicTimer = setInterval(() => {
+                if (!musicEnabled) return;
+                const note = notes[musicStep % notes.length];
+                const osc = ac.createOscillator();
+                const gain = ac.createGain();
+                const start = ac.currentTime;
+                osc.type = "triangle";
+                osc.frequency.setValueAtTime(note, start);
+                gain.gain.setValueAtTime(0.0001, start);
+                gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, 0.018 * masterVolume), start + .025);
+                gain.gain.exponentialRampToValueAtTime(0.0001, start + .34);
+                osc.connect(gain); gain.connect(ac.destination);
+                osc.start(start); osc.stop(start + .38);
+                if (musicStep % 4 === 0) playMusicBass(notes[musicStep % notes.length] / 2);
+                musicStep++;
+            }, 420);
+        }
+
+        function playMusicBass(freq) {
+            const ac = ensureAudio();
+            if (!ac || !musicEnabled) return;
+            const osc = ac.createOscillator();
+            const gain = ac.createGain();
+            const start = ac.currentTime;
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(freq, start);
+            gain.gain.setValueAtTime(0.0001, start);
+            gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, 0.012 * masterVolume), start + .02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, start + .36);
+            osc.connect(gain); gain.connect(ac.destination);
+            osc.start(start); osc.stop(start + .4);
+        }
+
+        function stopMusic() {
+            if (musicTimer) clearInterval(musicTimer);
+            musicTimer = null;
+        }
+
+        function updateSettingsUI() {
+            const sfx = document.getElementById("sfxToggle");
+            const music = document.getElementById("musicToggle");
+            const slider = document.getElementById("volumeSlider");
+            const value = document.getElementById("volumeValue");
+            const speedValue = document.getElementById("settingsSpeedValue");
+            if (sfx) { sfx.textContent = sfxEnabled ? "ON" : "OFF"; sfx.classList.toggle("off", !sfxEnabled); }
+            if (music) { music.textContent = musicEnabled ? "ON" : "OFF"; music.classList.toggle("off", !musicEnabled); }
+            if (slider) slider.value = Math.round(masterVolume * 100);
+            if (value) value.textContent = Math.round(masterVolume * 100) + "%";
+            if (speedValue) speedValue.textContent = gameSpeed + "x";
+            document.querySelectorAll(".speedOption").forEach(btn => {
+                const speed = Number(btn.dataset.speed);
+                const enabled = speed <= 3 || (speed === 5 ? speed5xEnabled : speed10xEnabled);
+                btn.classList.toggle("enabled", enabled);
+                btn.classList.toggle("disabled", !enabled);
+            });
+        }
+
+        function openSettings() {
+            gameRunning = false;
+            hideAllScreens();
+            const panel = document.getElementById("settingsPanel");
+            if (!panel) return;
+            panel.hidden = false;
+            panel.style.setProperty("display", "flex", "important");
+            panel.style.setProperty("visibility", "visible", "important");
+            panel.style.setProperty("pointer-events", "auto", "important");
+            updateSettingsUI();
+            ensureAudio();
+        }
+
+        function closeSettings() {
+            const panel = document.getElementById("settingsPanel");
+            if (!panel) return;
+            panel.hidden = true;
+            panel.style.setProperty("display", "none", "important");
+            panel.style.setProperty("visibility", "hidden", "important");
+            panel.style.setProperty("pointer-events", "none", "important");
+            showMainMenu();
+        }
+
+        function toggleSfx() {
+            sfxEnabled = !sfxEnabled;
+            localStorage.setItem("blockDefenseSfx", sfxEnabled ? "on" : "off");
+            updateSettingsUI();
+            if (sfxEnabled) playSfx("click");
+        }
+
+        function toggleMusic() {
+            musicEnabled = !musicEnabled;
+            localStorage.setItem("blockDefenseMusic", musicEnabled ? "on" : "off");
+            if (musicEnabled) startMusic(); else stopMusic();
+            updateSettingsUI();
+        }
+
+        function setMasterVolume(value) {
+            masterVolume = Number(value) / 100;
+            localStorage.setItem("blockDefenseVolume", masterVolume.toFixed(2));
+            updateSettingsUI();
+        }
+
+        function testSound() {
+            if (!sfxEnabled) { sfxEnabled = true; localStorage.setItem("blockDefenseSfx", "on"); }
+            ensureAudio();
+            playSfx("upgrade");
+            updateSettingsUI();
+        }
+
+        function setGameSpeed(speed) {
+            if (speed > 3 && ((speed === 5 && !speed5xEnabled) || (speed === 10 && !speed10xEnabled))) return;
+            gameSpeed = speed;
+            updateSettingsUI();
+            updateUI();
+        }
+
+        function toggleSpeedOption(speed) {
+            if (speed === 5) {
+                speed5xEnabled = !speed5xEnabled;
+                localStorage.setItem("blockDefenseSpeed5x", speed5xEnabled ? "on" : "off");
+                if (!speed5xEnabled && gameSpeed === 5) gameSpeed = 3;
+            } else if (speed === 10) {
+                speed10xEnabled = !speed10xEnabled;
+                localStorage.setItem("blockDefenseSpeed10x", speed10xEnabled ? "on" : "off");
+                if (!speed10xEnabled && gameSpeed === 10) gameSpeed = 3;
+            }
+            updateSettingsUI();
+            updateUI();
+        }
+
+        // Prime audio after a real user gesture, which keeps browser autoplay rules happy.
+        document.addEventListener("pointerdown", () => {
+            ensureAudio();
+            if (musicEnabled) startMusic();
+        }, { passive: true });
 
 
         let enemiesToSpawn = 0;
@@ -4170,6 +4560,7 @@
             gamePaused = false;
 
             gameSpeed = 1;
+            startMusic();
 
 
             enemiesToSpawn = 0;
@@ -4257,8 +4648,9 @@
             const levelComplete = document.getElementById("levelComplete");
             const skinsPanel = document.getElementById("skinsPanel");
             const achievementPanel = document.getElementById("achievementPanel");
+            const settingsPanel = document.getElementById("settingsPanel");
 
-            const finalPanels = [document.getElementById("profilePanel"), document.getElementById("codexPanel"), document.getElementById("dailyPanel")];
+            const finalPanels = [document.getElementById("profilePanel"), document.getElementById("codexPanel"), document.getElementById("dailyPanel"), settingsPanel];
 
             [mainMenu, levelSelect, gameOver, levelComplete, skinsPanel, achievementPanel, ...finalPanels].forEach(screen => {
                 if (!screen) return;
@@ -4287,9 +4679,58 @@
         }
 
 
+        function clearActiveRunState() {
+
+            // Stop the simulation first so no update can mutate the arrays
+            // while the menu is being opened.
+            gameRunning = false;
+            gamePaused = false;
+            stopMusic();
+            finalHuntMode = false;
+
+            selectedTower = null;
+            selectedShopTower = null;
+            selectedHero = null;
+            heroPlacing = false;
+            bountySelecting = false;
+            bountyTarget = null;
+            hero = null;
+
+            enemies.length = 0;
+            towers.length = 0;
+            projectiles.length = 0;
+            particles.length = 0;
+            floatingTexts.length = 0;
+            specialEffects.length = 0;
+            waterZones.length = 0;
+            levelPath.length = 0;
+            levelRoutes.length = 0;
+
+            enemiesToSpawn = 0;
+            spawnTimer = 0;
+            waveDelay = 0;
+            currentWave = 0;
+
+            cameraX = 0;
+            cameraY = 0;
+            cameraZoom = 1;
+
+            const towerPanel = document.getElementById("towerPanel");
+            const heroPanel = document.getElementById("heroPanel");
+            if (towerPanel) towerPanel.style.display = "none";
+            if (heroPanel) heroPanel.style.display = "none";
+
+            // Paint the canvas immediately so an old run can never remain
+            // visible underneath a menu screen.
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#101810";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+
         function openLevelSelect() {
 
-            gameRunning = false;
+            clearActiveRunState();
             hideAllScreens();
 
             const levelSelect = document.getElementById("levelSelect");
@@ -4348,46 +4789,7 @@
 
         function returnToMenu() {
 
-            // Fully clear the active run so the old game cannot remain
-            // painted behind the main menu.
-            gameRunning = false;
-            gamePaused = false;
-            finalHuntMode = false;
-
-            selectedTower = null;
-            selectedShopTower = null;
-            selectedHero = null;
-            heroPlacing = false;
-            bountySelecting = false;
-            bountyTarget = null;
-            hero = null;
-
-            enemies = [];
-            towers = [];
-            projectiles = [];
-            particles = [];
-            floatingTexts = [];
-            waterZones = [];
-            levelPath = [];
-            levelRoutes = [];
-            enemiesToSpawn = 0;
-            spawnTimer = 0;
-            waveDelay = 0;
-
-            cameraX = 0;
-            cameraY = 0;
-            cameraZoom = 1;
-
-            // Paint a completely clean canvas before showing the menu.
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#101810";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            const towerPanel = document.getElementById("towerPanel");
-            const heroPanel = document.getElementById("heroPanel");
-            if (towerPanel) towerPanel.style.display = "none";
-            if (heroPanel) heroPanel.style.display = "none";
-
+            clearActiveRunState();
             showMainMenu();
 
         }
@@ -4741,6 +5143,7 @@
 
             money -=
                 data.cost;
+            playSfx("place");
 
 
             totalTowersPlaced++;
@@ -5021,6 +5424,7 @@
             if (money < upgrade.cost) return;
 
             money -= upgrade.cost;
+            playSfx("upgrade");
             tower.totalSpent += upgrade.cost;
             totalTowerSpent += upgrade.cost;
             tower.upgradeLevels[path - 1] = tier + 1;
@@ -5239,6 +5643,7 @@
                         .totalSpent *
                     .7
                 );
+            playSfx("sell");
 
 
             towers =
@@ -5656,6 +6061,7 @@
             }
 
             currentWave++;
+            playSfx("wave");
 
 
             if (finalHuntMode && currentWave === 50) {
@@ -5668,12 +6074,11 @@
                 0
             ) {
 
-                enemiesToSpawn =
-                    1 +
-                    Math.floor(
-                        currentWave /
-                        10
-                    );
+                // Boss waves are intentionally ONE boss.
+                // Previously endless mode spawned 1 + floor(wave / 10) bosses
+                // at once, so Wave 40 spawned 5 bosses and their phase
+                // summons could snowball into a massive simulation freeze.
+                enemiesToSpawn = 1;
 
             }
 
@@ -6180,6 +6585,9 @@
                 maxLife: duration,
                 ...extra
             });
+            if (specialEffects.length > 900) {
+                specialEffects.splice(0, specialEffects.length - 900);
+            }
         }
 
         function spawnSpecialBurst(type, x, y, duration = 42, extra = {}) {
@@ -6191,6 +6599,9 @@
                 maxLife: duration,
                 ...extra
             });
+            if (specialEffects.length > 900) {
+                specialEffects.splice(0, specialEffects.length - 900);
+            }
         }
 
         function updateSpecialEffects() {
@@ -6978,6 +7389,7 @@
                 enemy.hp <= 0
             ) {
 
+                playSfx(enemy.type === "boss" || enemy.type === "voidBoss" || enemy.type === "government" ? "victory" : "death");
                 let killReward = enemy.reward;
                 if (dailyMode) {
                     const c = getDailyChallenge();
@@ -9024,6 +9436,7 @@ if (
             }
 
             const tower = selectedTower;
+            playSfx("ability");
             tower.abilityUses = (tower.abilityUses || 0) + 1;
             totalAbilityUses++;
             const inRange = enemy =>
@@ -9469,16 +9882,14 @@ if (
 
 
         function cycleSpeed() {
-
-            gameSpeed =
-                gameSpeed === 1
-                ? 2
-                : gameSpeed === 2
-                ? 3
-                : 1;
-
+            const speeds = [1, 2, 3];
+            if (speed5xEnabled) speeds.push(5);
+            if (speed10xEnabled) speeds.push(10);
+            const index = speeds.indexOf(gameSpeed);
+            gameSpeed = speeds[(index + 1) % speeds.length];
+            playSfx("click");
+            updateSettingsUI();
             updateUI();
-
         }
 
 
@@ -9490,6 +9901,8 @@ if (
 
             gameRunning =
                 false;
+            stopMusic();
+            playSfx("defeat");
 
 
             const gameOverText = document.querySelector("#gameOver .panel p");
@@ -9523,6 +9936,8 @@ if (
             // result of the run, so the finished run must no longer update.
             gameRunning = false;
             gamePaused = false;
+            stopMusic();
+            playSfx("victory");
 
             // Freeze the result visually without leaving towers/enemies
             // underneath the victory overlay or when returning to the menu.
@@ -9643,6 +10058,18 @@ if (
                         }
 
 
+                        // Prevent projectile/effect buildup from locking the browser
+                        // during very high endless waves.
+                        if (projectiles.length > 1800) {
+                            projectiles.splice(0, projectiles.length - 1800);
+                        }
+                        if (particles.length > 2500) {
+                            particles.splice(0, particles.length - 2500);
+                        }
+                        if (floatingTexts.length > 500) {
+                            floatingTexts.splice(0, floatingTexts.length - 500);
+                        }
+
                         updateProjectiles();
                         updateSpecialEffects();
                         updateParticles();
@@ -9676,6 +10103,7 @@ if (
         refreshDailyState();
         updateProfile();
         updateSecretUI();
+        updateSettingsUI();
 
         gameRunning =
             false;
