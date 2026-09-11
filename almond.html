@@ -1,0 +1,2175 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Faking Sim</title>
+
+<style>
+*{
+    box-sizing:border-box;
+}
+
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#05070b;
+    font-family:Arial,Helvetica,sans-serif;
+    color:white;
+    user-select:none;
+}
+
+body{
+    cursor:default;
+}
+
+#game{
+    position:fixed;
+    inset:0;
+    width:100vw;
+    height:100vh;
+    background:#111;
+}
+
+.hidden{
+    display:none!important;
+}
+
+/* =========================
+   MENU
+========================= */
+
+#menu{
+    position:fixed;
+    inset:0;
+    z-index:100;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+        radial-gradient(circle at center,#202a38 0%,#080b10 65%);
+}
+
+.menuBox{
+    width:min(620px,90vw);
+    padding:42px;
+    text-align:center;
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:22px;
+    background:rgba(10,14,20,.94);
+    box-shadow:0 25px 80px rgba(0,0,0,.6);
+}
+
+.menuBox h1{
+    margin:0;
+    font-size:54px;
+    letter-spacing:4px;
+}
+
+.menuBox p{
+    color:#aab7c7;
+    line-height:1.6;
+}
+
+#play{
+    margin-top:20px;
+    padding:15px 45px;
+    border:0;
+    border-radius:12px;
+    background:#2563eb;
+    color:white;
+    font-size:21px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+#play:hover{
+    background:#3b82f6;
+}
+
+/* =========================
+   PC
+========================= */
+
+#desktop{
+    position:fixed;
+    inset:0;
+    background:
+        linear-gradient(135deg,#182331,#101720 50%,#172333);
+}
+
+#desk{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    height:22%;
+    background:#2a211b;
+    border-top:8px solid #49382d;
+}
+
+#monitor{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-47%);
+    width:min(1100px,86vw);
+    height:min(650px,70vh);
+    border:18px solid #111;
+    border-radius:16px;
+    background:#020409;
+    box-shadow:
+        0 30px 80px rgba(0,0,0,.7),
+        inset 0 0 0 3px #303030;
+    overflow:hidden;
+}
+
+#browserBar{
+    height:44px;
+    background:#20252c;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    padding:0 14px;
+    color:#9da8b4;
+    font-size:13px;
+}
+
+.dot{
+    width:11px;
+    height:11px;
+    border-radius:50%;
+    background:#555;
+}
+
+.address{
+    flex:1;
+    height:27px;
+    padding:6px 12px;
+    border-radius:7px;
+    background:#11151a;
+    color:#8e9aa8;
+}
+
+/* =========================
+   GAME PAGE
+========================= */
+
+#gamePage{
+    position:absolute;
+    inset:44px 0 0;
+    background:#071018;
+    overflow:hidden;
+}
+
+#snakeCanvas{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    width:min(760px,90%);
+    aspect-ratio:36/21;
+    background:#08131b;
+    border:2px solid #213542;
+    box-shadow:0 0 40px rgba(0,0,0,.6);
+}
+
+.gameTitle{
+    position:absolute;
+    top:14px;
+    left:18px;
+    font-size:20px;
+    font-weight:bold;
+    color:#78b8ff;
+    z-index:2;
+}
+
+.gameHint{
+    position:absolute;
+    bottom:14px;
+    left:18px;
+    color:#647989;
+    font-size:12px;
+    z-index:2;
+}
+
+/* =========================
+   SCHOOL PAGE
+========================= */
+
+#schoolPage{
+    position:absolute;
+    inset:44px 0 0;
+    background:#f4f1e9;
+    color:#171717;
+    overflow:auto;
+    padding:40px;
+}
+
+.paper{
+    width:min(800px,90%);
+    margin:auto;
+    padding:42px;
+    min-height:100%;
+    background:white;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+}
+
+.paper h1{
+    margin-top:0;
+    font-family:Georgia,serif;
+}
+
+.paper h2{
+    margin-top:30px;
+}
+
+.paper p{
+    line-height:1.7;
+}
+
+.fakeLines{
+    margin-top:25px;
+    color:#555;
+    line-height:2;
+}
+
+/* =========================
+   HUD
+========================= */
+
+#hud{
+    position:fixed;
+    top:16px;
+    left:16px;
+    right:16px;
+    z-index:20;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    pointer-events:none;
+}
+
+.hudBox{
+    padding:9px 13px;
+    border-radius:10px;
+    background:rgba(0,0,0,.58);
+    border:1px solid rgba(255,255,255,.1);
+    backdrop-filter:blur(6px);
+    font-size:13px;
+}
+
+#leftHud{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+}
+
+#rightHud{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+}
+
+#suspicionWrap{
+    width:180px;
+}
+
+#suspicionBar{
+    margin-top:5px;
+    height:6px;
+    background:#252525;
+    border-radius:10px;
+    overflow:hidden;
+}
+
+#suspicionFill{
+    width:0%;
+    height:100%;
+    background:#f59e0b;
+    transition:width .15s linear;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+
+#controls{
+    position:fixed;
+    bottom:18px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:30;
+    display:flex;
+    gap:10px;
+}
+
+.control{
+    pointer-events:auto;
+    border:1px solid rgba(255,255,255,.15);
+    border-radius:10px;
+    padding:10px 16px;
+    background:rgba(10,15,22,.9);
+    color:white;
+    cursor:pointer;
+}
+
+.control:hover{
+    background:#1c2734;
+}
+
+/* =========================
+   WARNING
+========================= */
+
+#warning{
+    position:fixed;
+    left:50%;
+    top:15%;
+    transform:translateX(-50%);
+    z-index:50;
+    padding:13px 22px;
+    border-radius:12px;
+    background:rgba(150,15,15,.92);
+    border:2px solid #ff5555;
+    font-size:18px;
+    font-weight:bold;
+    opacity:0;
+    transition:opacity .15s;
+    pointer-events:none;
+}
+
+#warning.show{
+    opacity:1;
+}
+
+/* =========================
+   TEACHER
+========================= */
+
+#teacher{
+    position:fixed;
+    z-index:45;
+    left:-170px;
+    top:50%;
+    transform:translateY(-50%);
+    width:150px;
+    height:390px;
+    pointer-events:none;
+    transition:none;
+}
+
+.teacherBody{
+    position:absolute;
+    bottom:0;
+    left:15px;
+    width:120px;
+    height:255px;
+    border-radius:45px 45px 15px 15px;
+    background:#263449;
+}
+
+.teacherHead{
+    position:absolute;
+    top:15px;
+    left:38px;
+    width:75px;
+    height:85px;
+    border-radius:50%;
+    background:#d69b78;
+}
+
+.teacherHair{
+    position:absolute;
+    top:5px;
+    left:32px;
+    width:87px;
+    height:45px;
+    border-radius:50% 50% 20% 20%;
+    background:#252525;
+}
+
+.eye{
+    position:absolute;
+    top:50px;
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:#111;
+}
+
+.eye.one{
+    left:54px;
+}
+
+.eye.two{
+    left:82px;
+}
+
+.teacherArm{
+    position:absolute;
+    width:38px;
+    height:130px;
+    border-radius:30px;
+    background:#d69b78;
+}
+
+.teacherArm.one{
+    left:-10px;
+    top:150px;
+    transform:rotate(15deg);
+}
+
+.teacherArm.two{
+    right:-10px;
+    top:150px;
+    transform:rotate(-15deg);
+}
+
+/* =========================
+   POPUPS
+========================= */
+
+#notification{
+    position:fixed;
+    right:25px;
+    bottom:95px;
+    z-index:35;
+    width:300px;
+    padding:16px;
+    border-radius:13px;
+    background:#17202b;
+    border:1px solid #405064;
+    box-shadow:0 15px 40px rgba(0,0,0,.5);
+    transform:translateX(360px);
+    transition:transform .25s;
+}
+
+#notification.show{
+    transform:translateX(0);
+}
+
+#notificationTitle{
+    font-weight:bold;
+    margin-bottom:5px;
+}
+
+#notificationText{
+    color:#9eacbb;
+    font-size:13px;
+}
+
+#notification button{
+    margin-top:12px;
+    border:0;
+    border-radius:7px;
+    padding:7px 12px;
+    background:#26384c;
+    color:white;
+    cursor:pointer;
+}
+
+/* =========================
+   STATUS
+========================= */
+
+#status{
+    position:fixed;
+    bottom:18px;
+    right:18px;
+    z-index:31;
+    padding:8px 12px;
+    border-radius:9px;
+    background:rgba(0,0,0,.55);
+    color:#b7c4d2;
+    font-size:12px;
+}
+
+/* =========================
+   OVERLAYS
+========================= */
+
+#peekOverlay{
+    position:fixed;
+    inset:0;
+    z-index:70;
+    pointer-events:none;
+    display:none;
+    background:rgba(30,80,100,.08);
+}
+
+#peekOverlay.show{
+    display:block;
+}
+
+#peekTeacher{
+    position:fixed;
+    top:15px;
+    left:50%;
+    transform:translateX(-50%);
+    padding:8px 14px;
+    border-radius:8px;
+    background:rgba(0,0,0,.7);
+    font-weight:bold;
+}
+
+#vhs{
+    position:fixed;
+    inset:0;
+    z-index:90;
+    pointer-events:none;
+    opacity:.12;
+    background:
+        repeating-linear-gradient(
+            0deg,
+            rgba(255,255,255,.05) 0px,
+            rgba(255,255,255,.05) 1px,
+            transparent 1px,
+            transparent 4px
+        );
+    mix-blend-mode:screen;
+}
+
+#crt{
+    position:fixed;
+    inset:0;
+    z-index:91;
+    pointer-events:none;
+    box-shadow:
+        inset 0 0 120px rgba(0,0,0,.75);
+    background:
+        repeating-linear-gradient(
+            0deg,
+            rgba(255,255,255,.035) 0px,
+            rgba(255,255,255,.035) 1px,
+            transparent 1px,
+            transparent 4px
+        );
+}
+
+#noise{
+    position:fixed;
+    inset:0;
+    z-index:92;
+    pointer-events:none;
+    opacity:.05;
+    background-image:
+        repeating-radial-gradient(
+            circle at 0 0,
+            rgba(255,255,255,.5) 0 1px,
+            transparent 1px 3px
+        );
+}
+
+#batteryWarning{
+    position:fixed;
+    top:90px;
+    right:20px;
+    z-index:60;
+    padding:8px 12px;
+    border-radius:8px;
+    background:#7f1d1d;
+    display:none;
+}
+
+/* =========================
+   PAUSE
+========================= */
+
+#pause{
+    position:fixed;
+    inset:0;
+    z-index:80;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    background:rgba(0,0,0,.75);
+}
+
+#pause.show{
+    display:flex;
+}
+
+.pauseBox{
+    padding:35px 50px;
+    border-radius:18px;
+    background:#101722;
+    text-align:center;
+}
+
+/* =========================
+   RESULT
+========================= */
+
+#result{
+    position:fixed;
+    inset:0;
+    z-index:110;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    background:rgba(0,0,0,.84);
+}
+
+.resultBox{
+    width:min(500px,90vw);
+    padding:40px;
+    border-radius:20px;
+    text-align:center;
+    background:#101722;
+    border:1px solid rgba(255,255,255,.12);
+    box-shadow:0 25px 80px rgba(0,0,0,.7);
+}
+
+.resultBox h1{
+    font-size:42px;
+    margin-top:0;
+}
+
+#retry{
+    margin-top:20px;
+    padding:12px 28px;
+    border:0;
+    border-radius:10px;
+    background:#2563eb;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+}
+</style>
+
+</head>
+
+<body>
+
+<div id="menu">
+    <div class="menuBox">
+        <h1>FAKING SIM</h1>
+        <p>
+            You're supposed to be doing schoolwork.<br>
+            Unfortunately, Snake is right there.
+        </p>
+
+```
+    <p>
+        <b>SPACE</b> switch tabs ·
+        <b>Q</b> peek ·
+        <b>F</b> whistle ·
+        <b>P</b> pause
+    </p>
+
+    <button id="play">START SHIFT</button>
+</div>
+```
+
+</div>
+
+<div id="desktop">
+
+```
+<div id="desk"></div>
+
+<div id="monitor">
+
+    <div id="browserBar">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+
+        <div class="address">
+            classroom.local
+        </div>
+    </div>
+
+    <div id="gamePage">
+
+        <div class="gameTitle">
+            SNAKE.EXE
+        </div>
+
+        <canvas id="snakeCanvas"
+                width="720"
+                height="420">
+        </canvas>
+
+        <div class="gameHint">
+            WASD / ARROWS to move
+        </div>
+
+    </div>
+
+    <div id="schoolPage" class="hidden">
+
+        <div class="paper">
+
+            <h1>
+                History Assignment
+            </h1>
+
+            <h2>
+                The Industrial Revolution
+            </h2>
+
+            <p>
+                The Industrial Revolution transformed
+                manufacturing, transportation and daily
+                life through the development of machines,
+                factories and new production methods.
+            </p>
+
+            <p>
+                Explain two major effects of the Industrial
+                Revolution on society.
+            </p>
+
+            <div class="fakeLines">
+                __________________________________________________
+                <br>
+                __________________________________________________
+                <br>
+                __________________________________________________
+                <br>
+                __________________________________________________
+                <br>
+                __________________________________________________
+            </div>
+
+            <h2>
+                Question 2
+            </h2>
+
+            <p>
+                Why did factories become increasingly
+                important during the nineteenth century?
+            </p>
+
+            <div class="fakeLines">
+                __________________________________________________
+                <br>
+                __________________________________________________
+                <br>
+                __________________________________________________
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+```
+
+</div>
+
+<div id="hud">
+
+```
+<div id="leftHud">
+
+    <div class="hudBox">
+        TIME:
+        <span id="clock">00:00</span>
+    </div>
+
+    <div class="hudBox">
+        SCORE:
+        <span id="score">0</span>
+    </div>
+
+    <div class="hudBox">
+        NEXT VISIT:
+        <span id="next">--</span>
+    </div>
+
+</div>
+
+<div id="rightHud">
+
+    <div class="hudBox">
+        CAMERA:
+        <span id="camera">● ONLINE</span>
+    </div>
+
+    <div class="hudBox">
+        BATTERY:
+        <span id="battery">150s</span>
+    </div>
+
+    <div class="hudBox" id="suspicionWrap">
+        SUSPICION:
+        <span id="suspicionText">0%</span>
+
+        <div id="suspicionBar">
+            <div id="suspicionFill"></div>
+        </div>
+    </div>
+
+</div>
+```
+
+</div>
+
+<div id="warning"></div>
+
+<div id="teacher">
+
+```
+<div class="teacherHead"></div>
+<div class="teacherHair"></div>
+
+<div class="eye one"></div>
+<div class="eye two"></div>
+
+<div class="teacherBody"></div>
+
+<div class="teacherArm one"></div>
+<div class="teacherArm two"></div>
+```
+
+</div>
+
+<div id="notification">
+
+```
+<div id="notificationTitle">
+    School Portal
+</div>
+
+<div id="notificationText">
+    New assignment notification.
+</div>
+
+<button id="dismissNotification">
+    DISMISS
+</button>
+```
+
+</div>
+
+<div id="controls">
+
+```
+<button class="control" id="switchBtn">
+    SPACE — SWITCH
+</button>
+
+<button class="control" id="peekBtn">
+    Q — PEEK
+</button>
+
+<button class="control" id="pauseBtn">
+    P — PAUSE
+</button>
+```
+
+</div>
+
+<div id="status">
+    STATUS: gaming
+</div>
+
+<div id="batteryWarning">
+    ⚠ CAMERA BATTERY LOW
+</div>
+
+<div id="peekOverlay">
+    <div id="peekTeacher">
+        CAMERA PEEK
+    </div>
+</div>
+
+<div id="pause">
+    <div class="pauseBox">
+        <h1>PAUSED</h1>
+        <p>Press P to continue.</p>
+    </div>
+</div>
+
+<div id="result">
+
+```
+<div class="resultBox">
+
+    <h1 id="resultTitle">
+        BANNED
+    </h1>
+
+    <p id="resultText">
+        The teacher caught you gaming.
+    </p>
+
+    <p>
+        Final Score:
+        <b id="finalScore">0</b>
+    </p>
+
+    <button id="retry">
+        TRY AGAIN
+    </button>
+
+</div>
+```
+
+</div>
+
+<div id="vhs"></div>
+<div id="crt"></div>
+<div id="noise"></div>
+
+<script>
+
+/* =========================
+   HELPERS
+========================= */
+
+const $ = id => document.getElementById(id);
+
+function clamp(v,min,max){
+    return Math.max(min,Math.min(max,v));
+}
+
+function rand(min,max){
+    return Math.random()*(max-min)+min;
+}
+
+function fmtTime(seconds){
+
+    seconds=Math.max(0,seconds);
+
+    const m=Math.floor(seconds/60);
+    const s=Math.floor(seconds%60);
+
+    return String(m).padStart(2,"0")
+        +":"
+        +String(s).padStart(2,"0");
+}
+
+
+/* =========================
+   GAME STATE
+========================= */
+
+let running=false;
+let paused=false;
+let school=false;
+
+let startTime=0;
+let lastTime=0;
+
+let score=0;
+
+let battery=150;
+let peeking=false;
+let peekLeft=0;
+
+let suspicion=0;
+
+let nextVisit=0;
+let visitTimer=null;
+
+let teacher=false;
+let teacherX=-180;
+
+let teacherState="none";
+let teacherHold=0;
+
+let fakeOut=false;
+let longFakeout=false;
+
+let whistleUsed=false;
+let whistleBoost=false;
+
+let notificationVisible=false;
+let notificationTimer=null;
+
+const keys={};
+
+
+/* =========================
+   SNAKE
+========================= */
+
+const snakeCanvas=$("snakeCanvas");
+const snakeCtx=snakeCanvas.getContext("2d");
+
+const SNAKE_COLS=36;
+const SNAKE_ROWS=21;
+const SNAKE_STEP=.14;
+
+let snake=[];
+let snakeDir={x:1,y:0};
+let snakeNext={x:1,y:0};
+
+let snakeFood={
+    x:12,
+    y:7
+};
+
+let snakeTick=0;
+
+function resetSnake(){
+
+    snake=[
+        {x:18,y:10},
+        {x:17,y:10},
+        {x:16,y:10}
+    ];
+
+    snakeDir={x:1,y:0};
+    snakeNext={x:1,y:0};
+
+    spawnSnakeFood();
+}
+
+function spawnSnakeFood(){
+
+    let valid=false;
+
+    while(!valid){
+
+        snakeFood={
+            x:Math.floor(Math.random()*SNAKE_COLS),
+            y:Math.floor(Math.random()*SNAKE_ROWS)
+        };
+
+        valid=!snake.some(
+            s=>s.x===snakeFood.x &&
+               s.y===snakeFood.y
+        );
+    }
+}
+
+function drawSnake(){
+
+    const w=snakeCanvas.width;
+    const h=snakeCanvas.height;
+
+    snakeCtx.clearRect(0,0,w,h);
+
+    snakeCtx.fillStyle="#07131a";
+    snakeCtx.fillRect(0,0,w,h);
+
+    const cw=w/SNAKE_COLS;
+    const ch=h/SNAKE_ROWS;
+
+    snakeCtx.strokeStyle="rgba(120,180,210,.055)";
+    snakeCtx.lineWidth=1;
+
+    for(let x=0;x<=SNAKE_COLS;x++){
+
+        snakeCtx.beginPath();
+        snakeCtx.moveTo(x*cw,0);
+        snakeCtx.lineTo(x*cw,h);
+        snakeCtx.stroke();
+    }
+
+    for(let y=0;y<=SNAKE_ROWS;y++){
+
+        snakeCtx.beginPath();
+        snakeCtx.moveTo(0,y*ch);
+        snakeCtx.lineTo(w,y*ch);
+        snakeCtx.stroke();
+    }
+
+    /* food */
+
+    snakeCtx.fillStyle="#ef4444";
+
+    snakeCtx.beginPath();
+
+    snakeCtx.arc(
+        snakeFood.x*cw+cw/2,
+        snakeFood.y*ch+ch/2,
+        Math.min(cw,ch)*.32,
+        0,
+        Math.PI*2
+    );
+
+    snakeCtx.fill();
+
+    /* snake */
+
+    snake.forEach((part,i)=>{
+
+        snakeCtx.fillStyle=
+            i===0
+            ? "#5eead4"
+            : "#2dd4bf";
+
+        snakeCtx.fillRect(
+            part.x*cw+2,
+            part.y*ch+2,
+            cw-4,
+            ch-4
+        );
+    });
+}
+
+function snakeStep(){
+
+    snakeDir=snakeNext;
+
+    const head=snake[0];
+
+    const newHead={
+        x:head.x+snakeDir.x,
+        y:head.y+snakeDir.y
+    };
+
+    /* collision */
+
+    if(
+        newHead.x<0 ||
+        newHead.x>=SNAKE_COLS ||
+        newHead.y<0 ||
+        newHead.y>=SNAKE_ROWS ||
+        snake.some(
+            s=>s.x===newHead.x &&
+               s.y===newHead.y
+        )
+    ){
+
+        resetSnake();
+        return;
+    }
+
+    snake.unshift(newHead);
+
+    if(
+        newHead.x===snakeFood.x &&
+        newHead.y===snakeFood.y
+    ){
+
+        score+=100;
+
+        spawnSnakeFood();
+
+    }else{
+
+        snake.pop();
+    }
+}
+
+
+/* =========================
+   SCREEN
+========================= */
+
+function switchScreen(){
+
+    school=!school;
+
+    $("gamePage").classList.toggle(
+        "hidden",
+        school
+    );
+
+    $("schoolPage").classList.toggle(
+        "hidden",
+        !school
+    );
+
+    $("status").textContent=
+        "STATUS: "
+        +(school?"schoolwork":"gaming");
+
+    if(school){
+
+        suspicion=Math.max(
+            0,
+            suspicion-20
+        );
+
+        /*
+           Switching during a long fakeout
+           immediately saves the player.
+        */
+
+        if(
+            teacher &&
+            teacherState==="dangerFake"
+        ){
+
+            $("warning").classList.remove("show");
+
+            leaveTeacher();
+        }
+
+    }
+}
+
+
+/* =========================
+   SUSPICION
+========================= */
+
+function updateSuspicion(dt){
+
+    if(school){
+
+        suspicion-=18*dt;
+
+    }else{
+
+        suspicion-=2*dt;
+
+        if(teacher){
+
+            /*
+               Being visibly on the game while
+               teacher is nearby is suspicious.
+            */
+
+            suspicion+=
+                teacherState==="dangerFake"
+                ? 22*dt
+                : 10*dt;
+        }
+    }
+
+    suspicion=clamp(
+        suspicion,
+        0,
+        100
+    );
+
+    $("suspicionText").textContent=
+        Math.floor(suspicion)+"%";
+
+    $("suspicionFill").style.width=
+        suspicion+"%";
+
+    if(suspicion>=100){
+
+        banned(
+            "Your suspicious behaviour gave you away."
+        );
+    }
+}
+
+
+/* =========================
+   VISITS
+========================= */
+
+function scheduleVisit(seconds){
+
+    clearTimeout(visitTimer);
+
+    nextVisit=seconds;
+
+    visitTimer=setTimeout(()=>{
+
+        if(
+            running &&
+            !paused &&
+            !teacher
+        ){
+
+            startTeacher();
+        }
+
+    },seconds*1000);
+}
+
+function startTeacher(){
+
+    if(
+        !running ||
+        paused ||
+        teacher
+    ) return;
+
+    teacher=true;
+
+    teacherX=-180;
+
+    fakeOut=Math.random()<0.34;
+
+    if(fakeOut){
+
+        longFakeout=Math.random()<0.30;
+
+        if(longFakeout){
+
+            teacherState="dangerFake";
+
+            teacherHold=3.0;
+
+            $("warning").textContent=
+                "🚨 TEACHER IS WATCHING — SWITCH!";
+
+        }else{
+
+            teacherState="fakePeek";
+
+            teacherHold=.85;
+
+            $("warning").textContent=
+                "⚠️ TEACHER PEEKING";
+
+        }
+
+        $("warning").classList.add("show");
+
+        return;
+    }
+
+    teacherState="approach";
+
+    $("warning").textContent=
+        "🚨 TEACHER APPROACHING!";
+
+    $("warning").classList.add("show");
+}
+
+function leaveTeacher(){
+
+    teacher=false;
+
+    teacherState="none";
+
+    teacherX=-180;
+
+    teacherHold=0;
+
+    fakeOut=false;
+    longFakeout=false;
+
+    $("warning").classList.remove("show");
+
+    if(running){
+
+        scheduleVisit(
+            8+Math.random()*6
+        );
+    }
+}
+
+
+/* =========================
+   TEACHER UPDATE
+========================= */
+
+function updateTeacher(dt){
+
+    if(!teacher) return;
+
+    /* =====================
+       FAKE PEEK
+    ===================== */
+
+    if(teacherState==="fakePeek"){
+
+        teacherX=
+            Math.min(
+                25,
+                teacherX+850*dt
+            );
+
+        teacherHold-=dt;
+
+        if(teacherHold<=0){
+
+            teacherX-=900*dt;
+
+            if(teacherX<=-180){
+
+                leaveTeacher();
+            }
+        }
+
+        return;
+    }
+
+
+    /* =====================
+       DANGEROUS FAKEOUT
+    ===================== */
+
+    if(teacherState==="dangerFake"){
+
+        teacherX=
+            Math.min(
+                25,
+                teacherX+850*dt
+            );
+
+        teacherHold-=dt;
+
+        /*
+           Switching to schoolwork is the
+           correct response.
+        */
+
+        if(school){
+
+            leaveTeacher();
+
+            return;
+        }
+
+        if(teacherHold<=0){
+
+            banned(
+                "You stayed on the game during the long fakeout."
+            );
+
+            return;
+        }
+
+        return;
+    }
+
+
+    /* =====================
+       REAL TEACHER
+    ===================== */
+
+    if(teacherState==="approach"){
+
+        const speed=
+            whistleBoost
+            ? 1100
+            : 110;
+
+        teacherX+=speed*dt;
+
+        /*
+           Teacher reaches the monitor.
+        */
+
+        if(teacherX>=45){
+
+            teacherX=45;
+
+            if(school){
+
+                teacherState="checking";
+
+                teacherHold=1.5;
+
+                $("warning").textContent=
+                    "👀 TEACHER CHECKING YOUR WORK";
+
+            }else{
+
+                banned(
+                    "The teacher caught you gaming."
+                );
+            }
+        }
+
+        return;
+    }
+
+
+    /* =====================
+       CHECKING SCHOOLWORK
+    ===================== */
+
+    if(teacherState==="checking"){
+
+        teacherHold-=dt;
+
+        if(teacherHold<=0){
+
+            teacherState="leave";
+
+            $("warning").textContent=
+                "Teacher leaves...";
+
+        }
+
+        return;
+    }
+
+
+    /* =====================
+       LEAVING
+    ===================== */
+
+    if(teacherState==="leave"){
+
+        teacherX-=220*dt;
+
+        if(teacherX<=-180){
+
+            leaveTeacher();
+        }
+    }
+}
+
+
+/* =========================
+   WHISTLE
+========================= */
+
+function whistle(){
+
+    if(!running || whistleUsed) return;
+
+    whistleUsed=true;
+
+    score+=1000;
+
+    whistleBoost=true;
+
+    $("status").textContent=
+        "STATUS: WHISTLE USED";
+
+    setTimeout(()=>{
+
+        whistleBoost=false;
+
+        if(running){
+
+            $("status").textContent=
+                "STATUS: "
+                +(school?"schoolwork":"gaming");
+        }
+
+    },1800);
+
+    scheduleVisit(
+        1.15+Math.random()*.55
+    );
+
+    /*
+       If teacher is already present,
+       the whistle makes the situation worse.
+    */
+
+    if(teacher && teacherState==="approach"){
+
+        teacherState="approach";
+
+        teacherX=Math.max(
+            teacherX,
+            -100
+        );
+    }
+}
+
+
+/* =========================
+   PEEK
+========================= */
+
+function doPeek(){
+
+    if(
+        !running ||
+        peeking ||
+        battery<=0
+    ) return;
+
+    peeking=true;
+
+    peekLeft=1.2;
+
+    battery-=5;
+
+    updateBattery();
+
+    $("peekOverlay").classList.add("show");
+
+    let realTeacher=
+        teacher &&
+        teacherState!=="fakePeek" &&
+        teacherState!=="dangerFake";
+
+    let scheduledSoon=
+        !teacher &&
+        nextVisit<=10;
+
+    let nearby=
+        realTeacher ||
+        scheduledSoon;
+
+    $("peekTeacher").textContent=
+        nearby
+        ? "🚨 TEACHER NEARBY"
+        : "✓ CLEAR";
+
+    /*
+       Fakeouts are deliberately harder to
+       identify with the peek.
+    */
+
+    if(
+        teacher &&
+        (
+            teacherState==="fakePeek" ||
+            teacherState==="dangerFake"
+        )
+    ){
+
+        $("peekTeacher").textContent=
+            "⚠️ MOVEMENT DETECTED";
+    }
+}
+
+
+/* =========================
+   BATTERY
+========================= */
+
+function updateBattery(){
+
+    battery=clamp(
+        battery,
+        0,
+        150
+    );
+
+    $("battery").textContent=
+        Math.ceil(battery)+"s";
+
+    if(battery<=30){
+
+        $("batteryWarning").style.display=
+            "block";
+
+    }else{
+
+        $("batteryWarning").style.display=
+            "none";
+    }
+
+    if(battery<=0){
+
+        banned(
+            "The camera battery died."
+        );
+    }
+}
+
+
+/* =========================
+   RANDOM NOTIFICATIONS
+========================= */
+
+function scheduleNotification(){
+
+    clearTimeout(notificationTimer);
+
+    notificationTimer=setTimeout(()=>{
+
+        if(
+            running &&
+            !paused &&
+            !notificationVisible
+        ){
+
+            showNotification();
+        }
+
+        scheduleNotification();
+
+    },rand(18,30)*1000);
+}
+
+function showNotification(){
+
+    notificationVisible=true;
+
+    $("notification").classList.add("show");
+
+    /*
+       Notifications only matter while gaming.
+    */
+
+    if(!school){
+
+        suspicion+=8;
+
+        $("status").textContent=
+            "STATUS: DISTRACTED";
+    }
+}
+
+function hideNotification(){
+
+    notificationVisible=false;
+
+    $("notification").classList.remove("show");
+
+    if(running){
+
+        $("status").textContent=
+            "STATUS: "
+            +(school?"schoolwork":"gaming");
+    }
+}
+
+
+/* =========================
+   START
+========================= */
+
+function startGame(){
+
+    clearTimeout(visitTimer);
+    clearTimeout(notificationTimer);
+
+    running=true;
+    paused=false;
+
+    school=false;
+
+    startTime=performance.now();
+    lastTime=startTime;
+
+    score=0;
+
+    battery=150;
+
+    suspicion=0;
+
+    whistleUsed=false;
+    whistleBoost=false;
+
+    teacher=false;
+    teacherState="none";
+    teacherX=-180;
+
+    fakeOut=false;
+    longFakeout=false;
+
+    notificationVisible=false;
+
+    $("menu").style.display="none";
+    $("result").style.display="none";
+
+    $("gamePage").classList.remove("hidden");
+    $("schoolPage").classList.add("hidden");
+
+    $("notification").classList.remove("show");
+
+    $("status").textContent=
+        "STATUS: gaming";
+
+    $("warning").classList.remove("show");
+
+    resetSnake();
+    drawSnake();
+
+    updateBattery();
+
+    /*
+       First teacher arrives quickly.
+    */
+
+    scheduleVisit(
+        4+Math.random()*3
+    );
+
+    scheduleNotification();
+
+    requestAnimationFrame(loop);
+}
+
+
+/* =========================
+   BAN
+========================= */
+
+function banned(reason){
+
+    if(!running) return;
+
+    running=false;
+
+    clearTimeout(visitTimer);
+    clearTimeout(notificationTimer);
+
+    $("warning").classList.remove("show");
+
+    $("resultTitle").textContent=
+        "BANNED 🚫";
+
+    $("resultText").textContent=
+        reason;
+
+    $("finalScore").textContent=
+        Math.floor(score);
+
+    $("result").style.display=
+        "flex";
+}
+
+
+/* =========================
+   WIN
+========================= */
+
+function win(){
+
+    if(!running) return;
+
+    running=false;
+
+    clearTimeout(visitTimer);
+    clearTimeout(notificationTimer);
+
+    $("warning").classList.remove("show");
+
+    $("resultTitle").textContent=
+        "SHIFT COMPLETE 🎉";
+
+    $("resultText").textContent=
+        "You survived the entire class.";
+
+    $("finalScore").textContent=
+        Math.floor(score);
+
+    $("result").style.display=
+        "flex";
+}
+
+
+/* =========================
+   PAUSE
+========================= */
+
+function togglePause(){
+
+    if(!running) return;
+
+    paused=!paused;
+
+    $("pause").classList.toggle(
+        "show",
+        paused
+    );
+
+    if(!paused){
+
+        lastTime=performance.now();
+
+        requestAnimationFrame(loop);
+    }
+}
+
+
+/* =========================
+   MAIN LOOP
+========================= */
+
+function loop(time){
+
+    if(!running || paused) return;
+
+    const dt=
+        Math.min(
+            (time-lastTime)/1000,
+            .05
+        );
+
+    lastTime=time;
+
+    const elapsed=
+        (time-startTime)/1000;
+
+
+    /* =====================
+       TIMER
+    ===================== */
+
+    $("clock").textContent=
+        fmtTime(elapsed);
+
+
+    if(elapsed>=120){
+
+        win();
+
+        return;
+    }
+
+
+    /* =====================
+       VISIT DISPLAY
+    ===================== */
+
+    if(!teacher && nextVisit>0){
+
+        nextVisit=Math.max(
+            0,
+            nextVisit-dt
+        );
+
+        $("next").textContent=
+            Math.ceil(nextVisit)+"s";
+
+    }else if(teacher){
+
+        $("next").textContent=
+            "NOW";
+
+    }else{
+
+        $("next").textContent=
+            "--";
+    }
+
+
+    /* =====================
+       BATTERY
+    ===================== */
+
+    battery-=dt;
+
+    if(peeking){
+
+        peekLeft-=dt;
+
+        if(peekLeft<=0){
+
+            peeking=false;
+
+            $("peekOverlay").classList.remove(
+                "show"
+            );
+        }
+    }
+
+    updateBattery();
+
+
+    /* =====================
+       SNAKE
+    ===================== */
+
+    snakeTick+=dt;
+
+    if(
+        !school &&
+        !notificationVisible &&
+        snakeTick>=SNAKE_STEP
+    ){
+
+        snakeTick=0;
+
+        snakeStep();
+    }
+
+
+    /* =====================
+       KEYBOARD SNAKE
+    ===================== */
+
+    if(
+        keys.ArrowUp ||
+        keys.w
+    ){
+
+        if(snakeDir.y===0)
+            snakeNext={x:0,y:-1};
+    }
+
+    if(
+        keys.ArrowDown ||
+        keys.s
+    ){
+
+        if(snakeDir.y===0)
+            snakeNext={x:0,y:1};
+    }
+
+    if(
+        keys.ArrowLeft ||
+        keys.a
+    ){
+
+        if(snakeDir.x===0)
+            snakeNext={x:-1,y:0};
+    }
+
+    if(
+        keys.ArrowRight ||
+        keys.d
+    ){
+
+        if(snakeDir.x===0)
+            snakeNext={x:1,y:0};
+    }
+
+
+    /* =====================
+       TEACHER
+    ===================== */
+
+    updateTeacher(dt);
+
+
+    /* =====================
+       SUSPICION
+    ===================== */
+
+    updateSuspicion(dt);
+
+
+    /* =====================
+       DRAW
+    ===================== */
+
+    drawSnake();
+
+    $("teacher").style.left=
+        teacherX+"px";
+
+
+    /*
+       VHS flicker
+    */
+
+    $("noise").style.opacity=
+        (.035+Math.random()*.035).toFixed(3);
+
+    $("vhs").style.opacity=
+        (.08+Math.random()*.08).toFixed(3);
+
+
+    requestAnimationFrame(loop);
+}
+
+
+/* =========================
+   KEYBOARD
+========================= */
+
+window.addEventListener(
+    "keydown",
+    e=>{
+
+        if(
+            e.key==="ArrowUp" ||
+            e.key==="ArrowDown" ||
+            e.key==="ArrowLeft" ||
+            e.key==="ArrowRight" ||
+            e.key===" "
+        ){
+
+            e.preventDefault();
+        }
+
+        keys[e.key]=true;
+        keys[e.key.toLowerCase()]=true;
+
+
+        if(e.repeat) return;
+
+
+        /* SPACE */
+
+        if(e.key===" "){
+
+            if(running)
+                switchScreen();
+
+            return;
+        }
+
+
+        /* P */
+
+        if(
+            e.key.toLowerCase()==="p"
+        ){
+
+            togglePause();
+
+            return;
+        }
+
+
+        /* Q */
+
+        if(
+            e.key.toLowerCase()==="q"
+        ){
+
+            doPeek();
+
+            return;
+        }
+
+
+        /* F */
+
+        if(
+            e.key.toLowerCase()==="f"
+        ){
+
+            whistle();
+
+            return;
+        }
+    }
+);
+
+window.addEventListener(
+    "keyup",
+    e=>{
+
+        keys[e.key]=false;
+        keys[e.key.toLowerCase()]=false;
+    }
+);
+
+
+/* =========================
+   BUTTONS
+========================= */
+
+$("play").addEventListener(
+    "click",
+    startGame
+);
+
+$("retry").addEventListener(
+    "click",
+    startGame
+);
+
+$("switchBtn").addEventListener(
+    "click",
+    ()=>{
+
+        if(running)
+            switchScreen();
+    }
+);
+
+$("peekBtn").addEventListener(
+    "click",
+    doPeek
+);
+
+$("pauseBtn").addEventListener(
+    "click",
+    togglePause
+);
+
+$("dismissNotification").addEventListener(
+    "click",
+    hideNotification
+);
+
+
+/* =========================
+   INITIAL
+========================= */
+
+resetSnake();
+drawSnake();
+
+</script>
+
+</body>
+</html>
