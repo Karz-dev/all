@@ -1,9 +1,14 @@
 <!DOCTYPE html>
-
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
 <title>Games</title>
 
@@ -17,21 +22,27 @@ html,
 body {
     margin: 0;
     min-height: 100%;
-    font-family: Arial, Helvetica, sans-serif;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
     background: #07130e;
     color: #e8f5ec;
 }
 
 body {
     min-height: 100vh;
-    transition: background .25s ease;
 }
+
 
 /* =========================
    HEADER
 ========================= */
 
 header {
+
     height: 72px;
 
     display: flex;
@@ -41,351 +52,389 @@ header {
     padding: 0 32px;
 
     background: #0a1b13;
-    border-bottom: 1px solid #183d2b;
+
+    border-bottom:
+        1px solid #183d2b;
 
     position: sticky;
     top: 0;
-    z-index: 100;
+
+    z-index: 10;
 }
 
+
 .logo-area {
+
     display: flex;
+
     align-items: center;
+
     gap: 12px;
 }
 
+
 .logo {
+
     width: 40px;
     height: 40px;
 
     display: flex;
+
     align-items: center;
     justify-content: center;
 
     border-radius: 10px;
 
     background: #163b29;
+
     color: #9be7b5;
 
     font-size: 21px;
-    font-weight: bold;
 
-    box-shadow: 0 0 18px rgba(80,180,110,.08);
+    font-weight: bold;
 }
+
 
 .site-title {
+
     font-size: 20px;
+
     font-weight: bold;
 }
 
+
 .site-subtitle {
+
     font-size: 12px;
+
     color: #769c83;
+
     margin-top: 2px;
 }
 
+
 /* =========================
-   HIDE BUTTON
+   H BUTTON
 ========================= */
 
 #hideButton {
-    border: 1px solid #28563d;
+
+    border:
+        1px solid #28563d;
+
     background: #10281b;
+
     color: #b8eac7;
 
-    padding: 9px 14px;
+    padding:
+        9px 14px;
 
     border-radius: 9px;
 
     cursor: pointer;
 
     font-size: 13px;
+
     font-weight: bold;
 
-    transition: .15s;
+    transition:
+        .15s;
 }
 
+
 #hideButton:hover {
+
     background: #173824;
-    transform: translateY(-1px);
+
 }
+
 
 /* =========================
    MAIN
 ========================= */
 
 main {
-    max-width: 1150px;
-    margin: auto;
 
-    padding: 55px 25px 80px;
+    max-width: 1100px;
+
+    margin:
+        auto;
+
+    padding:
+        55px 25px 70px;
 }
+
 
 /* =========================
    HERO
 ========================= */
 
 .hero {
-    margin-bottom: 30px;
+
+    margin-bottom: 32px;
 }
+
 
 .hero h1 {
+
     margin: 0;
 
-    font-size: 44px;
-    letter-spacing: -1.5px;
+    font-size: 42px;
+
+    letter-spacing:
+        -1px;
 }
+
 
 .hero p {
-    margin: 9px 0 0;
+
+    margin:
+        9px 0 0;
 
     color: #87a994;
+
     font-size: 15px;
 }
+
 
 /* =========================
    SEARCH
 ========================= */
 
 .search-wrap {
-    margin-bottom: 28px;
+
+    margin-bottom: 30px;
 }
 
+
 #search {
+
     width: 100%;
 
-    padding: 15px 17px;
+    padding:
+        15px 17px;
 
     border-radius: 11px;
-    border: 1px solid #214d35;
+
+    border:
+        1px solid #214d35;
 
     outline: none;
 
     background: #0c2116;
+
     color: white;
 
     font-size: 15px;
 
-    transition: .15s;
+    transition:
+        .15s;
 }
+
 
 #search::placeholder {
+
     color: #648271;
+
 }
+
 
 #search:focus {
-    border-color: #3c8159;
+
+    border-color:
+        #3c8159;
 
     box-shadow:
-        0 0 0 3px rgba(70,150,100,.12);
+        0 0 0 3px
+        rgba(
+            70,
+            150,
+            100,
+            .12
+        );
 }
+
 
 /* =========================
    GAME GRID
 ========================= */
 
 #appGrid {
+
     display: grid;
 
     grid-template-columns:
-        repeat(auto-fit, minmax(235px, 1fr));
+        repeat(
+            auto-fit,
+            minmax(
+                220px,
+                1fr
+            )
+        );
 
     gap: 16px;
 }
+
 
 /* =========================
    GAME CARD
 ========================= */
 
 .app-card {
-    position: relative;
 
     display: flex;
-    flex-direction: column;
 
-    min-height: 185px;
+    flex-direction:
+        column;
 
-    padding: 22px;
+    min-height:
+        175px;
 
-    border-radius: 15px;
+    padding:
+        22px;
 
-    text-decoration: none;
+    border-radius:
+        14px;
+
+    text-decoration:
+        none;
+
     color: inherit;
 
     background:
-        linear-gradient(
-            145deg,
-            #0d2619,
-            #091b12
-        );
+        #0b2115;
 
-    border: 1px solid #1b402c;
+    border:
+        1px solid #1b402c;
 
     transition:
-        transform .18s ease,
-        border-color .18s ease,
-        background .18s ease,
-        box-shadow .18s ease;
+        transform .15s,
+        border-color .15s,
+        background .15s;
 
-    cursor: pointer;
-
-    overflow: hidden;
+    cursor:
+        pointer;
 }
 
-.app-card::after {
-    content: "";
-
-    position: absolute;
-
-    width: 120px;
-    height: 120px;
-
-    right: -50px;
-    bottom: -60px;
-
-    border-radius: 50%;
-
-    background: rgba(80,180,110,.04);
-
-    pointer-events: none;
-}
 
 .app-card:hover {
-    transform: translateY(-4px);
+
+    transform:
+        translateY(-3px);
 
     background:
-        linear-gradient(
-            145deg,
-            #102b1c,
-            #0b2015
-        );
+        #10291a;
 
-    border-color: #3b7651;
-
-    box-shadow:
-        0 12px 30px rgba(0,0,0,.22);
+    border-color:
+        #3b7651;
 }
+
 
 /* =========================
    ICON
 ========================= */
 
 .app-icon {
-    width: 48px;
-    height: 48px;
+
+    width: 46px;
+    height: 46px;
 
     display: flex;
+
     align-items: center;
     justify-content: center;
 
-    border-radius: 12px;
-
-    background: #153823;
-
-    font-size: 24px;
-
-    margin-bottom: 17px;
-
-    border: 1px solid rgba(255,255,255,.04);
-}
-
-/* =========================
-   NAME
-========================= */
-
-.app-name {
-    font-size: 18px;
-    font-weight: bold;
-
-    margin-bottom: 7px;
-}
-
-/* =========================
-   DESCRIPTION
-========================= */
-
-.app-description {
-    color: #799887;
-
-    font-size: 13px;
-
-    line-height: 1.45;
-}
-
-/* =========================
-   ALMOND FEATURE
-========================= */
-
-.app-card[data-game="almond"] {
-    border-color: #4b6a3b;
+    border-radius:
+        11px;
 
     background:
-        linear-gradient(
-            145deg,
-            #182718,
-            #0b1d12
-        );
+        #153823;
+
+    font-size:
+        23px;
+
+    margin-bottom:
+        17px;
 }
 
-.app-card[data-game="almond"]:hover {
-    border-color: #79a65e;
 
-    box-shadow:
-        0 12px 35px rgba(100,150,70,.14);
+.app-name {
+
+    font-size:
+        18px;
+
+    font-weight:
+        bold;
+
+    margin-bottom:
+        7px;
 }
 
-/* =========================
-   COMING SOON
-========================= */
 
-.coming-soon {
-    margin-top: 14px;
+.app-description {
 
-    font-size: 11px;
-    font-weight: bold;
+    color:
+        #799887;
 
-    color: #68736c;
+    font-size:
+        13px;
 
-    letter-spacing: .5px;
+    line-height:
+        1.45;
 }
+
 
 /* =========================
    NO RESULTS
 ========================= */
 
 #noResults {
-    display: none;
 
-    text-align: center;
+    display:
+        none;
 
-    padding: 45px;
+    text-align:
+        center;
 
-    color: #6f8e7b;
+    padding:
+        40px;
+
+    color:
+        #6f8e7b;
 }
+
 
 /* =========================
    HIDDEN MODE
 ========================= */
 
-body.hidden-mode {
-    background: #07130e;
+body.hidden-mode .site-title {
+
+    color:
+        #d8f2df;
 }
 
-body.hidden-mode .site-title {
-    color: #d8f2df;
-}
 
 body.hidden-mode .site-subtitle {
-    color: #769c83;
+
+    color:
+        #769c83;
 }
+
 
 body.hidden-mode .hero h1 {
-    color: #d8f2df;
+
+    color:
+        #d8f2df;
 }
 
+
 body.hidden-mode .hero p {
-    color: #789985;
+
+    color:
+        #789985;
 }
+
 
 /* =========================
    MOBILE
@@ -394,19 +443,30 @@ body.hidden-mode .hero p {
 @media (max-width: 600px) {
 
     header {
-        padding: 0 18px;
+
+        padding:
+            0 18px;
     }
+
 
     main {
-        padding: 38px 17px 50px;
+
+        padding:
+            38px 17px 50px;
     }
+
 
     .hero h1 {
-        font-size: 34px;
+
+        font-size:
+            34px;
     }
 
+
     #appGrid {
-        grid-template-columns: 1fr;
+
+        grid-template-columns:
+            1fr;
     }
 
 }
@@ -415,83 +475,85 @@ body.hidden-mode .hero p {
 
 </head>
 
+
 <body>
+
 
 <header>
 
-```
-<div class="logo-area">
+    <div class="logo-area">
 
-    <div class="logo">
-        S
-    </div>
-
-    <div>
-
-        <div
-            class="site-title"
-            id="siteTitle"
-        >
-            Games
+        <div class="logo">
+            S
         </div>
 
-        <div
-            class="site-subtitle"
-            id="siteSubtitle"
-        >
-            Your games in one place
+        <div>
+
+            <div
+                class="site-title"
+                id="siteTitle"
+            >
+                Games
+            </div>
+
+            <div
+                class="site-subtitle"
+                id="siteSubtitle"
+            >
+                Your games in one place
+            </div>
+
         </div>
 
     </div>
 
-</div>
 
-<button id="hideButton">
-    H
-</button>
-```
+    <button id="hideButton">
+        H
+    </button>
 
 </header>
 
+
 <main>
 
-```
-<section class="hero">
+    <section class="hero">
 
-    <h1 id="heroTitle">
-        Welcome back.
-    </h1>
+        <h1 id="heroTitle">
+            Welcome back.
+        </h1>
 
-    <p id="heroDescription">
-        Pick a game and start playing.
-    </p>
+        <p id="heroDescription">
+            Pick a game and start playing.
+        </p>
 
-</section>
-
-
-<div class="search-wrap">
-
-    <input
-        id="search"
-        type="text"
-        placeholder="Search games..."
-        autocomplete="off"
-    >
-
-</div>
+    </section>
 
 
-<div id="appGrid"></div>
+    <div class="search-wrap">
+
+        <input
+            id="search"
+            type="text"
+            placeholder="Search games..."
+            autocomplete="off"
+        >
+
+    </div>
 
 
-<div id="noResults">
-    No games found.
-</div>
-```
+    <div id="appGrid"></div>
+
+
+    <div id="noResults">
+        No games found.
+    </div>
 
 </main>
 
+
 <script>
+
 
 /* =====================================================
    GAMES
@@ -500,17 +562,18 @@ body.hidden-mode .hero p {
 const apps = [
 
     {
-        name: "GDWAV",
+
+        name:
+            "GDWAV",
 
         description:
             "Ride the wave, dodge obstacles and try to survive as long as possible.",
 
-        icon: "🌊",
+        icon:
+            "🌊",
 
         url:
             "gdwav.html",
-
-        available: true,
 
         hiddenName:
             "School Portal",
@@ -523,21 +586,23 @@ const apps = [
 
         hiddenKeywords:
             "school portal school resources"
+
     },
 
 
     {
-        name: "Block Defense",
+
+        name:
+            "Block Defense",
 
         description:
             "Build your defences, place towers and stop waves of enemies.",
 
-        icon: "🛡️",
+        icon:
+            "🛡️",
 
         url:
             "https://walnut-48b.pages.dev/peanuts.html",
-
-        available: true,
 
         hiddenName:
             "Documents",
@@ -550,21 +615,23 @@ const apps = [
 
         hiddenKeywords:
             "documents files school work"
+
     },
 
 
     {
-        name: "Neon Salvage",
+
+        name:
+            "Neon Salvage",
 
         description:
             "Fight through dangerous sectors, collect loot and make it to extraction.",
 
-        icon: "⚡",
+        icon:
+            "⚡",
 
         url:
             "neon-salvage.html",
-
-        available: true,
 
         hiddenName:
             "Calculator",
@@ -577,21 +644,23 @@ const apps = [
 
         hiddenKeywords:
             "calculator maths math calculations"
+
     },
 
 
     {
-        name: "Fishin'",
+
+        name:
+            "Fishin'",
 
         description:
             "Cast your line, catch fish, upgrade your gear and explore new waters.",
 
-        icon: "🎣",
+        icon:
+            "🎣",
 
         url:
             "fishin.html",
-
-        available: true,
 
         hiddenName:
             "Attendance",
@@ -604,64 +673,36 @@ const apps = [
 
         hiddenKeywords:
             "attendance timetable register school"
-    },
 
-
-    /* =========================
-       NEW GAME
-    ========================= */
-
-    {
-        name: "Faking Sim",
-
-        description:
-            "Pretend to work, sneak in some gaming and try not to get caught.",
-
-        icon: "🖥️",
-
-        url:
-            "almond.html",
-
-        available: true,
-
-        hiddenName:
-            "School Work",
-
-        hiddenDescription:
-            "Complete your schoolwork and keep up with your assignments.",
-
-        keywords:
-            "faking sim almond teacher school snake stealth fakeout gaming",
-
-        hiddenKeywords:
-            "school work assignments homework study history"
     },
 
 
     {
-        name: "Zombie Defense",
+
+        name:
+            "Uncanny Shift",
 
         description:
-            "Build a base, manage electricity and survive increasingly dangerous waves.",
+            "Work the night shift. Watch the cameras. Keep the door secured. Try to make it until morning.",
 
-        icon: "🧟",
+        icon:
+            "👁️",
 
         url:
-            "zombie-defense.html",
-
-        available: false,
+            "Stalk.html",
 
         hiddenName:
-            "Study",
+            "Night Study",
 
         hiddenDescription:
-            "A place for focusing on your studies and school work.",
+            "Stay focused and keep working until morning.",
 
         keywords:
-            "zombie defense survival base electricity waves",
+            "uncanny shift stalk horror night shift scary cameras monster office",
 
         hiddenKeywords:
-            "study studying revision school work"
+            "night study homework revision school work"
+
     }
 
 ];
@@ -679,28 +720,51 @@ let hiddenMode = false;
 ===================================================== */
 
 const appGrid =
-    document.getElementById("appGrid");
+    document.getElementById(
+        "appGrid"
+    );
+
 
 const search =
-    document.getElementById("search");
+    document.getElementById(
+        "search"
+    );
+
 
 const noResults =
-    document.getElementById("noResults");
+    document.getElementById(
+        "noResults"
+    );
+
 
 const siteTitle =
-    document.getElementById("siteTitle");
+    document.getElementById(
+        "siteTitle"
+    );
+
 
 const siteSubtitle =
-    document.getElementById("siteSubtitle");
+    document.getElementById(
+        "siteSubtitle"
+    );
+
 
 const heroTitle =
-    document.getElementById("heroTitle");
+    document.getElementById(
+        "heroTitle"
+    );
+
 
 const heroDescription =
-    document.getElementById("heroDescription");
+    document.getElementById(
+        "heroDescription"
+    );
+
 
 const hideButton =
-    document.getElementById("hideButton");
+    document.getElementById(
+        "hideButton"
+    );
 
 
 /* =====================================================
@@ -715,13 +779,19 @@ function renderApps() {
             .trim();
 
 
-    appGrid.innerHTML = "";
+    appGrid.innerHTML =
+        "";
 
 
-    let visibleCount = 0;
+    let visibleCount =
+        0;
 
 
-    for (const app of apps) {
+    for (
+        const app
+        of apps
+    ) {
+
 
         const normalSearchText = (
 
@@ -753,7 +823,9 @@ function renderApps() {
 
         if (
             query &&
-            !searchText.includes(query)
+            !searchText.includes(
+                query
+            )
         ) {
 
             continue;
@@ -764,65 +836,26 @@ function renderApps() {
         visibleCount++;
 
 
-        let card;
+        const card =
+            document.createElement(
+                "a"
+            );
 
 
-        /* =========================
-           AVAILABLE
-        ========================= */
-
-        if (app.available) {
-
-            card =
-                document.createElement("a");
-
-            card.className =
-                "app-card";
-
-            card.href =
-                app.url;
-
-            card.target =
-                "_blank";
-
-            card.rel =
-                "noopener noreferrer";
-
-        }
+        card.className =
+            "app-card";
 
 
-        /* =========================
-           UNAVAILABLE
-        ========================= */
-
-        else {
-
-            card =
-                document.createElement("div");
-
-            card.className =
-                "app-card";
-
-            card.style.opacity =
-                "0.4";
-
-            card.style.cursor =
-                "not-allowed";
-        }
+        card.href =
+            app.url;
 
 
-        /*
-           Identify special games
-           for CSS.
-        */
+        card.target =
+            "_blank";
 
-        if (
-            app.name === "Faking Sim"
-        ) {
 
-            card.dataset.game =
-                "almond";
-        }
+        card.rel =
+            "noopener noreferrer";
 
 
         const name =
@@ -851,20 +884,12 @@ function renderApps() {
                 ${description}
             </div>
 
-            ${
-                app.available
-                    ? ""
-                    : `
-                        <div class="coming-soon">
-                            COMING SOON
-                        </div>
-                    `
-            }
-
         `;
 
 
-        appGrid.appendChild(card);
+        appGrid.appendChild(
+            card
+        );
 
     }
 
@@ -883,7 +908,10 @@ function renderApps() {
 
 function updateMode() {
 
-    if (hiddenMode) {
+    if (
+        hiddenMode
+    ) {
+
 
         document.body.classList.add(
             "hidden-mode"
@@ -915,7 +943,9 @@ function updateMode() {
 
     }
 
+
     else {
+
 
         document.body.classList.remove(
             "hidden-mode"
@@ -977,8 +1007,11 @@ function toggleHiddenMode() {
 ===================================================== */
 
 search.addEventListener(
+
     "input",
+
     renderApps
+
 );
 
 
@@ -987,8 +1020,11 @@ search.addEventListener(
 ===================================================== */
 
 hideButton.addEventListener(
+
     "click",
+
     toggleHiddenMode
+
 );
 
 
@@ -997,12 +1033,21 @@ hideButton.addEventListener(
 ===================================================== */
 
 document.addEventListener(
+
     "keydown",
+
     function(event) {
 
         if (
-            event.key.toLowerCase() === "h" &&
-            document.activeElement !== search
+
+            event.key.toLowerCase()
+                === "h"
+
+            &&
+
+            document.activeElement
+                !== search
+
         ) {
 
             toggleHiddenMode();
@@ -1010,6 +1055,7 @@ document.addEventListener(
         }
 
     }
+
 );
 
 
@@ -1019,7 +1065,10 @@ document.addEventListener(
 
 updateMode();
 
+
 </script>
 
+
 </body>
+
 </html>
