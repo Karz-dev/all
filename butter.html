@@ -1,0 +1,2930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cave Rush</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #17101f;
+    font-family: Arial, sans-serif;
+    user-select: none;
+}
+
+canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    cursor: crosshair;
+}
+
+#ui {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    color: white;
+}
+
+#topbar {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    right: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.panel {
+    background: rgba(20, 10, 30, .82);
+    border: 2px solid rgba(255,255,255,.15);
+    border-radius: 14px;
+    padding: 10px 15px;
+    box-shadow: 0 8px 25px rgba(0,0,0,.3);
+}
+
+#stats {
+    font-weight: bold;
+    line-height: 1.6;
+}
+
+#healthOuter {
+    width: 230px;
+    height: 18px;
+    background: #321b35;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,.2);
+}
+
+#health {
+    width: 100%;
+    height: 100%;
+    background: #ef476f;
+    transition: width .15s;
+}
+
+#roomText {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+#pauseButton {
+    pointer-events: auto;
+    border: 0;
+    padding: 9px 15px;
+    border-radius: 10px;
+    background: #6c4cff;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#help {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20,10,30,.75);
+    padding: 9px 15px;
+    border-radius: 10px;
+    color: #ddd;
+}
+
+.overlay {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10,5,15,.78);
+    pointer-events: auto;
+}
+
+.cardBox {
+    width: min(1050px, 94vw);
+    background: #21142d;
+    border: 3px solid #8c6cff;
+    border-radius: 22px;
+    padding: 25px;
+    box-shadow: 0 20px 70px rgba(0,0,0,.55);
+    text-align: center;
+}
+
+.cardBox h1 {
+    margin-top: 0;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+}
+
+.card {
+    min-height: 180px;
+    background: #30203e;
+    border: 2px solid #59466d;
+    border-radius: 16px;
+    padding: 15px;
+    cursor: pointer;
+    transition: .15s;
+}
+
+.card:hover {
+    transform: translateY(-7px);
+    border-color: #a994ff;
+    background: #3a2850;
+}
+
+.card.selected {
+    border-color: #ffe66d;
+    box-shadow: 0 0 20px rgba(255,230,109,.35);
+}
+
+.card .icon {
+    font-size: 42px;
+}
+
+.card h2 {
+    font-size: 18px;
+    margin: 8px 0;
+}
+
+.card p {
+    color: #cfc4d8;
+    font-size: 14px;
+}
+
+.bigButton {
+    margin-top: 20px;
+    border: 0;
+    padding: 13px 28px;
+    border-radius: 12px;
+    background: #6c4cff;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.bigButton:hover {
+    background: #8065ff;
+}
+
+#startScreen {
+    display: flex;
+}
+
+#startScreen h1 {
+    font-size: 55px;
+    margin-bottom: 5px;
+}
+
+#startScreen p {
+    color: #cfc4d8;
+}
+
+#autoAttack {
+    pointer-events: auto;
+    margin-top: 15px;
+}
+
+#message {
+    position: absolute;
+    left: 50%;
+    top: 45%;
+    transform: translate(-50%, -50%);
+    font-size: 30px;
+    font-weight: bold;
+    text-shadow: 0 3px 10px black;
+    opacity: 0;
+    transition: opacity .2s;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="ui">
+
+    <div id="topbar">
+
+        <div class="panel" id="stats">
+            <div id="roomText">Cave 1</div>
+
+            <div id="healthOuter">
+                <div id="health"></div>
+            </div>
+
+            <div id="statText">
+                HP: 100 / 100<br>
+                Damage: 15<br>
+                Attack: 0.45s
+            </div>
+        </div>
+
+        <div class="panel">
+            <button id="pauseButton">PAUSE</button>
+        </div>
+
+    </div>
+
+    <div id="message"></div>
+
+    <div id="help">
+        WASD / Arrow Keys to move • Click to attack • Clear the room to upgrade
+    </div>
+
+</div>
+
+
+<!-- START -->
+
+<div id="startScreen" class="overlay">
+
+    <div class="cardBox">
+
+        <h1>🦇 CAVE RUSH</h1>
+
+        <p>
+            Enter the cave. Destroy everything.<br>
+            Pick powerful upgrades and survive as long as possible.
+        </p>
+
+        <label>
+            <input type="checkbox" id="autoAttack">
+            Auto Attack
+        </label>
+
+        <br>
+
+        <button class="bigButton" id="startButton">
+            ENTER THE CAVE
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- UPGRADES -->
+
+<div id="upgradeScreen" class="overlay">
+
+    <div class="cardBox">
+
+        <h1 id="upgradeTitle">ROOM CLEARED!</h1>
+
+        <p>
+            Pick up to <b>2</b> cards.
+        </p>
+
+        <div class="cards" id="cards"></div>
+
+        <button class="bigButton" id="continueButton">
+            CONTINUE
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- PAUSE -->
+
+<div id="pauseScreen" class="overlay">
+
+    <div class="cardBox">
+
+        <h1>PAUSED</h1>
+
+        <button class="bigButton" id="resumeButton">
+            RESUME
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- DEATH -->
+
+<div id="deathScreen" class="overlay">
+
+    <div class="cardBox">
+
+        <h1>💀 YOU DIED</h1>
+
+        <p id="deathStats"></p>
+
+        <button class="bigButton" id="restartButton">
+            TRY AGAIN
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- VICTORY -->
+
+<div id="victoryScreen" class="overlay">
+
+    <div class="cardBox">
+
+        <h1>🏆 CAVE CONQUERED!</h1>
+
+        <p id="victoryStats"></p>
+
+        <button class="bigButton" id="victoryRestart">
+            PLAY AGAIN
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let W = 0;
+let H = 0;
+
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+}
+
+window.addEventListener("resize", resize);
+resize();
+
+
+/* =========================
+   GAME STATE
+========================= */
+
+let running = false;
+let paused = false;
+
+let room = 1;
+const MAX_ROOMS = 15;
+
+let score = 0;
+let elapsed = 0;
+
+let lastTime = 0;
+
+
+/* =========================
+   PLAYER
+========================= */
+
+const player = {
+
+    x: 130,
+    y: H / 2,
+
+    radius: 22,
+
+    hp: 100,
+    maxHp: 100,
+
+    damage: 15,
+
+    speed: 270,
+
+    attackCooldown: .45,
+    attackTimer: 0,
+
+    projectileSpeed: 650,
+    projectileSize: 7,
+
+    projectileCount: 1,
+    pierce: 0,
+
+    critChance: 0,
+
+    bounce: 0,
+
+    weapon: "basic",
+
+    orbital: false
+
+};
+
+
+/* =========================
+   INPUT
+========================= */
+
+const keys = {};
+
+let mouse = {
+    x: W / 2,
+    y: H / 2,
+    down: false
+};
+
+window.addEventListener("keydown", e => {
+
+    keys[e.code] = true;
+
+    if (
+        [
+            "ArrowUp",
+            "ArrowDown",
+            "ArrowLeft",
+            "ArrowRight",
+            "Space"
+        ].includes(e.code)
+    ) {
+        e.preventDefault();
+    }
+
+    if (e.code === "Escape") {
+        togglePause();
+    }
+
+});
+
+window.addEventListener("keyup", e => {
+    keys[e.code] = false;
+});
+
+canvas.addEventListener("mousemove", e => {
+
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+
+});
+
+canvas.addEventListener("mousedown", e => {
+
+    if (e.button === 0) {
+        mouse.down = true;
+    }
+
+});
+
+window.addEventListener("mouseup", e => {
+
+    if (e.button === 0) {
+        mouse.down = false;
+    }
+
+});
+
+
+/* =========================
+   AUTO ATTACK
+========================= */
+
+let autoAttack = false;
+
+
+/* =========================
+   ENEMIES
+========================= */
+
+let enemies = [];
+
+function makeEnemy(type, x, y) {
+
+    const difficulty = 1 + room * .11;
+
+    let e = {
+
+        type,
+
+        x,
+        y,
+
+        vx: 0,
+        vy: 0,
+
+        radius: 18,
+
+        hp: 35 * difficulty,
+        maxHp: 35 * difficulty,
+
+        speed: 55,
+
+        damage: 10,
+
+        attackTimer: Math.random(),
+
+        attackCooldown: 1.2,
+
+        color: "#ff6b6b",
+
+        boss: false
+
+    };
+
+
+    if (type === "bat") {
+
+        e.radius = 16;
+        e.hp = 25 * difficulty;
+        e.speed = 110;
+        e.damage = 7;
+        e.color = "#c77dff";
+
+    }
+
+
+    if (type === "slime") {
+
+        e.radius = 23;
+        e.hp = 70 * difficulty;
+        e.speed = 40;
+        e.damage = 13;
+        e.color = "#65e572";
+
+    }
+
+
+    if (type === "skeleton") {
+
+        e.radius = 19;
+        e.hp = 50 * difficulty;
+        e.speed = 65;
+        e.damage = 11;
+        e.color = "#e8e3d5";
+
+    }
+
+
+    if (type === "golem") {
+
+        e.radius = 34;
+        e.hp = 240 * difficulty;
+        e.speed = 28;
+        e.damage = 25;
+        e.color = "#888";
+
+    }
+
+
+    return e;
+}
+
+
+function makeBoss() {
+
+    const bossTypes = [
+        "batKing",
+        "rockGolem",
+        "caveSerpent"
+    ];
+
+    const type =
+        bossTypes[
+            Math.floor(
+                Math.random() *
+                bossTypes.length
+            )
+        ];
+
+
+    let boss = {
+
+        type,
+
+        x: W - 180,
+        y: H / 2,
+
+        radius: 65,
+
+        hp: 1000 + room * 160,
+        maxHp: 1000 + room * 160,
+
+        speed: 45,
+
+        damage: 25,
+
+        attackTimer: 0,
+
+        attackCooldown: .8,
+
+        color: "#ff9f1c",
+
+        boss: true
+
+    };
+
+
+    if (type === "batKing") {
+
+        boss.radius = 58;
+        boss.speed = 80;
+        boss.color = "#b86cff";
+
+    }
+
+
+    if (type === "rockGolem") {
+
+        boss.radius = 72;
+        boss.speed = 25;
+        boss.color = "#888";
+
+    }
+
+
+    if (type === "caveSerpent") {
+
+        boss.radius = 62;
+        boss.speed = 60;
+        boss.color = "#49d17d";
+
+    }
+
+
+    return boss;
+}
+
+
+/* =========================
+   SPAWN ROOM
+========================= */
+
+function spawnRoom() {
+
+    enemies = [];
+
+    const count =
+        Math.min(
+            4 + room * 2,
+            28
+        );
+
+
+    for (
+        let i = 0;
+        i < count;
+        i++
+    ) {
+
+        const types = [
+            "bat",
+            "slime",
+            "skeleton"
+        ];
+
+        if (room >= 4) {
+            types.push("golem");
+        }
+
+        const type =
+            types[
+                Math.floor(
+                    Math.random() *
+                    types.length
+                )
+            ];
+
+
+        enemies.push(
+            makeEnemy(
+                type,
+                W + 50 + Math.random() * 400,
+                80 + Math.random() * (H - 160)
+            )
+        );
+
+    }
+
+
+    if (room % 5 === 0) {
+
+        enemies.push(makeBoss());
+
+    }
+
+}
+
+
+/* =========================
+   PROJECTILES
+========================= */
+
+let projectiles = [];
+
+function fireProjectile(angle, weaponOverride = null) {
+
+    const weapon =
+        weaponOverride || player.weapon;
+
+
+    if (weapon === "boomerang") {
+
+        projectiles.push({
+
+            x: player.x,
+            y: player.y,
+
+            vx: Math.cos(angle) * player.projectileSpeed,
+            vy: Math.sin(angle) * player.projectileSpeed,
+
+            radius: player.projectileSize + 2,
+
+            damage: player.damage,
+
+            life: 2.2,
+
+            pierce: player.pierce,
+
+            bounce: player.bounce,
+
+            weapon: "boomerang",
+
+            returning: false,
+
+            angle
+
+        });
+
+        return;
+
+    }
+
+
+    if (weapon === "cannon") {
+
+        projectiles.push({
+
+            x: player.x,
+            y: player.y,
+
+            vx: Math.cos(angle) * 350,
+            vy: Math.sin(angle) * 350,
+
+            radius: player.projectileSize * 2.2,
+
+            damage: player.damage * 3,
+
+            life: 2,
+
+            pierce: player.pierce,
+
+            bounce: player.bounce,
+
+            weapon: "cannon"
+
+        });
+
+        return;
+
+    }
+
+
+    if (weapon === "spread") {
+
+        for (let i = -2; i <= 2; i++) {
+
+            const a =
+                angle + i * .12;
+
+            projectiles.push({
+
+                x: player.x,
+                y: player.y,
+
+                vx: Math.cos(a) * player.projectileSpeed,
+                vy: Math.sin(a) * player.projectileSpeed,
+
+                radius: player.projectileSize,
+
+                damage: player.damage,
+
+                life: 1.5,
+
+                pierce: player.pierce,
+
+                bounce: player.bounce,
+
+                weapon: "spread"
+
+            });
+
+        }
+
+        return;
+
+    }
+
+
+    if (weapon === "lightning") {
+
+        lightningAttack();
+
+        return;
+
+    }
+
+
+    projectiles.push({
+
+        x: player.x,
+        y: player.y,
+
+        vx: Math.cos(angle) * player.projectileSpeed,
+        vy: Math.sin(angle) * player.projectileSpeed,
+
+        radius: player.projectileSize,
+
+        damage: player.damage,
+
+        life: 1.5,
+
+        pierce: player.pierce,
+
+        bounce: player.bounce,
+
+        weapon: "basic"
+
+    });
+
+}
+
+
+/* =========================
+   LIGHTNING
+========================= */
+
+function lightningAttack() {
+
+    let target = null;
+    let best = Infinity;
+
+    for (const e of enemies) {
+
+        const d =
+            Math.hypot(
+                e.x - player.x,
+                e.y - player.y
+            );
+
+        if (d < best && d < 600) {
+
+            best = d;
+            target = e;
+
+        }
+
+    }
+
+
+    if (!target) return;
+
+
+    target.hp -= player.damage * 1.7;
+
+    spawnParticles(
+        target.x,
+        target.y,
+        "#ffe66d",
+        18
+    );
+
+    showMessage("⚡ CHAIN LIGHTNING!");
+
+}
+
+
+/* =========================
+   ATTACK
+========================= */
+
+function attack() {
+
+    if (player.attackTimer > 0) {
+        return;
+    }
+
+    player.attackTimer =
+        player.attackCooldown;
+
+
+    const angle =
+        Math.atan2(
+            mouse.y - player.y,
+            mouse.x - player.x
+        );
+
+
+    if (player.weapon === "lightning") {
+
+        lightningAttack();
+
+        return;
+
+    }
+
+
+    for (
+        let i = 0;
+        i < player.projectileCount;
+        i++
+    ) {
+
+        const spread =
+            player.projectileCount === 1
+                ? 0
+                : (i - (player.projectileCount - 1) / 2) * .12;
+
+        fireProjectile(
+            angle + spread
+        );
+
+    }
+
+}
+
+
+/* =========================
+   PARTICLES
+========================= */
+
+let particles = [];
+
+function spawnParticles(
+    x,
+    y,
+    color,
+    amount = 8
+) {
+
+    for (
+        let i = 0;
+        i < amount;
+        i++
+    ) {
+
+        const angle =
+            Math.random() *
+            Math.PI * 2;
+
+        const speed =
+            50 +
+            Math.random() * 220;
+
+
+        particles.push({
+
+            x,
+            y,
+
+            vx:
+                Math.cos(angle) *
+                speed,
+
+            vy:
+                Math.sin(angle) *
+                speed,
+
+            life:
+                .3 +
+                Math.random() * .5,
+
+            size:
+                2 +
+                Math.random() * 5,
+
+            color
+
+        });
+
+    }
+
+}
+
+
+/* =========================
+   DAMAGE
+========================= */
+
+function damageEnemy(enemy, amount) {
+
+    let finalDamage = amount;
+
+
+    if (
+        Math.random() <
+        player.critChance
+    ) {
+
+        finalDamage *= 2;
+
+        spawnParticles(
+            enemy.x,
+            enemy.y,
+            "#ffe66d",
+            12
+        );
+
+    }
+
+
+    enemy.hp -= finalDamage;
+
+    spawnParticles(
+        enemy.x,
+        enemy.y,
+        enemy.color,
+        5
+    );
+
+
+    if (enemy.hp <= 0) {
+
+        score +=
+            enemy.boss
+                ? 1000
+                : 100;
+
+        spawnParticles(
+            enemy.x,
+            enemy.y,
+            "#fff",
+            enemy.boss ? 35 : 12
+        );
+
+        const index =
+            enemies.indexOf(enemy);
+
+        if (index !== -1) {
+            enemies.splice(index, 1);
+        }
+
+    }
+
+}
+
+
+/* =========================
+   UPDATE PLAYER
+========================= */
+
+function updatePlayer(dt) {
+
+    let dx = 0;
+    let dy = 0;
+
+
+    if (
+        keys["KeyW"] ||
+        keys["ArrowUp"]
+    ) dy--;
+
+
+    if (
+        keys["KeyS"] ||
+        keys["ArrowDown"]
+    ) dy++;
+
+
+    if (
+        keys["KeyA"] ||
+        keys["ArrowLeft"]
+    ) dx--;
+
+
+    if (
+        keys["KeyD"] ||
+        keys["ArrowRight"]
+    ) dx++;
+
+
+    if (dx || dy) {
+
+        const len =
+            Math.hypot(dx, dy);
+
+        dx /= len;
+        dy /= len;
+
+
+        player.x +=
+            dx *
+            player.speed *
+            dt;
+
+        player.y +=
+            dy *
+            player.speed *
+            dt;
+
+    }
+
+
+    player.x =
+        Math.max(
+            55,
+            Math.min(
+                W - 55,
+                player.x
+            )
+        );
+
+
+    player.y =
+        Math.max(
+            70,
+            Math.min(
+                H - 55,
+                player.y
+            )
+        );
+
+
+    player.attackTimer =
+        Math.max(
+            0,
+            player.attackTimer - dt
+        );
+
+
+    if (
+        mouse.down ||
+        autoAttack
+    ) {
+
+        attack();
+
+    }
+
+}
+
+
+/* =========================
+   UPDATE ENEMIES
+========================= */
+
+function updateEnemies(dt) {
+
+    for (const e of enemies) {
+
+        const dx =
+            player.x - e.x;
+
+        const dy =
+            player.y - e.y;
+
+        const distance =
+            Math.hypot(dx, dy);
+
+
+        if (distance > player.radius + e.radius + 5) {
+
+            e.x +=
+                dx /
+                distance *
+                e.speed *
+                dt;
+
+            e.y +=
+                dy /
+                distance *
+                e.speed *
+                dt;
+
+        } else {
+
+            e.attackTimer -= dt;
+
+            if (e.attackTimer <= 0) {
+
+                e.attackTimer =
+                    e.attackCooldown;
+
+                player.hp -= e.damage;
+
+                spawnParticles(
+                    player.x,
+                    player.y,
+                    "#ef476f",
+                    7
+                );
+
+            }
+
+        }
+
+    }
+
+}
+
+
+/* =========================
+   UPDATE PROJECTILES
+========================= */
+
+function updateProjectiles(dt) {
+
+    for (
+        let i = projectiles.length - 1;
+        i >= 0;
+        i--
+    ) {
+
+        const p = projectiles[i];
+
+
+        p.x +=
+            p.vx *
+            dt;
+
+        p.y +=
+            p.vy *
+            dt;
+
+
+        p.life -= dt;
+
+
+        /* Boomerang */
+
+        if (
+            p.weapon === "boomerang" &&
+            p.life < 1
+        ) {
+
+            const dx =
+                player.x - p.x;
+
+            const dy =
+                player.y - p.y;
+
+            const d =
+                Math.hypot(dx, dy);
+
+            if (d > 5) {
+
+                p.vx =
+                    dx / d *
+                    player.projectileSpeed;
+
+                p.vy =
+                    dy / d *
+                    player.projectileSpeed;
+
+            }
+
+        }
+
+
+        /* Wall bounce */
+
+        if (
+            p.bounce > 0 &&
+            (
+                p.x < 20 ||
+                p.x > W - 20
+            )
+        ) {
+
+            p.vx *= -1;
+            p.bounce--;
+
+        }
+
+
+        if (
+            p.bounce > 0 &&
+            (
+                p.y < 55 ||
+                p.y > H - 20
+            )
+        ) {
+
+            p.vy *= -1;
+            p.bounce--;
+
+        }
+
+
+        /* Enemy collision */
+
+        for (
+            let j = enemies.length - 1;
+            j >= 0;
+            j--
+        ) {
+
+            const e =
+                enemies[j];
+
+
+            const d =
+                Math.hypot(
+                    p.x - e.x,
+                    p.y - e.y
+                );
+
+
+            if (
+                d <
+                p.radius +
+                e.radius
+            ) {
+
+                damageEnemy(
+                    e,
+                    p.damage
+                );
+
+
+                if (p.pierce > 0) {
+
+                    p.pierce--;
+
+                } else {
+
+                    p.life = 0;
+
+                }
+
+            }
+
+        }
+
+
+        if (p.life <= 0) {
+
+            projectiles.splice(
+                i,
+                1
+            );
+
+        }
+
+    }
+
+}
+
+
+/* =========================
+   ORBITAL
+========================= */
+
+function updateOrbital() {
+
+    if (!player.orbital) {
+        return;
+    }
+
+
+    const orbitRadius = 55;
+    const orbitSpeed = elapsed * 2.5;
+
+    const ox =
+        player.x +
+        Math.cos(orbitSpeed) *
+        orbitRadius;
+
+    const oy =
+        player.y +
+        Math.sin(orbitSpeed) *
+        orbitRadius;
+
+
+    for (const e of enemies) {
+
+        const d =
+            Math.hypot(
+                e.x - ox,
+                e.y - oy
+            );
+
+
+        if (
+            d <
+            e.radius + 10
+        ) {
+
+            e.hp -=
+                player.damage *
+                .02;
+
+        }
+
+    }
+
+}
+
+
+/* =========================
+   PARTICLES UPDATE
+========================= */
+
+function updateParticles(dt) {
+
+    for (
+        let i = particles.length - 1;
+        i >= 0;
+        i--
+    ) {
+
+        const p =
+            particles[i];
+
+
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+
+
+        p.vx *= .96;
+        p.vy *= .96;
+
+
+        p.life -= dt;
+
+
+        if (p.life <= 0) {
+
+            particles.splice(
+                i,
+                1
+            );
+
+        }
+
+    }
+
+}
+
+
+/* =========================
+   UPGRADE CARDS
+========================= */
+
+const upgradePool = [
+
+    {
+        icon: "💥",
+        name: "Heavy Hits",
+        desc: "+30% damage",
+        apply() {
+            player.damage *= 1.3;
+        }
+    },
+
+    {
+        icon: "👟",
+        name: "Swift Feet",
+        desc: "+20% movement speed",
+        apply() {
+            player.speed *= 1.2;
+        }
+    },
+
+    {
+        icon: "🔫",
+        name: "Twin Shot",
+        desc: "+1 projectile",
+        apply() {
+            player.projectileCount++;
+        }
+    },
+
+    {
+        icon: "🗡️",
+        name: "Piercing",
+        desc: "Projectiles pierce +1 enemy",
+        apply() {
+            player.pierce++;
+        }
+    },
+
+    {
+        icon: "⚡",
+        name: "Rapid Fire",
+        desc: "Attack 25% faster",
+        apply() {
+            player.attackCooldown *= .75;
+        }
+    },
+
+    {
+        icon: "❤️",
+        name: "Vitality",
+        desc: "+35 max HP and heal 35",
+        apply() {
+            player.maxHp += 35;
+            player.hp = Math.min(
+                player.maxHp,
+                player.hp + 35
+            );
+        }
+    },
+
+    {
+        icon: "🎯",
+        name: "Critical",
+        desc: "+12% critical chance",
+        apply() {
+            player.critChance += .12;
+        }
+    },
+
+    {
+        icon: "🔵",
+        name: "Big Shots",
+        desc: "+50% projectile size",
+        apply() {
+            player.projectileSize *= 1.5;
+        }
+    },
+
+    {
+        icon: "💎",
+        name: "Orbit Crystal",
+        desc: "A damaging crystal circles you",
+        apply() {
+            player.orbital = true;
+        }
+    },
+
+    {
+        icon: "🎯",
+        name: "Sniper",
+        desc: "+60% damage and faster projectiles",
+        apply() {
+            player.damage *= 1.6;
+            player.projectileSpeed *= 1.25;
+        }
+    },
+
+    {
+        icon: "↩️",
+        name: "Bouncer",
+        desc: "Projectiles bounce off walls once",
+        apply() {
+            player.bounce++;
+        }
+    },
+
+    {
+        icon: "🔁",
+        name: "Ricochet",
+        desc: "Projectiles gain 2 extra wall bounces",
+        apply() {
+            player.bounce += 2;
+        }
+    },
+
+    {
+        icon: "🪃",
+        name: "BOOMERANG",
+        desc: "Unlock a returning boomerang weapon",
+        apply() {
+            player.weapon = "boomerang";
+        }
+    },
+
+    {
+        icon: "🔫",
+        name: "SPREAD CANNON",
+        desc: "Fire a powerful 5-shot spread",
+        apply() {
+            player.weapon = "spread";
+        }
+    },
+
+    {
+        icon: "💣",
+        name: "CANNON",
+        desc: "Huge slow projectile dealing 3x damage",
+        apply() {
+            player.weapon = "cannon";
+        }
+    },
+
+    {
+        icon: "⚡",
+        name: "CHAIN LIGHTNING",
+        desc: "Attacks the nearest enemy instantly",
+        apply() {
+            player.weapon = "lightning";
+        }
+    }
+
+];
+
+
+let currentCards = [];
+let selectedCards = [];
+
+
+function randomCards() {
+
+    const pool =
+        [...upgradePool];
+
+    currentCards = [];
+
+
+    while (
+        currentCards.length < 5 &&
+        pool.length
+    ) {
+
+        const index =
+            Math.floor(
+                Math.random() *
+                pool.length
+            );
+
+        currentCards.push(
+            pool.splice(index, 1)[0]
+        );
+
+    }
+
+}
+
+
+/* =========================
+   SHOW UPGRADES
+========================= */
+
+function showUpgrades() {
+
+    paused = true;
+
+    selectedCards = [];
+
+    randomCards();
+
+
+    const container =
+        document.getElementById(
+            "cards"
+        );
+
+    container.innerHTML = "";
+
+
+    currentCards.forEach(
+        (card, index) => {
+
+            const div =
+                document.createElement(
+                    "div"
+                );
+
+            div.className = "card";
+
+
+            div.innerHTML = `
+                <div class="icon">
+                    ${card.icon}
+                </div>
+
+                <h2>
+                    ${card.name}
+                </h2>
+
+                <p>
+                    ${card.desc}
+                </p>
+            `;
+
+
+            div.addEventListener(
+                "click",
+                () => {
+
+                    if (
+                        selectedCards.includes(
+                            index
+                        )
+                    ) {
+
+                        selectedCards =
+                            selectedCards.filter(
+                                i => i !== index
+                            );
+
+                        div.classList.remove(
+                            "selected"
+                        );
+
+                        return;
+
+                    }
+
+
+                    if (
+                        selectedCards.length >= 2
+                    ) {
+
+                        showMessage(
+                            "ONLY 2 CARDS!"
+                        );
+
+                        return;
+
+                    }
+
+
+                    selectedCards.push(
+                        index
+                    );
+
+                    div.classList.add(
+                        "selected"
+                    );
+
+                }
+            );
+
+
+            container.appendChild(
+                div
+            );
+
+        }
+    );
+
+
+    document.getElementById(
+        "upgradeScreen"
+    ).style.display =
+        "flex";
+
+}
+
+
+/* =========================
+   CONTINUE
+========================= */
+
+document.getElementById(
+    "continueButton"
+).addEventListener(
+    "click",
+    () => {
+
+        if (
+            selectedCards.length === 0
+        ) {
+
+            showMessage(
+                "PICK AT LEAST 1 CARD!"
+            );
+
+            return;
+
+        }
+
+
+        for (const index of selectedCards) {
+
+            currentCards[index].apply();
+
+        }
+
+
+        document.getElementById(
+            "upgradeScreen"
+        ).style.display =
+            "none";
+
+
+        room++;
+
+
+        if (room > MAX_ROOMS) {
+
+            win();
+
+            return;
+
+        }
+
+
+        player.x = 130;
+        player.y = H / 2;
+
+        spawnRoom();
+
+        paused = false;
+
+    }
+);
+
+
+/* =========================
+   ROOM CLEAR
+========================= */
+
+function checkRoom() {
+
+    if (
+        enemies.length === 0
+    ) {
+
+        showUpgrades();
+
+    }
+
+}
+
+
+/* =========================
+   DRAW BACKGROUND
+========================= */
+
+function drawBackground() {
+
+    ctx.fillStyle =
+        "#17101f";
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    /* Cave gradient */
+
+    const gradient =
+        ctx.createRadialGradient(
+            W / 2,
+            H / 2,
+            100,
+            W / 2,
+            H / 2,
+            Math.max(W, H)
+        );
+
+
+    gradient.addColorStop(
+        0,
+        "#3a2144"
+    );
+
+    gradient.addColorStop(
+        1,
+        "#120c18"
+    );
+
+
+    ctx.fillStyle =
+        gradient;
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    /* Cave floor */
+
+    ctx.fillStyle =
+        "rgba(255,255,255,.025)";
+
+    for (
+        let i = 0;
+        i < 80;
+        i++
+    ) {
+
+        const x =
+            Math.random() * W;
+
+        const y =
+            60 +
+            Math.random() *
+            (H - 80);
+
+        const r =
+            2 +
+            Math.random() * 8;
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            x,
+            y,
+            r,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+    }
+
+
+    /* Cave entrance */
+
+    ctx.fillStyle =
+        "#0b0710";
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        0,
+        80
+    );
+
+    ctx.lineTo(
+        110,
+        120
+    );
+
+    ctx.lineTo(
+        110,
+        H - 100
+    );
+
+    ctx.lineTo(
+        0,
+        H - 60
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+
+    /* Right cave opening */
+
+    ctx.fillStyle =
+        "#0b0710";
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        W,
+        90
+    );
+
+    ctx.lineTo(
+        W - 120,
+        130
+    );
+
+    ctx.lineTo(
+        W - 120,
+        H - 110
+    );
+
+    ctx.lineTo(
+        W,
+        H - 60
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+
+    /* Top rocks */
+
+    ctx.fillStyle =
+        "#24152d";
+
+    ctx.beginPath();
+
+    ctx.moveTo(0,0);
+    ctx.lineTo(W,0);
+    ctx.lineTo(W,H*.08);
+    ctx.lineTo(W*.8,H*.12);
+    ctx.lineTo(W*.65,H*.07);
+    ctx.lineTo(W*.5,H*.13);
+    ctx.lineTo(W*.35,H*.08);
+    ctx.lineTo(W*.2,H*.12);
+    ctx.lineTo(0,H*.07);
+    ctx.closePath();
+
+    ctx.fill();
+
+}
+
+
+/* =========================
+   DRAW PLAYER
+========================= */
+
+function drawPlayer() {
+
+    ctx.save();
+
+
+    /* shadow */
+
+    ctx.fillStyle =
+        "rgba(0,0,0,.3)";
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        player.x,
+        player.y + player.radius * .8,
+        player.radius * 1.1,
+        player.radius * .4,
+        0,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    /* body */
+
+    ctx.beginPath();
+
+    ctx.arc(
+        player.x,
+        player.y,
+        player.radius,
+        0,
+        Math.PI * 2
+    );
+
+
+    const gradient =
+        ctx.createRadialGradient(
+            player.x - 8,
+            player.y - 8,
+            2,
+            player.x,
+            player.y,
+            player.radius
+        );
+
+
+    gradient.addColorStop(
+        0,
+        "#7ee8fa"
+    );
+
+    gradient.addColorStop(
+        .55,
+        "#38bdf8"
+    );
+
+    gradient.addColorStop(
+        1,
+        "#2563eb"
+    );
+
+
+    ctx.fillStyle =
+        gradient;
+
+    ctx.fill();
+
+
+    ctx.strokeStyle =
+        "#fff";
+
+    ctx.lineWidth = 3;
+
+    ctx.stroke();
+
+
+    /* eyes */
+
+    const angle =
+        Math.atan2(
+            mouse.y - player.y,
+            mouse.x - player.x
+        );
+
+
+    const ex =
+        Math.cos(angle) * 7;
+
+    const ey =
+        Math.sin(angle) * 7;
+
+
+    ctx.fillStyle =
+        "white";
+
+
+    ctx.beginPath();
+
+    ctx.arc(
+        player.x + ex - 5,
+        player.y + ey - 5,
+        5,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.arc(
+        player.x + ex + 5,
+        player.y + ey - 5,
+        5,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    ctx.fillStyle =
+        "#172033";
+
+
+    ctx.beginPath();
+
+    ctx.arc(
+        player.x + ex - 5,
+        player.y + ey - 5,
+        2.5,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.arc(
+        player.x + ex + 5,
+        player.y + ey - 5,
+        2.5,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    ctx.restore();
+
+
+    /* orbital */
+
+    if (player.orbital) {
+
+        const angle2 =
+            elapsed * 2.5;
+
+        const ox =
+            player.x +
+            Math.cos(angle2) * 55;
+
+        const oy =
+            player.y +
+            Math.sin(angle2) * 55;
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            ox,
+            oy,
+            10,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fillStyle =
+            "#b8f2ff";
+
+        ctx.shadowBlur = 15;
+
+        ctx.shadowColor =
+            "#8be9ff";
+
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+
+    }
+
+}
+
+
+/* =========================
+   DRAW ENEMY
+========================= */
+
+function drawEnemy(e) {
+
+    ctx.save();
+
+
+    /* health bar */
+
+    if (
+        e.hp < e.maxHp
+    ) {
+
+        const width =
+            e.radius * 2.2;
+
+        const hp =
+            Math.max(
+                0,
+                e.hp / e.maxHp
+            );
+
+
+        ctx.fillStyle =
+            "rgba(0,0,0,.55)";
+
+        ctx.fillRect(
+            e.x - width / 2,
+            e.y - e.radius - 13,
+            width,
+            6
+        );
+
+
+        ctx.fillStyle =
+            "#ef476f";
+
+        ctx.fillRect(
+            e.x - width / 2,
+            e.y - e.radius - 13,
+            width * hp,
+            6
+        );
+
+    }
+
+
+    /* Boss aura */
+
+    if (e.boss) {
+
+        ctx.beginPath();
+
+        ctx.arc(
+            e.x,
+            e.y,
+            e.radius + 10,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.strokeStyle =
+            "rgba(255,159,28,.5)";
+
+        ctx.lineWidth = 5;
+
+        ctx.stroke();
+
+    }
+
+
+    ctx.beginPath();
+
+    ctx.arc(
+        e.x,
+        e.y,
+        e.radius,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle =
+        e.color;
+
+    ctx.fill();
+
+
+    ctx.strokeStyle =
+        "rgba(255,255,255,.4)";
+
+    ctx.lineWidth = 2;
+
+    ctx.stroke();
+
+
+    /* eyes */
+
+    const angle =
+        Math.atan2(
+            player.y - e.y,
+            player.x - e.x
+        );
+
+
+    const ex =
+        Math.cos(angle) * e.radius * .3;
+
+    const ey =
+        Math.sin(angle) * e.radius * .3;
+
+
+    ctx.fillStyle =
+        "white";
+
+
+    ctx.beginPath();
+
+    ctx.arc(
+        e.x + ex - e.radius * .22,
+        e.y + ey - e.radius * .15,
+        e.radius * .16,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.arc(
+        e.x + ex + e.radius * .22,
+        e.y + ey - e.radius * .15,
+        e.radius * .16,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    ctx.restore();
+
+
+    if (e.boss) {
+
+        ctx.fillStyle =
+            "white";
+
+        ctx.font =
+            "bold 16px Arial";
+
+        ctx.textAlign =
+            "center";
+
+        let name = "BOSS";
+
+        if (e.type === "batKing")
+            name = "BAT KING";
+
+        if (e.type === "rockGolem")
+            name = "ROCK GOLEM";
+
+        if (e.type === "caveSerpent")
+            name = "CAVE SERPENT";
+
+        ctx.fillText(
+            name,
+            e.x,
+            e.y - e.radius - 22
+        );
+
+    }
+
+}
+
+
+/* =========================
+   DRAW PROJECTILES
+========================= */
+
+function drawProjectiles() {
+
+    for (const p of projectiles) {
+
+        ctx.save();
+
+        ctx.beginPath();
+
+        ctx.arc(
+            p.x,
+            p.y,
+            p.radius,
+            0,
+            Math.PI * 2
+        );
+
+
+        if (p.weapon === "cannon") {
+
+            ctx.fillStyle =
+                "#ff9f1c";
+
+            ctx.shadowColor =
+                "#ff9f1c";
+
+        } else if (
+            p.weapon === "boomerang"
+        ) {
+
+            ctx.fillStyle =
+                "#ffe66d";
+
+            ctx.shadowColor =
+                "#ffe66d";
+
+        } else {
+
+            ctx.fillStyle =
+                "#7ee8fa";
+
+            ctx.shadowColor =
+                "#7ee8fa";
+
+        }
+
+
+        ctx.shadowBlur = 12;
+
+        ctx.fill();
+
+        ctx.restore();
+
+    }
+
+}
+
+
+/* =========================
+   DRAW PARTICLES
+========================= */
+
+function drawParticles() {
+
+    for (const p of particles) {
+
+        ctx.globalAlpha =
+            Math.max(
+                0,
+                p.life
+            );
+
+        ctx.fillStyle =
+            p.color;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            p.x,
+            p.y,
+            p.size,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+    }
+
+    ctx.globalAlpha = 1;
+
+}
+
+
+/* =========================
+   DRAW
+========================= */
+
+function draw() {
+
+    drawBackground();
+
+
+    /* cave boundaries */
+
+    ctx.strokeStyle =
+        "rgba(255,255,255,.08)";
+
+    ctx.lineWidth = 4;
+
+    ctx.strokeRect(
+        25,
+        55,
+        W - 50,
+        H - 80
+    );
+
+
+    for (const e of enemies) {
+
+        drawEnemy(e);
+
+    }
+
+
+    drawProjectiles();
+
+    drawParticles();
+
+    drawPlayer();
+
+}
+
+
+/* =========================
+   UI
+========================= */
+
+function updateUI() {
+
+    document.getElementById(
+        "roomText"
+    ).textContent =
+        room % 5 === 0
+            ? `🔥 BOSS CAVE ${room}`
+            : `CAVE ${room}`;
+
+
+    const hpPercent =
+        Math.max(
+            0,
+            player.hp /
+            player.maxHp *
+            100
+        );
+
+
+    document.getElementById(
+        "health"
+    ).style.width =
+        hpPercent + "%";
+
+
+    document.getElementById(
+        "statText"
+    ).innerHTML = `
+        HP: ${Math.ceil(player.hp)} / ${player.maxHp}<br>
+        Damage: ${Math.floor(player.damage)}<br>
+        Attack: ${player.attackCooldown.toFixed(2)}s<br>
+        Score: ${score}
+    `;
+
+}
+
+
+/* =========================
+   MESSAGE
+========================= */
+
+let messageTimer = 0;
+
+function showMessage(text) {
+
+    const message =
+        document.getElementById(
+            "message"
+        );
+
+
+    message.textContent = text;
+
+    message.style.opacity = "1";
+
+    messageTimer = 1.1;
+
+}
+
+
+/* =========================
+   PAUSE
+========================= */
+
+function togglePause() {
+
+    if (!running) return;
+
+    if (
+        document.getElementById(
+            "upgradeScreen"
+        ).style.display === "flex"
+    ) {
+        return;
+    }
+
+
+    paused = !paused;
+
+
+    document.getElementById(
+        "pauseScreen"
+    ).style.display =
+        paused
+            ? "flex"
+            : "none";
+
+}
+
+
+document.getElementById(
+    "pauseButton"
+).addEventListener(
+    "click",
+    togglePause
+);
+
+
+document.getElementById(
+    "resumeButton"
+).addEventListener(
+    "click",
+    togglePause
+);
+
+
+/* =========================
+   DEATH
+========================= */
+
+function die() {
+
+    running = false;
+
+    document.getElementById(
+        "deathStats"
+    ).textContent =
+        `You reached Cave ${room} with ${score} score.`;
+
+
+    document.getElementById(
+        "deathScreen"
+    ).style.display =
+        "flex";
+
+}
+
+
+/* =========================
+   WIN
+========================= */
+
+function win() {
+
+    running = false;
+
+
+    document.getElementById(
+        "victoryStats"
+    ).textContent =
+        `You conquered all ${MAX_ROOMS} caves with ${score} score!`;
+
+
+    document.getElementById(
+        "victoryScreen"
+    ).style.display =
+        "flex";
+
+}
+
+
+/* =========================
+   RESET
+========================= */
+
+function resetGame() {
+
+    room = 1;
+
+    score = 0;
+
+    elapsed = 0;
+
+    paused = false;
+
+    player.x = 130;
+    player.y = H / 2;
+
+    player.hp = 100;
+    player.maxHp = 100;
+
+    player.damage = 15;
+
+    player.speed = 270;
+
+    player.attackCooldown = .45;
+
+    player.attackTimer = 0;
+
+    player.projectileSpeed = 650;
+
+    player.projectileSize = 7;
+
+    player.projectileCount = 1;
+
+    player.pierce = 0;
+
+    player.critChance = 0;
+
+    player.bounce = 0;
+
+    player.weapon = "basic";
+
+    player.orbital = false;
+
+    projectiles = [];
+
+    particles = [];
+
+    spawnRoom();
+
+    updateUI();
+
+}
+
+
+/* =========================
+   START
+========================= */
+
+function startGame() {
+
+    autoAttack =
+        document.getElementById(
+            "autoAttack"
+        ).checked;
+
+
+    document.getElementById(
+        "startScreen"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "deathScreen"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "victoryScreen"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "upgradeScreen"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "pauseScreen"
+    ).style.display =
+        "none";
+
+
+    resetGame();
+
+    running = true;
+
+    paused = false;
+
+    lastTime =
+        performance.now();
+
+
+    requestAnimationFrame(
+        loop
+    );
+
+}
+
+
+document.getElementById(
+    "startButton"
+).addEventListener(
+    "click",
+    startGame
+);
+
+
+document.getElementById(
+    "restartButton"
+).addEventListener(
+    "click",
+    startGame
+);
+
+
+document.getElementById(
+    "victoryRestart"
+).addEventListener(
+    "click",
+    startGame
+);
+
+
+/* =========================
+   LOOP
+========================= */
+
+function loop(time) {
+
+    if (!running) {
+        draw();
+        return;
+    }
+
+
+    const dt =
+        Math.min(
+            (time - lastTime) / 1000,
+            .05
+        );
+
+
+    lastTime = time;
+
+
+    if (!paused) {
+
+        elapsed += dt;
+
+
+        updatePlayer(dt);
+
+        updateEnemies(dt);
+
+        updateProjectiles(dt);
+
+        updateOrbital();
+
+        updateParticles(dt);
+
+
+        if (
+            messageTimer > 0
+        ) {
+
+            messageTimer -= dt;
+
+            if (
+                messageTimer <= 0
+            ) {
+
+                document.getElementById(
+                    "message"
+                ).style.opacity = "0";
+
+            }
+
+        }
+
+
+        if (
+            player.hp <= 0
+        ) {
+
+            die();
+
+            return;
+
+        }
+
+
+        checkRoom();
+
+    }
+
+
+    updateUI();
+
+    draw();
+
+
+    requestAnimationFrame(
+        loop
+    );
+
+}
+
+
+/* =========================
+   INITIAL
+========================= */
+
+resetGame();
+
+draw();
+
+document.getElementById(
+    "startScreen"
+).style.display =
+    "flex";
+
+</script>
+
+</body>
+</html>
