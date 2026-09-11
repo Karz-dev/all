@@ -1,0 +1,4563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Night Shift</title>
+
+<style>
+*{box-sizing:border-box}
+
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#020303;
+    font-family:Arial,sans-serif;
+    color:white;
+    user-select:none;
+}
+
+canvas{
+    display:block;
+    width:100vw;
+    height:100vh;
+    cursor:none;
+}
+
+#ui{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+}
+
+#clock{
+    position:absolute;
+    right:22px;
+    top:18px;
+    font-size:21px;
+    font-weight:bold;
+    color:#ddd;
+    text-shadow:0 2px 8px #000;
+}
+
+#power{
+    position:absolute;
+    left:22px;
+    bottom:20px;
+    font-size:15px;
+    color:#aaa;
+    text-shadow:0 2px 5px #000;
+}
+
+#barricade{
+    position:absolute;
+    left:22px;
+    bottom:47px;
+    font-size:13px;
+    color:#777;
+    display:none;
+}
+
+#prompt{
+    position:absolute;
+    left:50%;
+    bottom:34px;
+    transform:translateX(-50%);
+    font-size:14px;
+    color:#bbb;
+    text-shadow:0 2px 6px #000;
+}
+
+#message{
+    position:absolute;
+    left:50%;
+    top:72%;
+    transform:translate(-50%,-50%);
+    color:#aaa;
+    font-size:14px;
+    opacity:0;
+    text-shadow:0 2px 8px #000;
+}
+
+#signalLost{
+    position:fixed;
+    inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    background:#000;
+    z-index:200;
+    color:#555;
+    font-family:monospace;
+    font-size:24px;
+    letter-spacing:5px;
+}
+
+#signalLost span{
+    animation:signalBlink 1.4s infinite;
+}
+
+@keyframes signalBlink{
+    0%,100%{opacity:.25}
+    50%{opacity:.75}
+}
+
+#startScreen,
+#endScreen{
+    position:fixed;
+    inset:0;
+    background:#020303;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    z-index:50;
+}
+
+#endScreen{
+    display:none;
+}
+
+h1{
+    margin:0 0 15px;
+    font-size:48px;
+    letter-spacing:9px;
+    color:#ddd;
+}
+
+.subtitle{
+    color:#666;
+    margin-bottom:30px;
+}
+
+button{
+    pointer-events:auto;
+    background:#111;
+    border:1px solid #444;
+    color:#ccc;
+    padding:13px 30px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#1d1d1d;
+}
+
+#cameraUI{
+    position:fixed;
+    inset:0;
+    display:none;
+    z-index:20;
+    pointer-events:auto;
+    background:#071009;
+    overflow:hidden;
+}
+
+#cameraCanvas{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+}
+
+/* CRT glass */
+
+#crtOverlay{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    z-index:5;
+    background:
+        repeating-linear-gradient(
+            0deg,
+            rgba(255,255,255,.035) 0px,
+            rgba(255,255,255,.035) 1px,
+            rgba(0,0,0,.05) 2px,
+            transparent 4px
+        );
+    mix-blend-mode:screen;
+    opacity:.75;
+}
+
+#crtOverlay:after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+        radial-gradient(
+            ellipse at center,
+            transparent 45%,
+            rgba(0,0,0,.35) 100%
+        );
+}
+
+#recording{
+    position:absolute;
+    top:20px;
+    right:25px;
+    z-index:8;
+    font-family:monospace;
+    font-size:12px;
+    color:#8b918b;
+    letter-spacing:2px;
+}
+
+#recDot{
+    display:inline-block;
+    width:7px;
+    height:7px;
+    margin-right:7px;
+    border-radius:50%;
+    background:#777;
+    animation:recBlink 1s infinite;
+}
+
+@keyframes recBlink{
+    0%,45%{opacity:1}
+    46%,100%{opacity:.15}
+}
+
+#cameraName{
+    position:absolute;
+    top:20px;
+    left:24px;
+    z-index:8;
+    font-family:monospace;
+    font-size:15px;
+    color:#b5c0b5;
+}
+
+#cameraStatus{
+    position:absolute;
+    top:46px;
+    left:24px;
+    z-index:8;
+    font-family:monospace;
+    font-size:11px;
+    color:#667066;
+}
+
+#timestamp{
+    position:absolute;
+    left:24px;
+    bottom:24px;
+    z-index:8;
+    font-family:monospace;
+    font-size:11px;
+    color:#6d756d;
+}
+
+#cameraControls{
+    position:absolute;
+    right:20px;
+    bottom:20px;
+    width:310px;
+    padding:12px;
+    z-index:10;
+    background:rgba(2,4,3,.94);
+    border:1px solid #333;
+}
+
+.cam{
+    margin:3px;
+    padding:8px 10px;
+    font-size:11px;
+}
+
+.cam.active{
+    background:#282d28;
+    border-color:#777;
+}
+
+#lockerUI{
+    position:fixed;
+    inset:0;
+    display:none;
+    z-index:30;
+    background:#020202;
+}
+
+#lockerCrack{
+    position:absolute;
+    left:50%;
+    top:0;
+    width:3px;
+    height:100%;
+    background:rgba(180,175,140,.04);
+}
+
+#lockerText{
+    position:absolute;
+    bottom:28px;
+    left:50%;
+    transform:translateX(-50%);
+    color:#444;
+    font-size:11px;
+    letter-spacing:3px;
+}
+
+/* BREAKER MINIGAME */
+
+#breakerUI{
+    position:fixed;
+    inset:0;
+    display:none;
+    z-index:80;
+    align-items:center;
+    justify-content:center;
+    background:rgba(0,0,0,.82);
+}
+
+#breakerBox{
+    width:460px;
+    max-width:90vw;
+    padding:24px;
+    background:#101311;
+    border:1px solid #454a45;
+    box-shadow:0 15px 60px #000;
+}
+
+#breakerTitle{
+    font-family:monospace;
+    font-size:18px;
+    letter-spacing:3px;
+    color:#bbb;
+    margin-bottom:8px;
+}
+
+#breakerInstructions{
+    font-family:monospace;
+    font-size:11px;
+    color:#666;
+    margin-bottom:20px;
+}
+
+.wireRow{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin:12px 0;
+}
+
+.wire{
+    width:120px;
+    height:18px;
+    border:2px solid #555;
+    cursor:pointer;
+    pointer-events:auto;
+}
+
+.wire.selected{
+    border-color:#aaa;
+    box-shadow:0 0 10px rgba(255,255,255,.15);
+}
+
+.wire.right{
+    opacity:.7;
+}
+
+.connector{
+    width:22px;
+    height:22px;
+    border:2px solid #555;
+    border-radius:50%;
+}
+
+#breakerHint{
+    margin-top:18px;
+    min-height:18px;
+    font-family:monospace;
+    font-size:11px;
+    color:#777;
+}
+
+#breakerClose{
+    margin-top:18px;
+    padding:8px 20px;
+}
+
+#fade{
+    position:fixed;
+    inset:0;
+    background:#000;
+    opacity:0;
+    pointer-events:none;
+    z-index:100;
+}
+
+#grain{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:10;
+    opacity:.07;
+    background:
+        repeating-linear-gradient(
+            0deg,
+            rgba(255,255,255,.04) 0px,
+            rgba(255,255,255,.04) 1px,
+            transparent 1px,
+            transparent 4px
+        );
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="grain"></div>
+
+<div id="signalLost">
+    <span>SIGNAL LOST</span>
+</div>
+
+<div id="ui">
+
+    <div id="clock">12:00 AM</div>
+
+    <div id="power">
+        Power: <span id="powerValue">100</span>%
+    </div>
+
+    <div id="barricade">
+        Barricade: <span id="barValue">100</span>%
+    </div>
+
+    <div id="prompt"></div>
+
+    <div id="message"></div>
+
+</div>
+
+
+<!-- CAMERA -->
+
+<div id="cameraUI">
+
+    <canvas id="cameraCanvas"></canvas>
+
+    <div id="crtOverlay"></div>
+
+    <div id="recording">
+        <span id="recDot"></span>REC
+    </div>
+
+    <div id="cameraName">
+        CAM 01 — OFFICE
+    </div>
+
+    <div id="cameraStatus">
+        SIGNAL STABLE
+    </div>
+
+    <div id="timestamp">
+        00:00:00 / REC
+    </div>
+
+    <div id="cameraControls">
+
+        <button class="cam active" data-cam="office">
+            CAM 01 OFFICE
+        </button>
+
+        <button class="cam" data-cam="hall">
+            CAM 02 HALL
+        </button>
+
+        <button class="cam" data-cam="storage">
+            CAM 03 STORAGE
+        </button>
+
+        <button class="cam" data-cam="back">
+            CAM 04 BACK ROOM
+        </button>
+
+        <button class="cam" data-cam="outside">
+            CAM 05 OUTSIDE
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- LOCKER -->
+
+<div id="lockerUI">
+
+    <div id="lockerCrack"></div>
+
+    <div id="lockerText">
+        E — LEAVE LOCKER
+    </div>
+
+</div>
+
+
+<!-- BREAKER -->
+
+<div id="breakerUI">
+
+    <div id="breakerBox">
+
+        <div id="breakerTitle">
+            ELECTRICAL BREAKER
+        </div>
+
+        <div id="breakerInstructions">
+            CONNECT THE MATCHING WIRES.
+            <br>
+            COMPLETE THE CIRCUIT TO RESTORE 10% POWER.
+        </div>
+
+        <div class="wireRow">
+            <div class="connector"></div>
+            <div
+                class="wire"
+                data-wire="A"
+                data-side="left">
+            </div>
+            <div
+                class="wire"
+                data-wire="B"
+                data-side="left">
+            </div>
+            <div
+                class="wire"
+                data-wire="C"
+                data-side="left">
+            </div>
+            <div
+                class="wire"
+                data-wire="D"
+                data-side="left">
+            </div>
+            <div class="connector"></div>
+        </div>
+
+        <div class="wireRow">
+            <div class="connector"></div>
+            <div
+                class="wire right"
+                data-wire="A"
+                data-side="right">
+            </div>
+            <div
+                class="wire right"
+                data-wire="B"
+                data-side="right">
+            </div>
+            <div
+                class="wire right"
+                data-wire="C"
+                data-side="right">
+            </div>
+            <div
+                class="wire right"
+                data-wire="D"
+                data-side="right">
+            </div>
+            <div class="connector"></div>
+        </div>
+
+        <div id="breakerHint">
+            Select two matching wires.
+        </div>
+
+        <button id="breakerClose">
+            CLOSE
+        </button>
+
+    </div>
+
+</div>
+
+
+<div id="fade"></div>
+
+
+<div id="startScreen">
+
+    <h1>NIGHT SHIFT</h1>
+
+    <div class="subtitle">
+        12:00 AM — 6:00 AM
+    </div>
+
+    <button id="start">
+        START SHIFT
+    </button>
+
+</div>
+
+
+<div id="endScreen">
+
+    <h1 id="endTitle">6:00 AM</h1>
+
+    <div class="subtitle" id="endText">
+        Shift complete.
+    </div>
+
+    <button id="again">
+        AGAIN
+    </button>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   CANVAS
+========================================================= */
+
+const canvas =
+    document.getElementById("game");
+
+const ctx =
+    canvas.getContext("2d");
+
+const cameraCanvas =
+    document.getElementById("cameraCanvas");
+
+const cctx =
+    cameraCanvas.getContext("2d");
+
+
+function resize(){
+
+    canvas.width =
+        innerWidth;
+
+    canvas.height =
+        innerHeight;
+
+    cameraCanvas.width =
+        innerWidth;
+
+    cameraCanvas.height =
+        innerHeight;
+
+}
+
+window.addEventListener(
+    "resize",
+    resize
+);
+
+resize();
+
+
+/* =========================================================
+   GAME STATE
+========================================================= */
+
+let running = false;
+let gameOver = false;
+
+let elapsed = 0;
+
+const NIGHT_LENGTH = 420;
+
+let power = 100;
+
+let barricade = 100;
+
+let flashlight = false;
+
+let cameras = false;
+
+let hiding = false;
+
+let powerOut = false;
+
+
+/* =========================================================
+   VIEW
+========================================================= */
+
+let view = 0;
+let targetView = 0;
+
+const VIEW_LIMIT = 1;
+
+
+/* =========================================================
+   MOUSE
+========================================================= */
+
+window.addEventListener(
+    "mousemove",
+    e => {
+
+        if(
+            !running ||
+            cameras ||
+            hiding ||
+            breakerOpen
+        )
+            return;
+
+
+        const centre =
+            innerWidth / 2;
+
+
+        const difference =
+            e.clientX - centre;
+
+
+        targetView =
+            Math.max(
+                -VIEW_LIMIT,
+                Math.min(
+                    VIEW_LIMIT,
+                    difference /
+                    (innerWidth * .38)
+                )
+            );
+
+    }
+);
+
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+window.addEventListener(
+    "keydown",
+    e => {
+
+        const key =
+            e.key.toLowerCase();
+
+
+        if(
+            key === "f" &&
+            running &&
+            !gameOver &&
+            !hiding &&
+            !breakerOpen &&
+            !powerOut
+        ){
+
+            flashlight =
+                !flashlight;
+
+        }
+
+
+        if(
+            e.code === "Space" &&
+            running &&
+            !gameOver &&
+            !hiding &&
+            !breakerOpen &&
+            !powerOut
+        ){
+
+            cameras =
+                !cameras;
+
+
+            document.getElementById(
+                "cameraUI"
+            ).style.display =
+                cameras
+                    ? "block"
+                    : "none";
+
+
+            flashlight =
+                false;
+
+        }
+
+
+        if(
+            key === "e" &&
+            running &&
+            !gameOver
+        ){
+
+            if(breakerOpen){
+
+                closeBreaker();
+
+            }
+            else{
+
+                interact();
+
+            }
+
+        }
+
+
+        if(
+            e.key === "Escape" &&
+            breakerOpen
+        ){
+
+            closeBreaker();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   CAMERA
+========================================================= */
+
+let currentCam =
+    "office";
+
+let cameraGlitch = 0;
+
+
+document.querySelectorAll(".cam")
+.forEach(
+    button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                if(powerOut)
+                    return;
+
+
+                currentCam =
+                    button.dataset.cam;
+
+
+                document
+                    .querySelectorAll(".cam")
+                    .forEach(
+                        b =>
+                        b.classList.remove(
+                            "active"
+                        )
+                    );
+
+
+                button.classList.add(
+                    "active"
+                );
+
+
+                cameraGlitch =
+                    .6;
+
+            }
+        );
+
+    }
+);
+
+
+/* =========================================================
+   OBJECTS
+========================================================= */
+
+const office = {
+
+    desk:{
+        x:0,
+        y:4
+    },
+
+    locker:{
+        x:-7,
+        y:0
+    },
+
+    door:{
+        x:7,
+        y:0
+    },
+
+    breaker:{
+        x:9,
+        y:-2
+    },
+
+    monitor:{
+        x:0,
+        y:3.7
+
+    }
+
+};
+
+
+/* =========================================================
+   ENTITY
+========================================================= */
+
+const entity = {
+
+    room:"back",
+
+    active:false,
+
+    timer:0,
+
+    atDoor:false,
+
+    attackTimer:0,
+
+    phase:0,
+
+    moveCooldown:0,
+
+    visits:0
+
+};
+
+
+/* =========================================================
+   BREAKER
+========================================================= */
+
+let breakerOpen = false;
+
+let breakerUsed = false;
+
+let selectedWire = null;
+
+
+/* =========================================================
+   BREAKER WIRES
+========================================================= */
+
+document.querySelectorAll(
+    ".wire"
+)
+.forEach(
+    wire => {
+
+        wire.addEventListener(
+            "click",
+            () => {
+
+                if(!breakerOpen)
+                    return;
+
+
+                const side =
+                    wire.dataset.side;
+
+
+                if(side !== "left")
+                    return;
+
+
+                document
+                    .querySelectorAll(
+                        '.wire[data-side="left"]'
+                    )
+                    .forEach(
+                        w =>
+                        w.classList.remove(
+                            "selected"
+                        )
+                    );
+
+
+                wire.classList.add(
+                    "selected"
+                );
+
+
+                selectedWire =
+                    wire.dataset.wire;
+
+
+                document.getElementById(
+                    "breakerHint"
+                ).textContent =
+                    "Now select the matching wire.";
+
+            }
+        );
+
+    }
+);
+
+
+/* =========================================================
+   RIGHT WIRES
+========================================================= */
+
+document.querySelectorAll(
+    '.wire[data-side="right"]'
+)
+.forEach(
+    wire => {
+
+        wire.addEventListener(
+            "click",
+            () => {
+
+                if(
+                    !breakerOpen ||
+                    !selectedWire
+                )
+                    return;
+
+
+                if(
+                    wire.dataset.wire ===
+                    selectedWire
+                ){
+
+                    completeBreaker();
+
+                }
+                else{
+
+                    selectedWire =
+                        null;
+
+
+                    document
+                        .querySelectorAll(
+                            ".wire"
+                        )
+                        .forEach(
+                            w =>
+                            w.classList.remove(
+                                "selected"
+                            )
+                        );
+
+
+                    document.getElementById(
+                        "breakerHint"
+                    ).textContent =
+                        "Wrong connection. Try again.";
+
+                }
+
+            }
+        );
+
+    }
+);
+
+
+/* =========================================================
+   START
+========================================================= */
+
+document.getElementById(
+    "start"
+).addEventListener(
+    "click",
+    startGame
+);
+
+
+document.getElementById(
+    "again"
+).addEventListener(
+    "click",
+    startGame
+);
+
+
+function startGame(){
+
+    running = true;
+
+    gameOver = false;
+
+    elapsed = 0;
+
+    power = 100;
+
+    barricade = 100;
+
+    flashlight = false;
+
+    cameras = false;
+
+    hiding = false;
+
+    powerOut = false;
+
+    breakerOpen = false;
+
+    breakerUsed = false;
+
+    selectedWire = null;
+
+    view = 0;
+
+    targetView = 0;
+
+    currentCam =
+        "office";
+
+
+    entity.room =
+        "back";
+
+    entity.active =
+        false;
+
+    entity.timer =
+        0;
+
+    entity.atDoor =
+        false;
+
+    entity.attackTimer =
+        0;
+
+    entity.phase =
+        0;
+
+    entity.moveCooldown =
+        3 +
+        Math.random() * 3;
+
+    entity.visits =
+        0;
+
+
+    document.getElementById(
+        "startScreen"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "endScreen"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "cameraUI"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "lockerUI"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "breakerUI"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "signalLost"
+    ).style.display =
+        "none";
+
+
+    document
+        .querySelectorAll(".cam")
+        .forEach(
+            b =>
+            b.classList.remove(
+                "active"
+            )
+        );
+
+
+    document.querySelector(
+        '.cam[data-cam="office"]'
+    ).classList.add(
+        "active"
+    );
+
+
+    lastTime =
+        performance.now();
+
+
+    requestAnimationFrame(
+        loop
+    );
+
+}
+
+
+/* =========================================================
+   INTERACTION
+========================================================= */
+
+function interact(){
+
+    if(cameras)
+        return;
+
+
+    if(hiding){
+
+        hiding = false;
+
+        document.getElementById(
+            "lockerUI"
+        ).style.display =
+            "none";
+
+        return;
+
+    }
+
+
+    /*
+       Very far right = breaker.
+    */
+
+    if(
+        targetView > .78
+    ){
+
+        openBreaker();
+
+        return;
+
+    }
+
+
+    /*
+       Normal right = door.
+    */
+
+    if(
+        targetView > .35
+    ){
+
+        barricade =
+            Math.min(
+                100,
+                barricade + 8
+            );
+
+
+        showMessage(
+            "You brace the door."
+        );
+
+
+        return;
+
+    }
+
+
+    /*
+       Left = locker.
+    */
+
+    if(
+        targetView < -.35
+    ){
+
+        hiding = true;
+
+        flashlight = false;
+
+        document.getElementById(
+            "lockerUI"
+        ).style.display =
+            "block";
+
+        return;
+
+    }
+
+}
+
+
+/* =========================================================
+   BREAKER OPEN
+========================================================= */
+
+function openBreaker(){
+
+    if(
+        breakerUsed ||
+        powerOut
+    ){
+
+        if(breakerUsed)
+            showMessage(
+                "The breaker is already reset."
+            );
+
+        return;
+
+    }
+
+
+    breakerOpen =
+        true;
+
+    flashlight =
+        false;
+
+    cameras =
+        false;
+
+
+    document.getElementById(
+        "cameraUI"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "breakerUI"
+    ).style.display =
+        "flex";
+
+
+    selectedWire =
+        null;
+
+
+    document
+        .querySelectorAll(".wire")
+        .forEach(
+            w =>
+            w.classList.remove(
+                "selected"
+            )
+        );
+
+
+    document.getElementById(
+        "breakerHint"
+    ).textContent =
+        "Select a wire.";
+
+}
+
+
+/* =========================================================
+   BREAKER COMPLETE
+========================================================= */
+
+function completeBreaker(){
+
+    breakerUsed =
+        true;
+
+    breakerOpen =
+        false;
+
+    selectedWire =
+        null;
+
+
+    power =
+        Math.min(
+            100,
+            power + 10
+        );
+
+
+    document.getElementById(
+        "breakerUI"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "breakerHint"
+    ).textContent =
+        "Select a wire.";
+
+
+    showMessage(
+        "Power restored +10%."
+    );
+
+}
+
+
+/* =========================================================
+   BREAKER CLOSE
+========================================================= */
+
+function closeBreaker(){
+
+    if(!breakerOpen)
+        return;
+
+
+    breakerOpen =
+        false;
+
+    selectedWire =
+        null;
+
+
+    document.getElementById(
+        "breakerUI"
+    ).style.display =
+        "none";
+
+}
+
+
+/* =========================================================
+   MESSAGE
+========================================================= */
+
+let messageTimer = 0;
+
+
+function showMessage(text){
+
+    const el =
+        document.getElementById(
+            "message"
+        );
+
+
+    el.textContent =
+        text;
+
+
+    el.style.opacity =
+        "1";
+
+
+    messageTimer =
+        1.5;
+
+}
+
+
+/* =========================================================
+   ENTITY AI
+========================================================= */
+
+function updateEntity(dt){
+
+    entity.timer +=
+        dt;
+
+    entity.moveCooldown -=
+        dt;
+
+
+    /*
+       Movement starts earlier and
+       becomes considerably more frequent.
+    */
+
+    if(
+        elapsed > 12 &&
+        entity.moveCooldown <= 0
+    ){
+
+        moveEntity();
+
+    }
+
+
+    if(
+        entity.room === "hall"
+    ){
+
+        entity.atDoor =
+            true;
+
+
+        if(
+            entity.attackTimer <= 0
+        ){
+
+            entity.attackTimer =
+                1.7 +
+                Math.random() * 2.8;
+
+
+            knock();
+
+        }
+
+    }
+    else{
+
+        entity.atDoor =
+            false;
+
+    }
+
+
+    if(
+        entity.atDoor
+    ){
+
+        entity.attackTimer -=
+            dt;
+
+
+        /*
+           Barricade slowly weakens
+           while something is outside.
+        */
+
+        barricade -=
+            dt *
+            (
+                .7 +
+                elapsed / 300
+            );
+
+
+        barricade =
+            Math.max(
+                0,
+                barricade
+            );
+
+
+        if(
+            barricade <= 0 &&
+            !hiding &&
+            entity.attackTimer <= 0
+        ){
+
+            lose();
+
+        }
+
+
+        if(
+            barricade <= 0 &&
+            hiding
+        ){
+
+            if(
+                Math.random() <
+                dt * .09
+            ){
+
+                entity.room =
+                    "storage";
+
+                entity.atDoor =
+                    false;
+
+                entity.attackTimer =
+                    0;
+
+            }
+
+        }
+
+    }
+
+
+    entity.phase +=
+        dt;
+
+}
+
+
+/* =========================================================
+   ENTITY MOVEMENT
+========================================================= */
+
+function moveEntity(){
+
+    entity.visits++;
+
+
+    /*
+       Movement becomes more aggressive
+       as the night progresses.
+    */
+
+    const danger =
+        Math.min(
+            1,
+            elapsed / NIGHT_LENGTH
+        );
+
+
+    const roll =
+        Math.random();
+
+
+    if(
+        danger > .55 &&
+        roll < .42
+    ){
+
+        entity.room =
+            "hall";
+
+    }
+    else if(
+        roll < .64
+    ){
+
+        entity.room =
+            "storage";
+
+    }
+    else if(
+        roll < .82
+    ){
+
+        entity.room =
+            "back";
+
+    }
+    else{
+
+        entity.room =
+            "outside";
+
+    }
+
+
+    entity.active =
+        true;
+
+
+    /*
+       2.5–7 seconds between movements,
+       getting faster later.
+    */
+
+    const minimum =
+        Math.max(
+            2.4,
+            6.5 -
+            danger * 2.5
+        );
+
+
+    const maximum =
+        Math.max(
+            minimum + .5,
+            9 -
+            danger * 4
+        );
+
+
+    entity.moveCooldown =
+        minimum +
+        Math.random() *
+        (maximum - minimum);
+
+}
+
+
+/* =========================================================
+   POWER
+========================================================= */
+
+function updatePower(dt){
+
+    if(powerOut)
+        return;
+
+
+    let drain =
+        .0035;
+
+
+    if(flashlight)
+        drain += .013;
+
+
+    if(cameras)
+        drain += .011;
+
+
+    /*
+       Door/barricade systems consume
+       a tiny amount while under stress.
+    */
+
+    if(entity.atDoor)
+        drain += .004;
+
+
+    power -=
+        drain *
+        dt *
+        60;
+
+
+    power =
+        Math.max(
+            0,
+            power
+        );
+
+
+    if(
+        power <= 0
+    ){
+
+        triggerPowerOut();
+
+    }
+
+}
+
+
+/* =========================================================
+   POWER OUT
+========================================================= */
+
+function triggerPowerOut(){
+
+    if(powerOut)
+        return;
+
+
+    powerOut =
+        true;
+
+
+    power =
+        0;
+
+
+    flashlight =
+        false;
+
+
+    cameras =
+        false;
+
+
+    document.getElementById(
+        "cameraUI"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "breakerUI"
+    ).style.display =
+        "none";
+
+
+    breakerOpen =
+        false;
+
+
+    /*
+       Complete blackout.
+    */
+
+    document.getElementById(
+        "signalLost"
+    ).style.display =
+        "flex";
+
+}
+
+
+/* =========================================================
+   VIEW
+========================================================= */
+
+function updateView(){
+
+    view +=
+        (
+            targetView -
+            view
+        ) *
+        .12;
+
+}
+
+
+/* =========================================================
+   OFFICE DRAW
+========================================================= */
+
+function drawOffice(){
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    ctx.save();
+
+
+    ctx.translate(
+        canvas.width / 2,
+        0
+    );
+
+
+    ctx.translate(
+        -view * 430,
+        0
+    );
+
+
+    drawCeiling();
+
+    drawBackWall();
+
+    drawFloor();
+
+    drawLeftWall();
+
+    drawRightWall();
+
+    drawHall();
+
+    drawDesk();
+
+    drawLocker();
+
+    drawDoor();
+
+    drawBreaker();
+
+    drawMonitor();
+
+
+    /*
+       Entity.
+    */
+
+    if(
+        entity.room === "hall" &&
+        entity.active
+    ){
+
+        /*
+           Distance changes with the
+           current view to make the
+           hallway feel deeper.
+        */
+
+        const entityX =
+            canvas.width * .77;
+
+
+        drawEntity(
+            entityX,
+            canvas.height * .47,
+            .85
+        );
+
+    }
+
+
+    ctx.restore();
+
+
+    if(
+        flashlight &&
+        !powerOut
+    ){
+
+        drawFlashlight();
+
+    }
+
+
+    drawDarkness();
+
+    drawVignette();
+
+}
+
+
+/* =========================================================
+   CEILING
+========================================================= */
+
+function drawCeiling(){
+
+    ctx.fillStyle =
+        "#080a0a";
+
+    ctx.fillRect(
+        -canvas.width,
+        0,
+        canvas.width * 3,
+        canvas.height * .43
+    );
+
+
+    ctx.strokeStyle =
+        "rgba(150,150,140,.045)";
+
+
+    for(
+        let x = -1200;
+        x < 2400;
+        x += 100
+    ){
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            x,
+            0
+        );
+
+        ctx.lineTo(
+            x,
+            canvas.height * .43
+        );
+
+        ctx.stroke();
+
+    }
+
+}
+
+
+/* =========================================================
+   BACK WALL
+========================================================= */
+
+function drawBackWall(){
+
+    const y =
+        canvas.height * .28;
+
+
+    ctx.fillStyle =
+        "#121514";
+
+    ctx.fillRect(
+        -canvas.width,
+        y,
+        canvas.width * 3,
+        canvas.height * .28
+    );
+
+
+    ctx.strokeStyle =
+        "#202421";
+
+    ctx.lineWidth =
+        2;
+
+
+    for(
+        let x = -1200;
+        x < 2400;
+        x += 150
+    ){
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            x,
+            y
+        );
+
+        ctx.lineTo(
+            x,
+            y + canvas.height * .28
+        );
+
+        ctx.stroke();
+
+    }
+
+}
+
+
+/* =========================================================
+   FLOOR
+========================================================= */
+
+function drawFloor(){
+
+    const horizon =
+        canvas.height * .56;
+
+
+    const gradient =
+        ctx.createLinearGradient(
+            0,
+            horizon,
+            0,
+            canvas.height
+        );
+
+
+    gradient.addColorStop(
+        0,
+        "#151817"
+    );
+
+
+    gradient.addColorStop(
+        1,
+        "#050606"
+    );
+
+
+    ctx.fillStyle =
+        gradient;
+
+
+    ctx.fillRect(
+        -canvas.width,
+        horizon,
+        canvas.width * 3,
+        canvas.height
+    );
+
+
+    ctx.strokeStyle =
+        "rgba(130,130,120,.075)";
+
+
+    for(
+        let y = horizon + 40;
+        y < canvas.height;
+        y += 55
+    ){
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            -canvas.width,
+            y
+        );
+
+        ctx.lineTo(
+            canvas.width * 2,
+            y
+        );
+
+        ctx.stroke();
+
+    }
+
+}
+
+
+/* =========================================================
+   LEFT WALL
+========================================================= */
+
+function drawLeftWall(){
+
+    ctx.fillStyle =
+        "#0c0f0e";
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        -canvas.width,
+        canvas.height * .27
+    );
+
+    ctx.lineTo(
+        -canvas.width * .15,
+        canvas.height * .39
+    );
+
+    ctx.lineTo(
+        -canvas.width * .15,
+        canvas.height * .7
+    );
+
+    ctx.lineTo(
+        -canvas.width,
+        canvas.height
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+}
+
+
+/* =========================================================
+   RIGHT WALL
+========================================================= */
+
+function drawRightWall(){
+
+    ctx.fillStyle =
+        "#0a0d0c";
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        canvas.width,
+        canvas.height * .27
+    );
+
+    ctx.lineTo(
+        canvas.width * .15,
+        canvas.height * .39
+    );
+
+    ctx.lineTo(
+        canvas.width * .15,
+        canvas.height * .7
+    );
+
+    ctx.lineTo(
+        canvas.width,
+        canvas.height
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+}
+
+
+/* =========================================================
+   HALL
+========================================================= */
+
+function drawHall(){
+
+    const x =
+        canvas.width * .56;
+
+    const y =
+        canvas.height * .32;
+
+    const w =
+        canvas.width * .31;
+
+    const h =
+        canvas.height * .31;
+
+
+    ctx.fillStyle =
+        "#020302";
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        x,
+        y
+    );
+
+    ctx.lineTo(
+        x + w,
+        y + 20
+    );
+
+    ctx.lineTo(
+        x + w * .83,
+        y + h
+    );
+
+    ctx.lineTo(
+        x + 20,
+        y + h
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+
+    ctx.strokeStyle =
+        "rgba(120,130,120,.1)";
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        x + 20,
+        y + h
+    );
+
+    ctx.lineTo(
+        x + w * .83,
+        y + h
+    );
+
+    ctx.stroke();
+
+
+    for(
+        let i = 0;
+        i < 4;
+        i++
+    ){
+
+        const lx =
+            x + 35 + i * 70;
+
+        const ly =
+            y + 22 + i * 18;
+
+
+        ctx.fillStyle =
+            "#353b36";
+
+        ctx.fillRect(
+            lx,
+            ly,
+            45 - i * 5,
+            6
+        );
+
+    }
+
+
+    for(
+        let i = 0;
+        i < 3;
+        i++
+    ){
+
+        const dy =
+            y + 65 + i * 67;
+
+
+        ctx.fillStyle =
+            "#242925";
+
+        ctx.fillRect(
+            x + 25 + i * 4,
+            dy,
+            63 - i * 5,
+            54 - i * 5
+        );
+
+
+        ctx.fillRect(
+            x + w - 92 - i * 3,
+            dy,
+            63 - i * 5,
+            54 - i * 5
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   DESK
+========================================================= */
+
+function drawDesk(){
+
+    const x =
+        canvas.width * .20;
+
+    const y =
+        canvas.height * .67;
+
+    const w =
+        canvas.width * .52;
+
+    const h =
+        canvas.height * .18;
+
+
+    ctx.fillStyle =
+        "#191a18";
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        x,
+        y
+    );
+
+    ctx.lineTo(
+        x + w,
+        y
+    );
+
+    ctx.lineTo(
+        x + w + 45,
+        y + h
+    );
+
+    ctx.lineTo(
+        x - 40,
+        y + h
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+
+    ctx.strokeStyle =
+        "#30322f";
+
+    ctx.lineWidth =
+        2;
+
+    ctx.stroke();
+
+
+    ctx.fillStyle =
+        "#0d0f0e";
+
+    ctx.fillRect(
+        x - 35,
+        y + h,
+        w + 80,
+        22
+    );
+
+}
+
+
+/* =========================================================
+   MONITOR
+========================================================= */
+
+function drawMonitor(){
+
+    const x =
+        canvas.width * .40;
+
+    const y =
+        canvas.height * .52;
+
+    const w =
+        canvas.width * .16;
+
+    const h =
+        canvas.height * .11;
+
+
+    ctx.fillStyle =
+        "#050606";
+
+    ctx.fillRect(
+        x,
+        y,
+        w,
+        h
+    );
+
+
+    ctx.strokeStyle =
+        "#3a3c38";
+
+    ctx.strokeRect(
+        x,
+        y,
+        w,
+        h
+    );
+
+
+    ctx.fillStyle =
+        "#141915";
+
+    ctx.fillRect(
+        x + 7,
+        y + 7,
+        w - 14,
+        h - 14
+    );
+
+
+    ctx.fillStyle =
+        cameras
+            ? "#7b8c7c"
+            : "#292d2a";
+
+
+    ctx.beginPath();
+
+    ctx.arc(
+        x + w - 14,
+        y + 13,
+        3,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    ctx.fillStyle =
+        "#101210";
+
+    ctx.fillRect(
+        x + w * .42,
+        y + h,
+        w * .16,
+        27
+    );
+
+}
+
+
+/* =========================================================
+   LOCKER
+========================================================= */
+
+function drawLocker(){
+
+    const x =
+        canvas.width * .035;
+
+    const y =
+        canvas.height * .31;
+
+    const w =
+        canvas.width * .13;
+
+    const h =
+        canvas.height * .40;
+
+
+    ctx.fillStyle =
+        "#151816";
+
+    ctx.fillRect(
+        x,
+        y,
+        w,
+        h
+    );
+
+
+    ctx.strokeStyle =
+        "#363936";
+
+    ctx.lineWidth =
+        3;
+
+    ctx.strokeRect(
+        x,
+        y,
+        w,
+        h
+    );
+
+
+    ctx.strokeStyle =
+        "#272a27";
+
+    ctx.lineWidth =
+        1;
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        x + w / 2,
+        y
+    );
+
+    ctx.lineTo(
+        x + w / 2,
+        y + h
+    );
+
+    ctx.stroke();
+
+
+    for(
+        let i = 0;
+        i < 9;
+        i++
+    ){
+
+        const vy =
+            y + 28 + i * 20;
+
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            x + 18,
+            vy
+        );
+
+        ctx.lineTo(
+            x + w - 18,
+            vy
+        );
+
+        ctx.stroke();
+
+    }
+
+
+    ctx.fillStyle =
+        "#4a4d49";
+
+    ctx.fillRect(
+        x + w - 16,
+        y + h / 2,
+        5,
+        18
+    );
+
+}
+
+
+/* =========================================================
+   DOOR
+========================================================= */
+
+function drawDoor(){
+
+    const x =
+        canvas.width * .78;
+
+    const y =
+        canvas.height * .27;
+
+    const w =
+        canvas.width * .17;
+
+    const h =
+        canvas.height * .46;
+
+
+    ctx.fillStyle =
+        "#050605";
+
+    ctx.fillRect(
+        x - 10,
+        y - 10,
+        w + 20,
+        h + 20
+    );
+
+
+    ctx.fillStyle =
+        "#302720";
+
+    ctx.fillRect(
+        x,
+        y,
+        w,
+        h
+    );
+
+
+    ctx.strokeStyle =
+        "#191512";
+
+    ctx.lineWidth =
+        4;
+
+
+    for(
+        let i = 1;
+        i < 6;
+        i++
+    ){
+
+        const bx =
+            x +
+            i *
+            w / 6;
+
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            bx,
+            y
+        );
+
+        ctx.lineTo(
+            bx,
+            y + h
+        );
+
+        ctx.stroke();
+
+    }
+
+
+    for(
+        let i = 1;
+        i < 4;
+        i++
+    ){
+
+        const by =
+            y +
+            i *
+            h / 4;
+
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            x,
+            by
+        );
+
+        ctx.lineTo(
+            x + w,
+            by
+        );
+
+        ctx.stroke();
+
+    }
+
+
+    ctx.fillStyle =
+        "#55534e";
+
+    ctx.fillRect(
+        x + 20,
+        y + h / 2 - 10,
+        28,
+        20
+    );
+
+
+    ctx.fillStyle =
+        "#151515";
+
+    ctx.fillRect(
+        x + 43,
+        y + h / 2 - 5,
+        19,
+        10
+    );
+
+
+    ctx.strokeStyle =
+        "#15110f";
+
+    ctx.lineWidth =
+        2;
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        x + w * .64,
+        y + 35
+    );
+
+    ctx.lineTo(
+        x + w * .53,
+        y + 85
+    );
+
+    ctx.lineTo(
+        x + w * .68,
+        y + 125
+    );
+
+    ctx.stroke();
+
+}
+
+
+/* =========================================================
+   BREAKER BOX
+========================================================= */
+
+function drawBreaker(){
+
+    /*
+       Physically mounted beyond the
+       door on the far right wall.
+    */
+
+    const x =
+        canvas.width * .965;
+
+    const y =
+        canvas.height * .32;
+
+    const w =
+        canvas.width * .10;
+
+    const h =
+        canvas.height * .25;
+
+
+    /*
+       Outer metal housing.
+    */
+
+    ctx.fillStyle =
+        "#111412";
+
+    ctx.fillRect(
+        x,
+        y,
+        w,
+        h
+    );
+
+
+    ctx.strokeStyle =
+        "#3c403d";
+
+    ctx.lineWidth =
+        4;
+
+    ctx.strokeRect(
+        x,
+        y,
+        w,
+        h
+    );
+
+
+    /*
+       Inner panel.
+    */
+
+    ctx.fillStyle =
+        "#080a09";
+
+    ctx.fillRect(
+        x + 12,
+        y + 12,
+        w - 24,
+        h - 24
+    );
+
+
+    /*
+       Breaker switches.
+    */
+
+    for(
+        let i = 0;
+        i < 4;
+        i++
+    ){
+
+        const sy =
+            y + 32 + i * 36;
+
+
+        ctx.fillStyle =
+            "#292d2a";
+
+        ctx.fillRect(
+            x + 18,
+            sy,
+            25,
+            14
+        );
+
+
+        ctx.fillStyle =
+            power > 20
+                ? "#4c514d"
+                : "#242824";
+
+        ctx.fillRect(
+            x + 50,
+            sy + 3,
+            7,
+            7
+        );
+
+    }
+
+
+    /*
+       Label.
+    */
+
+    ctx.fillStyle =
+        "#686d68";
+
+    ctx.font =
+        "9px monospace";
+
+    ctx.fillText(
+        "POWER",
+        x + 18,
+        y + h - 14
+    );
+
+}
+
+
+/* =========================================================
+   ENTITY
+========================================================= */
+
+function drawEntity(
+    x,
+    y,
+    scale = 1
+){
+
+    ctx.save();
+
+    ctx.translate(
+        x,
+        y
+    );
+
+    ctx.scale(
+        scale,
+        scale
+    );
+
+
+    ctx.fillStyle =
+        "rgba(0,1,0,.98)";
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        -34,
+        125
+    );
+
+    ctx.lineTo(
+        -27,
+        25
+    );
+
+    ctx.quadraticCurveTo(
+        -44,
+        -4,
+        -34,
+        -38
+    );
+
+    ctx.quadraticCurveTo(
+        -27,
+        -76,
+        0,
+        -80
+    );
+
+    ctx.quadraticCurveTo(
+        29,
+        -76,
+        36,
+        -38
+    );
+
+    ctx.quadraticCurveTo(
+        45,
+        -4,
+        28,
+        25
+    );
+
+    ctx.lineTo(
+        34,
+        125
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        0,
+        -46,
+        39,
+        47,
+        0,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    ctx.fillRect(
+        -55,
+        10,
+        110,
+        38
+    );
+
+
+    /*
+       Face flicker.
+    */
+
+    if(
+        Math.sin(
+            entity.phase * 2.8
+        ) > .58
+    ){
+
+        ctx.fillStyle =
+            "rgba(180,180,160,.12)";
+
+
+        ctx.fillRect(
+            -21,
+            -50,
+            12,
+            5
+        );
+
+
+        ctx.fillRect(
+            9,
+            -50,
+            12,
+            5
+        );
+
+    }
+
+
+    ctx.restore();
+
+}
+
+
+/* =========================================================
+   FLASHLIGHT
+========================================================= */
+
+function drawFlashlight(){
+
+    const beamX =
+        canvas.width / 2 +
+        view * 300;
+
+
+    const beam =
+        ctx.createRadialGradient(
+            beamX,
+            canvas.height * .54,
+            15,
+            beamX,
+            canvas.height * .54,
+            canvas.height * .68
+        );
+
+
+    beam.addColorStop(
+        0,
+        "rgba(255,255,225,.19)"
+    );
+
+
+    beam.addColorStop(
+        .22,
+        "rgba(235,235,210,.10)"
+    );
+
+
+    beam.addColorStop(
+        .55,
+        "rgba(210,210,190,.035)"
+    );
+
+
+    beam.addColorStop(
+        1,
+        "rgba(0,0,0,0)"
+    );
+
+
+    ctx.fillStyle =
+        beam;
+
+
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    /*
+       Actual narrow cone.
+    */
+
+    ctx.save();
+
+    ctx.globalCompositeOperation =
+        "screen";
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        beamX - 35,
+        canvas.height * .56
+    );
+
+    ctx.lineTo(
+        beamX - 210,
+        canvas.height * .12
+    );
+
+    ctx.lineTo(
+        beamX + 210,
+        canvas.height * .12
+    );
+
+    ctx.lineTo(
+        beamX + 35,
+        canvas.height * .56
+    );
+
+    ctx.closePath();
+
+
+    const cone =
+        ctx.createLinearGradient(
+            0,
+            canvas.height * .1,
+            0,
+            canvas.height * .6
+        );
+
+
+    cone.addColorStop(
+        0,
+        "rgba(255,255,220,.025)"
+    );
+
+    cone.addColorStop(
+        1,
+        "rgba(255,255,220,.10)"
+    );
+
+
+    ctx.fillStyle =
+        cone;
+
+    ctx.fill();
+
+    ctx.restore();
+
+}
+
+
+/* =========================================================
+   DARKNESS
+========================================================= */
+
+function drawDarkness(){
+
+    if(power > 0)
+        return;
+
+
+    ctx.fillStyle =
+        "#000";
+
+
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+}
+
+
+/* =========================================================
+   VIGNETTE
+========================================================= */
+
+function drawVignette(){
+
+    const gradient =
+        ctx.createRadialGradient(
+            canvas.width / 2,
+            canvas.height / 2,
+            canvas.height * .15,
+            canvas.width / 2,
+            canvas.height / 2,
+            canvas.height * .8
+        );
+
+
+    gradient.addColorStop(
+        0,
+        "rgba(0,0,0,0)"
+    );
+
+
+    gradient.addColorStop(
+        1,
+        "rgba(0,0,0,.8)"
+    );
+
+
+    ctx.fillStyle =
+        gradient;
+
+
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+}
+
+
+/* =========================================================
+   CAMERA
+========================================================= */
+
+function drawCamera(){
+
+    if(powerOut)
+        return;
+
+
+    cameraGlitch =
+        Math.max(
+            0,
+            cameraGlitch - .012
+        );
+
+
+    cctx.clearRect(
+        0,
+        0,
+        cameraCanvas.width,
+        cameraCanvas.height
+    );
+
+
+    if(currentCam === "office")
+        drawCamOffice();
+
+    if(currentCam === "hall")
+        drawCamHall();
+
+    if(currentCam === "storage")
+        drawCamStorage();
+
+    if(currentCam === "back")
+        drawCamBack();
+
+    if(currentCam === "outside")
+        drawCamOutside();
+
+
+    /*
+       Heavy CRT lines.
+    */
+
+    cctx.fillStyle =
+        "rgba(255,255,255,.025)";
+
+
+    for(
+        let y = 0;
+        y < cameraCanvas.height;
+        y += 4
+    ){
+
+        cctx.fillRect(
+            0,
+            y,
+            cameraCanvas.width,
+            1
+        );
+
+    }
+
+
+    /*
+       Rolling CRT bar.
+    */
+
+    const scan =
+        (
+            elapsed * 85
+        ) %
+        cameraCanvas.height;
+
+
+    const scanGradient =
+        cctx.createLinearGradient(
+            0,
+            scan - 35,
+            0,
+            scan + 35
+        );
+
+
+    scanGradient.addColorStop(
+        0,
+        "rgba(180,200,180,0)"
+    );
+
+    scanGradient.addColorStop(
+        .5,
+        "rgba(180,200,180,.035)"
+    );
+
+    scanGradient.addColorStop(
+        1,
+        "rgba(180,200,180,0)"
+    );
+
+
+    cctx.fillStyle =
+        scanGradient;
+
+
+    cctx.fillRect(
+        0,
+        scan - 35,
+        cameraCanvas.width,
+        70
+    );
+
+
+    /*
+       Static.
+    */
+
+    if(
+        cameraGlitch > 0 ||
+        Math.random() < .05
+    ){
+
+        const amount =
+            180 +
+            Math.floor(
+                cameraGlitch * 300
+            );
+
+
+        for(
+            let i = 0;
+            i < amount;
+            i++
+        ){
+
+            cctx.fillStyle =
+                `rgba(
+                    255,
+                    255,
+                    255,
+                    ${Math.random()*.12}
+                )`;
+
+
+            cctx.fillRect(
+                Math.random() *
+                    cameraCanvas.width,
+
+                Math.random() *
+                    cameraCanvas.height,
+
+                Math.random() * 7 + 1,
+
+                Math.random() * 3 + 1
+            );
+
+        }
+
+    }
+
+
+    /*
+       Tiny horizontal distortion.
+    */
+
+    if(
+        Math.random() < .04
+    ){
+
+        const sliceY =
+            Math.random() *
+            cameraCanvas.height;
+
+
+        const sliceH =
+            Math.random() * 8 + 2;
+
+
+        const offset =
+            Math.random() * 20 - 10;
+
+
+        try{
+
+            const image =
+                cctx.getImageData(
+                    0,
+                    sliceY,
+                    cameraCanvas.width,
+                    sliceH
+                );
+
+
+            cctx.putImageData(
+                image,
+                offset,
+                sliceY
+            );
+
+        }
+        catch(e){}
+
+    }
+
+
+    document.getElementById(
+        "cameraName"
+    ).textContent =
+        {
+            office:"CAM 01 — OFFICE",
+            hall:"CAM 02 — HALLWAY",
+            storage:"CAM 03 — STORAGE",
+            back:"CAM 04 — BACK ROOM",
+            outside:"CAM 05 — OUTSIDE"
+        }[currentCam];
+
+
+    document.getElementById(
+        "cameraStatus"
+    ).textContent =
+        cameraGlitch > .08
+            ? "SIGNAL INTERFERENCE"
+            : power < 20
+                ? "LOW POWER"
+                : "SIGNAL STABLE";
+
+
+    const mins =
+        Math.floor(
+            elapsed / 60
+        );
+
+
+    const secs =
+        Math.floor(
+            elapsed % 60
+        );
+
+
+    document.getElementById(
+        "timestamp"
+    ).textContent =
+        String(mins).padStart(2,"0") +
+        ":" +
+        String(secs).padStart(2,"0") +
+        ":REC";
+
+}
+
+
+/* =========================================================
+   CAMERA BASE
+========================================================= */
+
+function camBase(){
+
+    cctx.fillStyle =
+        "#0b100c";
+
+    cctx.fillRect(
+        0,
+        0,
+        cameraCanvas.width,
+        cameraCanvas.height
+    );
+
+
+    cctx.fillStyle =
+        "#141a15";
+
+    cctx.fillRect(
+        0,
+        cameraCanvas.height * .18,
+        cameraCanvas.width,
+        cameraCanvas.height * .48
+    );
+
+
+    cctx.fillStyle =
+        "#080c09";
+
+    cctx.beginPath();
+
+    cctx.moveTo(
+        0,
+        cameraCanvas.height * .66
+    );
+
+    cctx.lineTo(
+        cameraCanvas.width,
+        cameraCanvas.height * .66
+    );
+
+    cctx.lineTo(
+        cameraCanvas.width,
+        cameraCanvas.height
+    );
+
+    cctx.lineTo(
+        0,
+        cameraCanvas.height
+    );
+
+    cctx.closePath();
+
+    cctx.fill();
+
+}
+
+
+/* =========================================================
+   CAMERA OFFICE
+========================================================= */
+
+function drawCamOffice(){
+
+    camBase();
+
+
+    cctx.fillStyle =
+        "#1a1e1b";
+
+    cctx.fillRect(
+        cameraCanvas.width * .23,
+        cameraCanvas.height * .57,
+        cameraCanvas.width * .54,
+        cameraCanvas.height * .18
+    );
+
+
+    cctx.fillStyle =
+        "#202520";
+
+    cctx.fillRect(
+        cameraCanvas.width * .08,
+        cameraCanvas.height * .25,
+        cameraCanvas.width * .15,
+        cameraCanvas.height * .42
+    );
+
+
+    cctx.fillStyle =
+        "#302720";
+
+    cctx.fillRect(
+        cameraCanvas.width * .77,
+        cameraCanvas.height * .22,
+        cameraCanvas.width * .14,
+        cameraCanvas.height * .45
+    );
+
+}
+
+
+/* =========================================================
+   CAMERA HALL
+========================================================= */
+
+function drawCamHall(){
+
+    cctx.fillStyle =
+        "#080c09";
+
+    cctx.fillRect(
+        0,
+        0,
+        cameraCanvas.width,
+        cameraCanvas.height
+    );
+
+
+    const w =
+        cameraCanvas.width;
+
+    const h =
+        cameraCanvas.height;
+
+
+    cctx.fillStyle =
+        "#161b17";
+
+
+    cctx.beginPath();
+
+    cctx.moveTo(
+        0,
+        0
+    );
+
+    cctx.lineTo(
+        w * .32,
+        h * .28
+    );
+
+    cctx.lineTo(
+        w * .32,
+        h * .70
+    );
+
+    cctx.lineTo(
+        0,
+        h
+    );
+
+    cctx.closePath();
+
+    cctx.fill();
+
+
+    cctx.beginPath();
+
+    cctx.moveTo(
+        w,
+        0
+    );
+
+    cctx.lineTo(
+        w * .68,
+        h * .28
+    );
+
+    cctx.lineTo(
+        w * .68,
+        h * .70
+    );
+
+    cctx.lineTo(
+        w,
+        h
+    );
+
+    cctx.closePath();
+
+    cctx.fill();
+
+
+    cctx.fillStyle =
+        "#070a08";
+
+
+    cctx.beginPath();
+
+    cctx.moveTo(
+        w * .32,
+        h * .70
+    );
+
+    cctx.lineTo(
+        w * .68,
+        h * .70
+    );
+
+    cctx.lineTo(
+        w,
+        h
+    );
+
+    cctx.lineTo(
+        0,
+        h
+    );
+
+    cctx.closePath();
+
+    cctx.fill();
+
+
+    for(
+        let i = 0;
+        i < 4;
+        i++
+    ){
+
+        const y =
+            h * .34 +
+            i * 72;
+
+
+        cctx.fillStyle =
+            "#292f2a";
+
+
+        cctx.fillRect(
+            w * .16 + i * 7,
+            y,
+            88 - i * 12,
+            67 - i * 10
+        );
+
+
+        cctx.fillRect(
+            w * .84 - i * 7 - 88 + i * 12,
+            y,
+            88 - i * 12,
+            67 - i * 10
+        );
+
+    }
+
+
+    /*
+       Monster feed.
+    */
+
+    if(
+        entity.room === "hall" &&
+        entity.active
+    ){
+
+        drawCameraEntity(
+            w / 2,
+            h * .52,
+            .75
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   CAMERA STORAGE
+========================================================= */
+
+function drawCamStorage(){
+
+    camBase();
+
+
+    for(
+        let i = 0;
+        i < 5;
+        i++
+    ){
+
+        const x =
+            60 +
+            i * 180;
+
+
+        cctx.fillStyle =
+            "#252a25";
+
+        cctx.fillRect(
+            x,
+            cameraCanvas.height * .24,
+            125,
+            340
+        );
+
+
+        for(
+            let j = 0;
+            j < 4;
+            j++
+        ){
+
+            cctx.fillStyle =
+                "#353b35";
+
+            cctx.fillRect(
+                x + 12,
+                cameraCanvas.height * .29 +
+                    j * 72,
+                100,
+                43
+            );
+
+        }
+
+    }
+
+
+    if(
+        entity.room === "storage" &&
+        entity.active
+    ){
+
+        drawCameraEntity(
+            cameraCanvas.width * .72,
+            cameraCanvas.height * .48,
+            .65
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   CAMERA BACK
+========================================================= */
+
+function drawCamBack(){
+
+    camBase();
+
+
+    cctx.fillStyle =
+        "#1b211c";
+
+    cctx.fillRect(
+        cameraCanvas.width * .15,
+        cameraCanvas.height * .2,
+        cameraCanvas.width * .7,
+        cameraCanvas.height * .52
+    );
+
+
+    cctx.fillStyle =
+        "#050705";
+
+    cctx.fillRect(
+        cameraCanvas.width * .43,
+        cameraCanvas.height * .25,
+        cameraCanvas.width * .15,
+        cameraCanvas.height * .46
+    );
+
+
+    if(
+        entity.room === "back" &&
+        entity.active
+    ){
+
+        drawCameraEntity(
+            cameraCanvas.width / 2,
+            cameraCanvas.height * .49,
+            .55
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   CAMERA OUTSIDE
+========================================================= */
+
+function drawCamOutside(){
+
+    cctx.fillStyle =
+        "#020403";
+
+    cctx.fillRect(
+        0,
+        0,
+        cameraCanvas.width,
+        cameraCanvas.height
+    );
+
+
+    cctx.fillStyle =
+        "#111512";
+
+    cctx.fillRect(
+        cameraCanvas.width * .18,
+        cameraCanvas.height * .2,
+        cameraCanvas.width * .64,
+        cameraCanvas.height * .55
+    );
+
+
+    cctx.fillStyle =
+        "#070908";
+
+    cctx.fillRect(
+        0,
+        cameraCanvas.height * .75,
+        cameraCanvas.width,
+        cameraCanvas.height * .25
+    );
+
+
+    cctx.fillStyle =
+        "#414741";
+
+    cctx.fillRect(
+        cameraCanvas.width * .76,
+        cameraCanvas.height * .12,
+        7,
+        cameraCanvas.height * .63
+    );
+
+
+    cctx.fillStyle =
+        "rgba(180,180,150,.05)";
+
+    cctx.beginPath();
+
+    cctx.arc(
+        cameraCanvas.width * .76,
+        cameraCanvas.height * .14,
+        160,
+        0,
+        Math.PI * 2
+    );
+
+    cctx.fill();
+
+}
+
+
+/* =========================================================
+   CAMERA ENTITY
+========================================================= */
+
+function drawCameraEntity(
+    x,
+    y,
+    scale
+){
+
+    cctx.save();
+
+    cctx.translate(
+        x,
+        y
+    );
+
+    cctx.scale(
+        scale,
+        scale
+    );
+
+
+    cctx.fillStyle =
+        "rgba(0,1,0,.98)";
+
+
+    cctx.beginPath();
+
+    cctx.moveTo(
+        -32,
+        125
+    );
+
+    cctx.lineTo(
+        -27,
+        22
+    );
+
+    cctx.quadraticCurveTo(
+        -43,
+        -10,
+        -33,
+        -42
+    );
+
+    cctx.quadraticCurveTo(
+        -27,
+        -75,
+        0,
+        -79
+    );
+
+    cctx.quadraticCurveTo(
+        29,
+        -75,
+        35,
+        -42
+    );
+
+    cctx.quadraticCurveTo(
+        43,
+        -10,
+        28,
+        22
+    );
+
+    cctx.lineTo(
+        32,
+        125
+    );
+
+    cctx.closePath();
+
+    cctx.fill();
+
+
+    cctx.beginPath();
+
+    cctx.ellipse(
+        0,
+        -44,
+        38,
+        46,
+        0,
+        0,
+        Math.PI * 2
+    );
+
+    cctx.fill();
+
+
+    /*
+       Occasional face.
+    */
+
+    if(
+        Math.random() <
+        .22
+    ){
+
+        cctx.fillStyle =
+            "rgba(190,190,175,.14)";
+
+
+        cctx.fillRect(
+            -21,
+            -49,
+            13,
+            5
+        );
+
+
+        cctx.fillRect(
+            9,
+            -49,
+            13,
+            5
+        );
+
+    }
+
+
+    cctx.restore();
+
+}
+
+
+/* =========================================================
+   CLOCK
+========================================================= */
+
+function updateClock(){
+
+    const progress =
+        elapsed /
+        NIGHT_LENGTH;
+
+
+    const totalMinutes =
+        progress *
+        360;
+
+
+    const hour =
+        Math.floor(
+            totalMinutes / 60
+        );
+
+
+    const minute =
+        Math.floor(
+            totalMinutes % 60
+        );
+
+
+    const displayHour =
+        hour === 0
+            ? 12
+            : Math.min(
+                6,
+                hour
+            );
+
+
+    document.getElementById(
+        "clock"
+    ).textContent =
+        displayHour +
+        ":" +
+        String(minute).padStart(
+            2,
+            "0"
+        ) +
+        " AM";
+
+}
+
+
+/* =========================================================
+   HUD
+========================================================= */
+
+function updateHUD(){
+
+    document.getElementById(
+        "powerValue"
+    ).textContent =
+        Math.floor(power);
+
+
+    document.getElementById(
+        "barValue"
+    ).textContent =
+        Math.floor(barricade);
+
+
+    document.getElementById(
+        "barricade"
+    ).style.display =
+        barricade < 100
+            ? "block"
+            : "none";
+
+
+    updateClock();
+
+
+    const prompt =
+        document.getElementById(
+            "prompt"
+        );
+
+
+    if(powerOut){
+
+        prompt.textContent =
+            "";
+
+        return;
+
+    }
+
+
+    if(cameras){
+
+        prompt.textContent =
+            "";
+
+    }
+    else if(breakerOpen){
+
+        prompt.textContent =
+            "";
+
+    }
+    else if(hiding){
+
+        prompt.textContent =
+            "E — Leave locker";
+
+    }
+    else if(view > .78){
+
+        if(breakerUsed){
+
+            prompt.textContent =
+                "Breaker already reset";
+
+        }
+        else{
+
+            prompt.textContent =
+                "E — Open breaker";
+
+        }
+
+    }
+    else if(view > .35){
+
+        prompt.textContent =
+            "E — Brace door";
+
+    }
+    else if(view < -.35){
+
+        prompt.textContent =
+            "E — Hide in locker";
+
+    }
+    else{
+
+        prompt.textContent =
+            "F — Flashlight     SPACE — Cameras";
+
+    }
+
+}
+
+
+/* =========================================================
+   AUDIO
+========================================================= */
+
+let audio;
+
+
+function getAudio(){
+
+    if(!audio){
+
+        audio =
+            new (
+                window.AudioContext ||
+                window.webkitAudioContext
+            )();
+
+    }
+
+    return audio;
+
+}
+
+
+function knock(){
+
+    try{
+
+        const a =
+            getAudio();
+
+
+        const osc =
+            a.createOscillator();
+
+        const gain =
+            a.createGain();
+
+
+        osc.type =
+            "square";
+
+        osc.frequency.value =
+            48;
+
+
+        gain.gain.setValueAtTime(
+            .09,
+            a.currentTime
+        );
+
+
+        gain.gain.exponentialRampToValueAtTime(
+            .001,
+            a.currentTime + .16
+        );
+
+
+        osc.connect(gain);
+
+        gain.connect(
+            a.destination
+        );
+
+
+        osc.start();
+
+        osc.stop(
+            a.currentTime + .2
+        );
+
+    }
+    catch(e){}
+
+}
+
+
+/* =========================================================
+   ATMOSPHERE
+========================================================= */
+
+let ambience =
+    7;
+
+
+function updateAtmosphere(dt){
+
+    ambience -=
+        dt;
+
+
+    if(
+        ambience <= 0
+    ){
+
+        ambience =
+            6 +
+            Math.random() * 14;
+
+
+        if(
+            Math.random() < .65
+        ){
+
+            try{
+
+                const a =
+                    getAudio();
+
+
+                const osc =
+                    a.createOscillator();
+
+                const gain =
+                    a.createGain();
+
+
+                osc.frequency.value =
+                    40 +
+                    Math.random() * 35;
+
+
+                gain.gain.setValueAtTime(
+                    .025,
+                    a.currentTime
+                );
+
+
+                gain.gain.exponentialRampToValueAtTime(
+                    .001,
+                    a.currentTime + 1.3
+                );
+
+
+                osc.connect(gain);
+
+                gain.connect(
+                    a.destination
+                );
+
+
+                osc.start();
+
+                osc.stop(
+                    a.currentTime + 1.4
+                );
+
+            }
+            catch(e){}
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   MESSAGE
+========================================================= */
+
+function updateMessage(dt){
+
+    if(
+        messageTimer <= 0
+    )
+        return;
+
+
+    messageTimer -=
+        dt;
+
+
+    if(
+        messageTimer <= 0
+    ){
+
+        document.getElementById(
+            "message"
+        ).style.opacity =
+            "0";
+
+    }
+
+}
+
+
+/* =========================================================
+   LOSE
+========================================================= */
+
+function lose(){
+
+    if(gameOver)
+        return;
+
+
+    gameOver = true;
+
+    running = false;
+
+    cameras = false;
+
+    hiding = false;
+
+    breakerOpen = false;
+
+
+    document.getElementById(
+        "cameraUI"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "lockerUI"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "breakerUI"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "signalLost"
+    ).style.display =
+        "none";
+
+
+    const fade =
+        document.getElementById(
+            "fade"
+        );
+
+
+    fade.style.transition =
+        "opacity .3s";
+
+    fade.style.opacity =
+        "1";
+
+
+    setTimeout(
+        () => {
+
+            document.getElementById(
+                "endScreen"
+            ).style.display =
+                "flex";
+
+
+            document.getElementById(
+                "endTitle"
+            ).textContent =
+                "SHIFT ENDED";
+
+
+            document.getElementById(
+                "endText"
+            ).textContent =
+                "Something reached the office.";
+
+
+            fade.style.opacity =
+                "0";
+
+        },
+        650
+    );
+
+}
+
+
+/* =========================================================
+   WIN
+========================================================= */
+
+function win(){
+
+    if(gameOver)
+        return;
+
+
+    gameOver = true;
+
+    running = false;
+
+
+    document.getElementById(
+        "endScreen"
+    ).style.display =
+        "flex";
+
+
+    document.getElementById(
+        "endTitle"
+    ).textContent =
+        "6:00 AM";
+
+
+    document.getElementById(
+        "endText"
+    ).textContent =
+        "Shift complete.";
+
+}
+
+
+/* =========================================================
+   DRAW
+========================================================= */
+
+function draw(){
+
+    if(powerOut){
+
+        /*
+           Don't render the normal office
+           after total power failure.
+        */
+
+        ctx.fillStyle =
+            "#000";
+
+        ctx.fillRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+    }
+    else if(cameras){
+
+        drawCamera();
+
+    }
+    else if(hiding){
+
+        ctx.fillStyle =
+            "#020202";
+
+        ctx.fillRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+    }
+    else{
+
+        drawOffice();
+
+    }
+
+
+    updateHUD();
+
+}
+
+
+/* =========================================================
+   LOOP
+========================================================= */
+
+let lastTime =
+    0;
+
+
+function loop(time){
+
+    if(!running)
+        return;
+
+
+    const dt =
+        Math.min(
+            .05,
+            (time - lastTime) / 1000
+        );
+
+
+    lastTime =
+        time;
+
+
+    elapsed +=
+        dt;
+
+
+    if(
+        elapsed >=
+        NIGHT_LENGTH
+    ){
+
+        win();
+
+        return;
+
+    }
+
+
+    updateView();
+
+    updatePower(dt);
+
+    updateEntity(dt);
+
+    updateAtmosphere(dt);
+
+    updateMessage(dt);
+
+    draw();
+
+
+    requestAnimationFrame(
+        loop
+    );
+
+}
+
+
+/* =========================================================
+   INITIAL
+========================================================= */
+
+draw();
+
+</script>
+
+</body>
+</html>
