@@ -1,2175 +1,452 @@
-<!DOCTYPE html>
-
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Faking Sim</title>
-
 <style>
-*{
-    box-sizing:border-box;
-}
-
-html,body{
-    margin:0;
-    width:100%;
-    height:100%;
-    overflow:hidden;
-    background:#05070b;
-    font-family:Arial,Helvetica,sans-serif;
-    color:white;
-    user-select:none;
-}
-
-body{
-    cursor:default;
-}
-
-#game{
-    position:fixed;
-    inset:0;
-    width:100vw;
-    height:100vh;
-    background:#111;
-}
-
-.hidden{
-    display:none!important;
-}
-
-/* =========================
-   MENU
-========================= */
-
-#menu{
-    position:fixed;
-    inset:0;
-    z-index:100;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:
-        radial-gradient(circle at center,#202a38 0%,#080b10 65%);
-}
-
-.menuBox{
-    width:min(620px,90vw);
-    padding:42px;
-    text-align:center;
-    border:1px solid rgba(255,255,255,.12);
-    border-radius:22px;
-    background:rgba(10,14,20,.94);
-    box-shadow:0 25px 80px rgba(0,0,0,.6);
-}
-
-.menuBox h1{
-    margin:0;
-    font-size:54px;
-    letter-spacing:4px;
-}
-
-.menuBox p{
-    color:#aab7c7;
-    line-height:1.6;
-}
-
-#play{
-    margin-top:20px;
-    padding:15px 45px;
-    border:0;
-    border-radius:12px;
-    background:#2563eb;
-    color:white;
-    font-size:21px;
-    font-weight:bold;
-    cursor:pointer;
-}
-
-#play:hover{
-    background:#3b82f6;
-}
-
-/* =========================
-   PC
-========================= */
-
-#desktop{
-    position:fixed;
-    inset:0;
-    background:
-        linear-gradient(135deg,#182331,#101720 50%,#172333);
-}
-
-#desk{
-    position:absolute;
-    left:0;
-    right:0;
-    bottom:0;
-    height:22%;
-    background:#2a211b;
-    border-top:8px solid #49382d;
-}
-
-#monitor{
-    position:absolute;
-    left:50%;
-    top:50%;
-    transform:translate(-50%,-47%);
-    width:min(1100px,86vw);
-    height:min(650px,70vh);
-    border:18px solid #111;
-    border-radius:16px;
-    background:#020409;
-    box-shadow:
-        0 30px 80px rgba(0,0,0,.7),
-        inset 0 0 0 3px #303030;
-    overflow:hidden;
-}
-
-#browserBar{
-    height:44px;
-    background:#20252c;
-    display:flex;
-    align-items:center;
-    gap:9px;
-    padding:0 14px;
-    color:#9da8b4;
-    font-size:13px;
-}
-
-.dot{
-    width:11px;
-    height:11px;
-    border-radius:50%;
-    background:#555;
-}
-
-.address{
-    flex:1;
-    height:27px;
-    padding:6px 12px;
-    border-radius:7px;
-    background:#11151a;
-    color:#8e9aa8;
-}
-
-/* =========================
-   GAME PAGE
-========================= */
-
-#gamePage{
-    position:absolute;
-    inset:44px 0 0;
-    background:#071018;
-    overflow:hidden;
-}
-
-#snakeCanvas{
-    position:absolute;
-    left:50%;
-    top:50%;
-    transform:translate(-50%,-50%);
-    width:min(760px,90%);
-    aspect-ratio:36/21;
-    background:#08131b;
-    border:2px solid #213542;
-    box-shadow:0 0 40px rgba(0,0,0,.6);
-}
-
-.gameTitle{
-    position:absolute;
-    top:14px;
-    left:18px;
-    font-size:20px;
-    font-weight:bold;
-    color:#78b8ff;
-    z-index:2;
-}
-
-.gameHint{
-    position:absolute;
-    bottom:14px;
-    left:18px;
-    color:#647989;
-    font-size:12px;
-    z-index:2;
-}
-
-/* =========================
-   SCHOOL PAGE
-========================= */
-
-#schoolPage{
-    position:absolute;
-    inset:44px 0 0;
-    background:#f4f1e9;
-    color:#171717;
-    overflow:auto;
-    padding:40px;
-}
-
-.paper{
-    width:min(800px,90%);
-    margin:auto;
-    padding:42px;
-    min-height:100%;
-    background:white;
-    box-shadow:0 10px 30px rgba(0,0,0,.25);
-}
-
-.paper h1{
-    margin-top:0;
-    font-family:Georgia,serif;
-}
-
-.paper h2{
-    margin-top:30px;
-}
-
-.paper p{
-    line-height:1.7;
-}
-
-.fakeLines{
-    margin-top:25px;
-    color:#555;
-    line-height:2;
-}
-
-/* =========================
-   HUD
-========================= */
-
-#hud{
-    position:fixed;
-    top:16px;
-    left:16px;
-    right:16px;
-    z-index:20;
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-start;
-    pointer-events:none;
-}
-
-.hudBox{
-    padding:9px 13px;
-    border-radius:10px;
-    background:rgba(0,0,0,.58);
-    border:1px solid rgba(255,255,255,.1);
-    backdrop-filter:blur(6px);
-    font-size:13px;
-}
-
-#leftHud{
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
-}
-
-#rightHud{
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
-    justify-content:flex-end;
-}
-
-#suspicionWrap{
-    width:180px;
-}
-
-#suspicionBar{
-    margin-top:5px;
-    height:6px;
-    background:#252525;
-    border-radius:10px;
-    overflow:hidden;
-}
-
-#suspicionFill{
-    width:0%;
-    height:100%;
-    background:#f59e0b;
-    transition:width .15s linear;
-}
-
-/* =========================
-   BUTTONS
-========================= */
-
-#controls{
-    position:fixed;
-    bottom:18px;
-    left:50%;
-    transform:translateX(-50%);
-    z-index:30;
-    display:flex;
-    gap:10px;
-}
-
-.control{
-    pointer-events:auto;
-    border:1px solid rgba(255,255,255,.15);
-    border-radius:10px;
-    padding:10px 16px;
-    background:rgba(10,15,22,.9);
-    color:white;
-    cursor:pointer;
-}
-
-.control:hover{
-    background:#1c2734;
-}
-
-/* =========================
-   WARNING
-========================= */
-
-#warning{
-    position:fixed;
-    left:50%;
-    top:15%;
-    transform:translateX(-50%);
-    z-index:50;
-    padding:13px 22px;
-    border-radius:12px;
-    background:rgba(150,15,15,.92);
-    border:2px solid #ff5555;
-    font-size:18px;
-    font-weight:bold;
-    opacity:0;
-    transition:opacity .15s;
-    pointer-events:none;
-}
-
-#warning.show{
-    opacity:1;
-}
-
-/* =========================
-   TEACHER
-========================= */
-
-#teacher{
-    position:fixed;
-    z-index:45;
-    left:-170px;
-    top:50%;
-    transform:translateY(-50%);
-    width:150px;
-    height:390px;
-    pointer-events:none;
-    transition:none;
-}
-
-.teacherBody{
-    position:absolute;
-    bottom:0;
-    left:15px;
-    width:120px;
-    height:255px;
-    border-radius:45px 45px 15px 15px;
-    background:#263449;
-}
-
-.teacherHead{
-    position:absolute;
-    top:15px;
-    left:38px;
-    width:75px;
-    height:85px;
-    border-radius:50%;
-    background:#d69b78;
-}
-
-.teacherHair{
-    position:absolute;
-    top:5px;
-    left:32px;
-    width:87px;
-    height:45px;
-    border-radius:50% 50% 20% 20%;
-    background:#252525;
-}
-
-.eye{
-    position:absolute;
-    top:50px;
-    width:7px;
-    height:7px;
-    border-radius:50%;
-    background:#111;
-}
-
-.eye.one{
-    left:54px;
-}
-
-.eye.two{
-    left:82px;
-}
-
-.teacherArm{
-    position:absolute;
-    width:38px;
-    height:130px;
-    border-radius:30px;
-    background:#d69b78;
-}
-
-.teacherArm.one{
-    left:-10px;
-    top:150px;
-    transform:rotate(15deg);
-}
-
-.teacherArm.two{
-    right:-10px;
-    top:150px;
-    transform:rotate(-15deg);
-}
-
-/* =========================
-   POPUPS
-========================= */
-
-#notification{
-    position:fixed;
-    right:25px;
-    bottom:95px;
-    z-index:35;
-    width:300px;
-    padding:16px;
-    border-radius:13px;
-    background:#17202b;
-    border:1px solid #405064;
-    box-shadow:0 15px 40px rgba(0,0,0,.5);
-    transform:translateX(360px);
-    transition:transform .25s;
-}
-
-#notification.show{
-    transform:translateX(0);
-}
-
-#notificationTitle{
-    font-weight:bold;
-    margin-bottom:5px;
-}
-
-#notificationText{
-    color:#9eacbb;
-    font-size:13px;
-}
-
-#notification button{
-    margin-top:12px;
-    border:0;
-    border-radius:7px;
-    padding:7px 12px;
-    background:#26384c;
-    color:white;
-    cursor:pointer;
-}
-
-/* =========================
-   STATUS
-========================= */
-
-#status{
-    position:fixed;
-    bottom:18px;
-    right:18px;
-    z-index:31;
-    padding:8px 12px;
-    border-radius:9px;
-    background:rgba(0,0,0,.55);
-    color:#b7c4d2;
-    font-size:12px;
-}
-
-/* =========================
-   OVERLAYS
-========================= */
-
-#peekOverlay{
-    position:fixed;
-    inset:0;
-    z-index:70;
-    pointer-events:none;
-    display:none;
-    background:rgba(30,80,100,.08);
-}
-
-#peekOverlay.show{
-    display:block;
-}
-
-#peekTeacher{
-    position:fixed;
-    top:15px;
-    left:50%;
-    transform:translateX(-50%);
-    padding:8px 14px;
-    border-radius:8px;
-    background:rgba(0,0,0,.7);
-    font-weight:bold;
-}
-
-#vhs{
-    position:fixed;
-    inset:0;
-    z-index:90;
-    pointer-events:none;
-    opacity:.12;
-    background:
-        repeating-linear-gradient(
-            0deg,
-            rgba(255,255,255,.05) 0px,
-            rgba(255,255,255,.05) 1px,
-            transparent 1px,
-            transparent 4px
-        );
-    mix-blend-mode:screen;
-}
-
-#crt{
-    position:fixed;
-    inset:0;
-    z-index:91;
-    pointer-events:none;
-    box-shadow:
-        inset 0 0 120px rgba(0,0,0,.75);
-    background:
-        repeating-linear-gradient(
-            0deg,
-            rgba(255,255,255,.035) 0px,
-            rgba(255,255,255,.035) 1px,
-            transparent 1px,
-            transparent 4px
-        );
-}
-
-#noise{
-    position:fixed;
-    inset:0;
-    z-index:92;
-    pointer-events:none;
-    opacity:.05;
-    background-image:
-        repeating-radial-gradient(
-            circle at 0 0,
-            rgba(255,255,255,.5) 0 1px,
-            transparent 1px 3px
-        );
-}
-
-#batteryWarning{
-    position:fixed;
-    top:90px;
-    right:20px;
-    z-index:60;
-    padding:8px 12px;
-    border-radius:8px;
-    background:#7f1d1d;
-    display:none;
-}
-
-/* =========================
-   PAUSE
-========================= */
-
-#pause{
-    position:fixed;
-    inset:0;
-    z-index:80;
-    display:none;
-    align-items:center;
-    justify-content:center;
-    background:rgba(0,0,0,.75);
-}
-
-#pause.show{
-    display:flex;
-}
-
-.pauseBox{
-    padding:35px 50px;
-    border-radius:18px;
-    background:#101722;
-    text-align:center;
-}
-
-/* =========================
-   RESULT
-========================= */
-
-#result{
-    position:fixed;
-    inset:0;
-    z-index:110;
-    display:none;
-    align-items:center;
-    justify-content:center;
-    background:rgba(0,0,0,.84);
-}
-
-.resultBox{
-    width:min(500px,90vw);
-    padding:40px;
-    border-radius:20px;
-    text-align:center;
-    background:#101722;
-    border:1px solid rgba(255,255,255,.12);
-    box-shadow:0 25px 80px rgba(0,0,0,.7);
-}
-
-.resultBox h1{
-    font-size:42px;
-    margin-top:0;
-}
-
-#retry{
-    margin-top:20px;
-    padding:12px 28px;
-    border:0;
-    border-radius:10px;
-    background:#2563eb;
-    color:white;
-    font-weight:bold;
-    cursor:pointer;
-}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif;background:#05070c;color:#fff}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;font-weight:800}
+#menu,#over{position:fixed!important;inset:0!important;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 35%,#172554,#05070c 65%);z-index:2147483647!important;visibility:visible;opacity:1;pointer-events:auto}
+.panel{position:relative;z-index:2147483648;width:min(650px,92vw);padding:38px;text-align:center;background:#111827ee;border:1px solid #334155;border-radius:22px;box-shadow:0 30px 100px #000b}
+h1{font-size:56px;margin:0 0 10px}h2{font-size:42px;margin:0 0 10px}.sub{color:#cbd5e1;line-height:1.6}.big{padding:15px 30px;background:#2563eb;color:#fff;font-size:20px;margin-top:15px}
+#game{height:100%;display:flex;flex-direction:column;background:#0b1220}
+#top{height:58px;display:flex;justify-content:space-between;align-items:center;padding:0 18px;background:#080d18;border-bottom:1px solid #263244;gap:15px}
+.topLeft{display:flex;align-items:center;gap:14px}.brand{font-weight:900}.vhsTag{font-size:10px;letter-spacing:2px;color:#94a3b8;border:1px solid #334155;padding:4px 7px;border-radius:4px}
+#hudRight{display:flex;align-items:center;gap:18px;font-size:13px;white-space:nowrap}
+#clock{font-family:monospace;font-size:20px;font-weight:900;letter-spacing:1px}#batteryWrap{display:flex;align-items:center;gap:7px}.battery{width:78px;height:17px;border:2px solid #cbd5e1;border-radius:4px;padding:2px;position:relative}.battery:after{content:"";position:absolute;right:-6px;top:4px;width:4px;height:7px;background:#cbd5e1;border-radius:1px}.batteryFill{display:block;height:100%;width:100%;background:#86efac;border-radius:1px;transition:width .15s,background .15s}
+#desktop{position:relative;flex:1;overflow:hidden;background:linear-gradient(135deg,#172554,#0f172a 55%,#111827)}
+#monitor{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(1100px,92vw);height:min(680px,78vh);border:14px solid #151b26;border-radius:22px;overflow:hidden;background:#020617;box-shadow:0 30px 90px #000,inset 0 0 0 3px #384454,inset 0 -18px 0 #0b1018}.monitorBezel{position:absolute;inset:0;pointer-events:none;z-index:45;border:3px solid #414b5b;border-radius:10px;box-shadow:inset 0 0 45px #0008}.monitorStand{position:absolute;left:50%;bottom:-58px;transform:translateX(-50%);width:150px;height:58px;background:#171e2a;border-radius:0 0 12px 12px;box-shadow:0 12px 25px #0008}.monitorStand:after{content:"";position:absolute;left:50%;bottom:-12px;transform:translateX(-50%);width:230px;height:18px;border-radius:50%;background:#111722}.powerLed{position:absolute;right:18px;bottom:10px;width:7px;height:7px;border-radius:50%;background:#6ee7b7;box-shadow:0 0 9px #6ee7b7;z-index:46}
+#browser{height:46px;transition:filter .12s,transform .12s;background:#e5e7eb;color:#374151;display:flex;align-items:center;gap:8px;padding:0 12px}.dot{width:11px;height:11px;border-radius:50%;background:#9ca3af}.address{flex:1;background:white;border:1px solid #cbd5e1;border-radius:8px;padding:7px 12px;font-size:13px}
+#screen{height:calc(100% - 46px);background:#0f172a;position:relative}.tabSwitch{animation:tabSwitch .28s ease}@keyframes tabSwitch{0%{opacity:.2;filter:blur(7px);transform:scale(.985)}55%{opacity:.72;filter:blur(2px);transform:scale(1.012)}100%{opacity:1;filter:none;transform:scale(1)}}
+#gamePage{height:100%;padding:24px}.title{font-size:30px;font-weight:900;margin-bottom:10px}
+#fakeGame{position:relative;height:calc(100% - 55px);overflow:hidden;border:2px solid #334155;border-radius:12px;background:linear-gradient(145deg,#111827,#020617);padding:12px}
+#gameHud{position:absolute;left:18px;top:18px;z-index:4;padding:7px 10px;border-radius:8px;background:#020617cc;font-size:12px;font-weight:800}
+#snakeCanvas{display:block;width:100%;height:100%;border-radius:8px;background:#07111a;image-rendering:pixelated}
+#snakeHint{position:absolute;right:18px;top:18px;z-index:4;padding:7px 10px;border-radius:8px;background:#020617cc;font-size:11px;color:#cbd5e1}
+#schoolPage{display:none;height:100%;padding:32px;background:#fff;color:#111827}.line{height:14px;background:#e5e7eb;border-radius:5px;margin:14px 0;width:85%}.short{width:55%}.input{height:90px;border:1px solid #cbd5e1;border-radius:7px;padding:12px;color:#64748b;margin-top:24px}
+#warning{display:none;position:absolute;right:18px;top:18px;z-index:20;padding:13px 18px;background:#991b1b;border-radius:12px;box-shadow:0 8px 30px #0008;font-weight:900}
+#whistle{display:none;position:absolute;left:50%;top:78px;transform:translateX(-50%);z-index:25;padding:12px 20px;text-align:center;background:#f59e0b;color:#111827;border:2px solid #fef3c7;border-radius:14px;box-shadow:0 10px 35px #0008;font-weight:1000;animation:pop .22s ease-out}
+#peek{display:none;position:absolute;left:50%;top:16px;transform:translateX(-50%);z-index:28;padding:10px 18px;background:#020617eF;border:2px solid #cbd5e1;border-radius:8px;font-family:monospace;font-weight:900;letter-spacing:1px;box-shadow:0 8px 30px #0009}
+#peekTeacher{display:none;position:absolute;left:50%;top:4px;transform:translateX(-50%);z-index:47;text-align:center;filter:drop-shadow(0 5px 14px #000);animation:peekRise .32s cubic-bezier(.2,.8,.2,1)}
+.peekHead{position:relative;width:58px;height:58px;border-radius:50%;background:#f1c7a7;margin:auto;border:3px solid #334155}.peekHead:before,.peekHead:after{content:"";position:absolute;top:22px;width:8px;height:8px;background:#111827;border-radius:50%;animation:lookAtYou .9s infinite alternate}.peekHead:before{left:13px}.peekHead:after{right:13px}.peekBody{width:78px;height:48px;background:#475569;border-radius:15px 15px 0 0;margin:-2px auto 0;border:3px solid #334155}.peekText{font-size:10px;font-weight:900;background:#020617dd;padding:4px 7px;border-radius:4px;margin-top:2px}.peekEyes{position:absolute;left:0;right:0;top:18px;font-size:11px;font-weight:900;letter-spacing:3px;color:#fff;text-shadow:0 1px 3px #000}@keyframes peekRise{from{transform:translateX(-50%) translateY(-70px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}@keyframes lookAtYou{from{transform:translateX(-2px)}to{transform:translateX(2px)}}
+.flash{animation:flash .45s infinite alternate}@keyframes flash{to{filter:brightness(1.7)}}@keyframes pop{from{transform:translateX(-50%) scale(.7);opacity:0}to{transform:translateX(-50%) scale(1);opacity:1}}
+#status,#camera{position:absolute;bottom:18px;padding:10px 14px;background:#020617dd;border:1px solid #334155;border-radius:10px;z-index:10;font-size:12px}#status{left:18px}#camera{right:18px}
+#teacher{display:none;position:absolute;left:-140px;top:40%;width:110px;z-index:15;transition:transform .15s ease}.head{width:58px;height:58px;margin:auto;border-radius:50%;background:#f1c7a7}.body{width:86px;height:105px;margin:8px auto;background:#475569;border-radius:18px}.tlabel{text-align:center;background:#020617cc;border-radius:6px;padding:4px;font-size:11px}
+#controls{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:8px;z-index:30}.ctrl{padding:11px 16px;background:#2563eb;color:white}.ctrl:hover,.big:hover{background:#3b82f6}
+#tabFlash{display:none;position:absolute;inset:0;z-index:54;pointer-events:none;background:linear-gradient(90deg,transparent,#fff8,transparent);animation:tabFlash .22s ease}@keyframes tabFlash{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+#vhs{position:absolute;inset:0;pointer-events:none;z-index:50;opacity:.25;background:repeating-linear-gradient(to bottom,transparent 0,transparent 3px,rgba(255,255,255,.045) 4px),linear-gradient(90deg,rgba(255,0,0,.025),transparent 45%,rgba(0,255,255,.025));mix-blend-mode:screen}
+#vhs:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 5px,rgba(0,0,0,.12) 6px 7px);animation:scan .15s linear infinite}@keyframes scan{from{transform:translateY(0)}to{transform:translateY(7px)}}
+#crt{position:absolute;inset:0;pointer-events:none;z-index:53;overflow:hidden;border-radius:8px;box-shadow:inset 0 0 80px rgba(0,0,0,.72),inset 0 0 18px rgba(255,255,255,.08);background:radial-gradient(ellipse at center,transparent 52%,rgba(0,0,0,.28) 100%);animation:crtFlicker .08s steps(2) infinite}
+#crt:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(to bottom,rgba(255,255,255,.035) 0px,rgba(255,255,255,.035) 1px,rgba(0,0,0,.12) 2px,rgba(0,0,0,.12) 4px);opacity:.7;mix-blend-mode:overlay}
+#crt:after{content:"";position:absolute;inset:-5%;background:repeating-linear-gradient(90deg,rgba(255,0,0,.025) 0 1px,transparent 1px 3px,rgba(0,255,255,.018) 3px 4px,transparent 4px 6px);opacity:.35;transform:scaleX(1.01)}
+@keyframes crtFlicker{0%,100%{opacity:.98}48%{opacity:1}50%{opacity:.94}52%{opacity:1}}
+#vhsNoise{position:absolute;inset:0;pointer-events:none;z-index:51;opacity:.08;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='80'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");animation:noise .12s steps(2) infinite}@keyframes noise{0%{transform:translate(0)}25%{transform:translate(2px,-1px)}50%{transform:translate(-1px,2px)}75%{transform:translate(1px,1px)}100%{transform:translate(0)}}
+#rec{position:absolute;left:22px;top:74px;z-index:52;font-family:monospace;font-size:12px;color:#ff6b6b;font-weight:900;letter-spacing:1px;text-shadow:0 1px 4px #000}.recDot{display:inline-block;width:8px;height:8px;background:#ff4444;border-radius:50%;margin-right:5px;animation:blink 1s infinite}@keyframes blink{50%{opacity:.25}}
+#batteryWarning{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:60;padding:16px 24px;background:#991b1bee;border:2px solid #fecaca;border-radius:14px;font-weight:1000;font-size:20px;box-shadow:0 15px 60px #000}
+#over{display:none;background:#020617ef}.good{color:#86efac}.bad{color:#fca5a5}
+
+#suspicionWrap{position:absolute;left:50%;top:18px;transform:translateX(-50%);z-index:18;width:190px;padding:7px 9px;background:#020617dd;border:1px solid #334155;border-radius:9px;font-size:10px;font-weight:900;text-align:center;box-shadow:0 8px 25px #0007}.susBar{height:6px;margin-top:5px;background:#1e293b;border-radius:4px;overflow:hidden}.susFill{height:100%;width:0;background:#f59e0b;border-radius:4px;transition:width .15s,background .15s}
+#notify{display:none;position:absolute;right:18px;bottom:74px;z-index:35;width:min(330px,42vw);padding:13px 15px;background:#f8fafc;color:#111827;border:2px solid #94a3b8;border-radius:12px;box-shadow:0 12px 35px #000b;animation:notifyIn .25s ease}.notifyTitle{font-weight:1000;margin-bottom:4px}.notifyText{font-size:12px;line-height:1.4}.notifyBtn{margin-top:9px;padding:7px 11px;background:#2563eb;color:#fff;border-radius:7px;font-size:11px}.notifyBtn:hover{background:#3b82f6}@keyframes notifyIn{from{transform:translateY(18px);opacity:0}to{transform:translateY(0);opacity:1}}
+#closeCall{display:none;position:absolute;left:50%;top:105px;transform:translateX(-50%);z-index:34;padding:9px 15px;background:#fef3c7;color:#111827;border:2px solid #f59e0b;border-radius:10px;font-weight:1000;box-shadow:0 10px 30px #0008;animation:pop .2s ease-out}
+#charger{display:none;position:absolute;left:50%;bottom:78px;transform:translateX(-50%);z-index:34;padding:10px 16px;background:#172554;border:2px solid #60a5fa;border-radius:11px;font-weight:900;box-shadow:0 10px 35px #0009;cursor:pointer}.chargerSmall{font-size:10px;color:#bfdbfe;font-weight:700;margin-top:3px}
+#snakePower{display:none;position:absolute;left:18px;bottom:18px;z-index:5;padding:7px 10px;background:#020617cc;border-radius:8px;font-size:10px;color:#bfdbfe}
+#glitch{display:none;position:absolute;inset:0;z-index:52;pointer-events:none;background:linear-gradient(180deg,transparent 0 35%,rgba(255,255,255,.12) 36% 39%,transparent 40% 62%,rgba(96,165,250,.08) 63% 66%,transparent 67%);mix-blend-mode:screen;animation:glitch .16s steps(2) 3}@keyframes glitch{0%{transform:translate(0)}33%{transform:translate(5px,-2px)}66%{transform:translate(-4px,2px)}100%{transform:translate(0)}}
 </style>
-
 </head>
-
 <body>
+<div id="menu"><div class="panel">
+<h1>FAKING SIM</h1>
+<p class="sub">You're definitely doing important schoolwork.<br><br>Survive until the clock hits <b>2:00</b>. Use the camera to peek for the teacher, but the camera only has <b>2:30</b> of battery.</p>
+<p class="sub"><b>SPACE</b> = switch screens &nbsp; • &nbsp; <b>WASD / ARROWS</b> = move &nbsp; • &nbsp; <b>F</b> = whistle &nbsp; • &nbsp; <b>Q</b> = peek</p>
+<button id="start" class="big">START FAKING</button>
+</div></div>
 
-<div id="menu">
-    <div class="menuBox">
-        <h1>FAKING SIM</h1>
-        <p>
-            You're supposed to be doing schoolwork.<br>
-            Unfortunately, Snake is right there.
-        </p>
-
-```
-    <p>
-        <b>SPACE</b> switch tabs ·
-        <b>Q</b> peek ·
-        <b>F</b> whistle ·
-        <b>P</b> pause
-    </p>
-
-    <button id="play">START SHIFT</button>
-</div>
-```
-
-</div>
-
+<div id="game">
+<div id="top"><div class="topLeft"><span class="brand">🖥️ FAKING SIM</span><span class="vhsTag">VHS CAM 1998</span></div><div id="hudRight"><span>⏱ <b id="clock">00:00</b> / 02:00</span><span id="batteryWrap">📼 <span class="battery"><span class="batteryFill" id="batteryFill"></span></span><b id="batteryText">02:30</b></span><span>Score: <b id="score">0</b></span></div></div>
 <div id="desktop">
-
-```
-<div id="desk"></div>
-
-<div id="monitor">
-
-    <div id="browserBar">
-        <span class="dot"></span>
-        <span class="dot"></span>
-        <span class="dot"></span>
-
-        <div class="address">
-            classroom.local
-        </div>
-    </div>
-
-    <div id="gamePage">
-
-        <div class="gameTitle">
-            SNAKE.EXE
-        </div>
-
-        <canvas id="snakeCanvas"
-                width="720"
-                height="420">
-        </canvas>
-
-        <div class="gameHint">
-            WASD / ARROWS to move
-        </div>
-
-    </div>
-
-    <div id="schoolPage" class="hidden">
-
-        <div class="paper">
-
-            <h1>
-                History Assignment
-            </h1>
-
-            <h2>
-                The Industrial Revolution
-            </h2>
-
-            <p>
-                The Industrial Revolution transformed
-                manufacturing, transportation and daily
-                life through the development of machines,
-                factories and new production methods.
-            </p>
-
-            <p>
-                Explain two major effects of the Industrial
-                Revolution on society.
-            </p>
-
-            <div class="fakeLines">
-                __________________________________________________
-                <br>
-                __________________________________________________
-                <br>
-                __________________________________________________
-                <br>
-                __________________________________________________
-                <br>
-                __________________________________________________
-            </div>
-
-            <h2>
-                Question 2
-            </h2>
-
-            <p>
-                Why did factories become increasingly
-                important during the nineteenth century?
-            </p>
-
-            <div class="fakeLines">
-                __________________________________________________
-                <br>
-                __________________________________________________
-                <br>
-                __________________________________________________
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-```
-
-</div>
-
-<div id="hud">
-
-```
-<div id="leftHud">
-
-    <div class="hudBox">
-        TIME:
-        <span id="clock">00:00</span>
-    </div>
-
-    <div class="hudBox">
-        SCORE:
-        <span id="score">0</span>
-    </div>
-
-    <div class="hudBox">
-        NEXT VISIT:
-        <span id="next">--</span>
-    </div>
-
-</div>
-
-<div id="rightHud">
-
-    <div class="hudBox">
-        CAMERA:
-        <span id="camera">● ONLINE</span>
-    </div>
-
-    <div class="hudBox">
-        BATTERY:
-        <span id="battery">150s</span>
-    </div>
-
-    <div class="hudBox" id="suspicionWrap">
-        SUSPICION:
-        <span id="suspicionText">0%</span>
-
-        <div id="suspicionBar">
-            <div id="suspicionFill"></div>
-        </div>
-    </div>
-
-</div>
-```
-
-</div>
-
-<div id="warning"></div>
-
-<div id="teacher">
-
-```
-<div class="teacherHead"></div>
-<div class="teacherHair"></div>
-
-<div class="eye one"></div>
-<div class="eye two"></div>
-
-<div class="teacherBody"></div>
-
-<div class="teacherArm one"></div>
-<div class="teacherArm two"></div>
-```
-
-</div>
-
-<div id="notification">
-
-```
-<div id="notificationTitle">
-    School Portal
-</div>
-
-<div id="notificationText">
-    New assignment notification.
-</div>
-
-<button id="dismissNotification">
-    DISMISS
-</button>
-```
-
-</div>
-
-<div id="controls">
-
-```
-<button class="control" id="switchBtn">
-    SPACE — SWITCH
-</button>
-
-<button class="control" id="peekBtn">
-    Q — PEEK
-</button>
-
-<button class="control" id="pauseBtn">
-    P — PAUSE
-</button>
-```
-
-</div>
-
-<div id="status">
-    STATUS: gaming
-</div>
-
-<div id="batteryWarning">
-    ⚠ CAMERA BATTERY LOW
-</div>
-
-<div id="peekOverlay">
-    <div id="peekTeacher">
-        CAMERA PEEK
-    </div>
-</div>
-
-<div id="pause">
-    <div class="pauseBox">
-        <h1>PAUSED</h1>
-        <p>Press P to continue.</p>
-    </div>
-</div>
-
-<div id="result">
-
-```
-<div class="resultBox">
-
-    <h1 id="resultTitle">
-        BANNED
-    </h1>
-
-    <p id="resultText">
-        The teacher caught you gaming.
-    </p>
-
-    <p>
-        Final Score:
-        <b id="finalScore">0</b>
-    </p>
-
-    <button id="retry">
-        TRY AGAIN
-    </button>
-
-</div>
-```
-
-</div>
-
-<div id="vhs"></div>
-<div id="crt"></div>
-<div id="noise"></div>
+<div id="monitor"><div class="monitorBezel"></div><div class="monitorStand"></div><div class="powerLed"></div><div id="browser"><span class="dot"></span><span class="dot"></span><span class="dot"></span><div class="address" id="address">https://totally-not-a-game.local</div></div>
+<div id="screen">
+<div id="gamePage"><div class="title">🎮 Totally Not A Game</div><div id="fakeGame"><canvas id="snakeCanvas" width="720" height="420"></canvas><div id="gameHud">SNAKE &nbsp; | &nbsp; SCORE: <span id="coins">0</span></div><div id="snakeHint">WASD / ARROWS</div></div></div>
+<div id="schoolPage"><h2>📚 History Assignment</h2><p>Industrial Revolution — Question 4</p><div class="line"></div><div class="line"></div><div class="line short"></div><div class="input">Type your response here...</div><div class="line"></div><div class="line short"></div></div>
+</div></div><div id="tabFlash"></div>
+<div id="warning">📡 TEACHER DETECTED — <span id="dist">???</span>m</div>
+<div id="whistle">🎵 WHISTLE! +1000<br><span>Teacher heard that...</span></div>
+<div id="peek">👀 PEEKING THROUGH THE TOP...</div>
+<div id="peekTeacher"><div class="peekHead"><div class="peekEyes">• &nbsp; •</div></div><div class="peekBody"></div><div class="peekText">HE IS LOOKING AT YOU 👁️</div></div>
+<div id="status">STATUS: <b id="screenStatus">GAMING</b></div>
+<div id="camera">● CAMERA ACTIVE<br><span id="camState">Scanning classroom...</span></div>
+<div id="teacher"><div class="head"></div><div class="body"></div><div class="tlabel">TEACHER</div></div>
+<div id="controls"><button class="ctrl" id="switch">SPACE — SWITCH</button><button class="ctrl" id="peekBtn">Q — PEEK</button><button class="ctrl" id="pause">PAUSE</button></div>
+<div id="rec"><span class="recDot"></span>REC</div><div id="vhs"></div><div id="crt"></div><div id="vhsNoise"></div><div id="batteryWarning">📼 CAMERA BATTERY DEAD</div><div id="suspicionWrap">SUSPICION <span id="suspicionText">0%</span><div class="susBar"><div class="susFill" id="susFill"></div></div></div>
+<div id="notify"><div class="notifyTitle" id="notifyTitle">📚 School Notification</div><div class="notifyText" id="notifyText"></div><button class="notifyBtn" id="notifyBtn">DISMISS</button></div>
+<div id="closeCall">😳 THAT WAS CLOSE!</div>
+<div id="charger">🔌 CAMERA CHARGER FOUND<div class="chargerSmall">Click to restore 20 seconds of battery</div></div>
+<div id="snakePower">POWER-UP: <span id="powerText">NONE</span></div>
+<div id="glitch"></div>
+</div></div>
+<div id="over"><div class="panel"><h2 id="result">CAUGHT 💀</h2><p class="sub" id="resultText"></p><button class="big" id="again">TRY AGAIN</button></div></div>
 
 <script>
-
-/* =========================
-   HELPERS
-========================= */
-
-const $ = id => document.getElementById(id);
-
-function clamp(v,min,max){
-    return Math.max(min,Math.min(max,v));
-}
-
-function rand(min,max){
-    return Math.random()*(max-min)+min;
-}
-
-function fmtTime(seconds){
-
-    seconds=Math.max(0,seconds);
-
-    const m=Math.floor(seconds/60);
-    const s=Math.floor(seconds%60);
-
-    return String(m).padStart(2,"0")
-        +":"
-        +String(s).padStart(2,"0");
-}
-
-
-/* =========================
-   GAME STATE
-========================= */
-
-let running=false;
-let paused=false;
-let school=false;
-
-let startTime=0;
-let lastTime=0;
-
-let score=0;
-
-let battery=150;
-let peeking=false;
-let peekLeft=0;
-
-let suspicion=0;
-
-let nextVisit=0;
-let visitTimer=null;
-
-let teacher=false;
-let teacherX=-180;
-
-let teacherState="none";
-let teacherHold=0;
-
-let fakeOut=false;
-let longFakeout=false;
-
-let whistleUsed=false;
-let whistleBoost=false;
-
-let notificationVisible=false;
-let notificationTimer=null;
-
-const keys={};
-
-
-/* =========================
-   SNAKE
-========================= */
-
-const snakeCanvas=$("snakeCanvas");
-const snakeCtx=snakeCanvas.getContext("2d");
-
-const SNAKE_COLS=36;
-const SNAKE_ROWS=21;
-const SNAKE_STEP=.14;
-
-let snake=[];
-let snakeDir={x:1,y:0};
-let snakeNext={x:1,y:0};
-
-let snakeFood={
-    x:12,
-    y:7
-};
-
-let snakeTick=0;
-
-function resetSnake(){
-
-    snake=[
-        {x:18,y:10},
-        {x:17,y:10},
-        {x:16,y:10}
-    ];
-
-    snakeDir={x:1,y:0};
-    snakeNext={x:1,y:0};
-
-    spawnSnakeFood();
-}
-
-function spawnSnakeFood(){
-
-    let valid=false;
-
-    while(!valid){
-
-        snakeFood={
-            x:Math.floor(Math.random()*SNAKE_COLS),
-            y:Math.floor(Math.random()*SNAKE_ROWS)
-        };
-
-        valid=!snake.some(
-            s=>s.x===snakeFood.x &&
-               s.y===snakeFood.y
-        );
-    }
-}
-
-function drawSnake(){
-
-    const w=snakeCanvas.width;
-    const h=snakeCanvas.height;
-
-    snakeCtx.clearRect(0,0,w,h);
-
-    snakeCtx.fillStyle="#07131a";
-    snakeCtx.fillRect(0,0,w,h);
-
-    const cw=w/SNAKE_COLS;
-    const ch=h/SNAKE_ROWS;
-
-    snakeCtx.strokeStyle="rgba(120,180,210,.055)";
-    snakeCtx.lineWidth=1;
-
-    for(let x=0;x<=SNAKE_COLS;x++){
-
-        snakeCtx.beginPath();
-        snakeCtx.moveTo(x*cw,0);
-        snakeCtx.lineTo(x*cw,h);
-        snakeCtx.stroke();
-    }
-
-    for(let y=0;y<=SNAKE_ROWS;y++){
-
-        snakeCtx.beginPath();
-        snakeCtx.moveTo(0,y*ch);
-        snakeCtx.lineTo(w,y*ch);
-        snakeCtx.stroke();
-    }
-
-    /* food */
-
-    snakeCtx.fillStyle="#ef4444";
-
-    snakeCtx.beginPath();
-
-    snakeCtx.arc(
-        snakeFood.x*cw+cw/2,
-        snakeFood.y*ch+ch/2,
-        Math.min(cw,ch)*.32,
-        0,
-        Math.PI*2
-    );
-
-    snakeCtx.fill();
-
-    /* snake */
-
-    snake.forEach((part,i)=>{
-
-        snakeCtx.fillStyle=
-            i===0
-            ? "#5eead4"
-            : "#2dd4bf";
-
-        snakeCtx.fillRect(
-            part.x*cw+2,
-            part.y*ch+2,
-            cw-4,
-            ch-4
-        );
-    });
-}
-
-function snakeStep(){
-
-    snakeDir=snakeNext;
-
-    const head=snake[0];
-
-    const newHead={
-        x:head.x+snakeDir.x,
-        y:head.y+snakeDir.y
-    };
-
-    /* collision */
-
-    if(
-        newHead.x<0 ||
-        newHead.x>=SNAKE_COLS ||
-        newHead.y<0 ||
-        newHead.y>=SNAKE_ROWS ||
-        snake.some(
-            s=>s.x===newHead.x &&
-               s.y===newHead.y
-        )
-    ){
-
-        resetSnake();
-        return;
-    }
-
-    snake.unshift(newHead);
-
-    if(
-        newHead.x===snakeFood.x &&
-        newHead.y===snakeFood.y
-    ){
-
-        score+=100;
-
-        spawnSnakeFood();
-
-    }else{
-
-        snake.pop();
-    }
-}
-
-
-/* =========================
-   SCREEN
-========================= */
-
-function switchScreen(){
-
-    school=!school;
-
-    $("gamePage").classList.toggle(
-        "hidden",
-        school
-    );
-
-    $("schoolPage").classList.toggle(
-        "hidden",
-        !school
-    );
-
-    $("status").textContent=
-        "STATUS: "
-        +(school?"schoolwork":"gaming");
-
-    if(school){
-
-        suspicion=Math.max(
-            0,
-            suspicion-20
-        );
-
-        /*
-           Switching during a long fakeout
-           immediately saves the player.
-        */
-
-        if(
-            teacher &&
-            teacherState==="dangerFake"
-        ){
-
-            $("warning").classList.remove("show");
-
-            leaveTeacher();
-        }
-
-    }
-}
-
-
-/* =========================
-   SUSPICION
-========================= */
-
-function updateSuspicion(dt){
-
-    if(school){
-
-        suspicion-=18*dt;
-
-    }else{
-
-        suspicion-=2*dt;
-
-        if(teacher){
-
-            /*
-               Being visibly on the game while
-               teacher is nearby is suspicious.
-            */
-
-            suspicion+=
-                teacherState==="dangerFake"
-                ? 22*dt
-                : 10*dt;
-        }
-    }
-
-    suspicion=clamp(
-        suspicion,
-        0,
-        100
-    );
-
-    $("suspicionText").textContent=
-        Math.floor(suspicion)+"%";
-
-    $("suspicionFill").style.width=
-        suspicion+"%";
-
-    if(suspicion>=100){
-
-        banned(
-            "Your suspicious behaviour gave you away."
-        );
-    }
-}
-
-
-/* =========================
-   VISITS
-========================= */
-
-function scheduleVisit(seconds){
-
-    clearTimeout(visitTimer);
-
-    nextVisit=seconds;
-
-    visitTimer=setTimeout(()=>{
-
-        if(
-            running &&
-            !paused &&
-            !teacher
-        ){
-
-            startTeacher();
-        }
-
-    },seconds*1000);
-}
-
-function startTeacher(){
-
-    if(
-        !running ||
-        paused ||
-        teacher
-    ) return;
-
-    teacher=true;
-
-    teacherX=-180;
-
-    fakeOut=Math.random()<0.34;
-
-    if(fakeOut){
-
-        longFakeout=Math.random()<0.30;
-
-        if(longFakeout){
-
-            teacherState="dangerFake";
-
-            teacherHold=3.0;
-
-            $("warning").textContent=
-                "🚨 TEACHER IS WATCHING — SWITCH!";
-
-        }else{
-
-            teacherState="fakePeek";
-
-            teacherHold=.85;
-
-            $("warning").textContent=
-                "⚠️ TEACHER PEEKING";
-
-        }
-
-        $("warning").classList.add("show");
-
-        return;
-    }
-
-    teacherState="approach";
-
-    $("warning").textContent=
-        "🚨 TEACHER APPROACHING!";
-
-    $("warning").classList.add("show");
-}
-
-function leaveTeacher(){
-
-    teacher=false;
-
-    teacherState="none";
-
-    teacherX=-180;
-
-    teacherHold=0;
-
-    fakeOut=false;
-    longFakeout=false;
-
-    $("warning").classList.remove("show");
-
-    if(running){
-
-        scheduleVisit(
-            8+Math.random()*6
-        );
-    }
-}
-
-
-/* =========================
-   TEACHER UPDATE
-========================= */
-
-function updateTeacher(dt){
-
-    if(!teacher) return;
-
-    /* =====================
-       FAKE PEEK
-    ===================== */
-
-    if(teacherState==="fakePeek"){
-
-        teacherX=
-            Math.min(
-                25,
-                teacherX+850*dt
-            );
-
-        teacherHold-=dt;
-
-        if(teacherHold<=0){
-
-            teacherX-=900*dt;
-
-            if(teacherX<=-180){
-
-                leaveTeacher();
-            }
-        }
-
-        return;
-    }
-
-
-    /* =====================
-       DANGEROUS FAKEOUT
-    ===================== */
-
-    if(teacherState==="dangerFake"){
-
-        teacherX=
-            Math.min(
-                25,
-                teacherX+850*dt
-            );
-
-        teacherHold-=dt;
-
-        /*
-           Switching to schoolwork is the
-           correct response.
-        */
-
-        if(school){
-
-            leaveTeacher();
-
-            return;
-        }
-
-        if(teacherHold<=0){
-
-            banned(
-                "You stayed on the game during the long fakeout."
-            );
-
-            return;
-        }
-
-        return;
-    }
-
-
-    /* =====================
-       REAL TEACHER
-    ===================== */
-
-    if(teacherState==="approach"){
-
-        const speed=
-            whistleBoost
-            ? 1100
-            : 110;
-
-        teacherX+=speed*dt;
-
-        /*
-           Teacher reaches the monitor.
-        */
-
-        if(teacherX>=45){
-
-            teacherX=45;
-
-            if(school){
-
-                teacherState="checking";
-
-                teacherHold=1.5;
-
-                $("warning").textContent=
-                    "👀 TEACHER CHECKING YOUR WORK";
-
-            }else{
-
-                banned(
-                    "The teacher caught you gaming."
-                );
-            }
-        }
-
-        return;
-    }
-
-
-    /* =====================
-       CHECKING SCHOOLWORK
-    ===================== */
-
-    if(teacherState==="checking"){
-
-        teacherHold-=dt;
-
-        if(teacherHold<=0){
-
-            teacherState="leave";
-
-            $("warning").textContent=
-                "Teacher leaves...";
-
-        }
-
-        return;
-    }
-
-
-    /* =====================
-       LEAVING
-    ===================== */
-
-    if(teacherState==="leave"){
-
-        teacherX-=220*dt;
-
-        if(teacherX<=-180){
-
-            leaveTeacher();
-        }
-    }
-}
-
-
-/* =========================
-   WHISTLE
-========================= */
-
-function whistle(){
-
-    if(!running || whistleUsed) return;
-
-    whistleUsed=true;
-
-    score+=1000;
-
-    whistleBoost=true;
-
-    $("status").textContent=
-        "STATUS: WHISTLE USED";
-
-    setTimeout(()=>{
-
-        whistleBoost=false;
-
-        if(running){
-
-            $("status").textContent=
-                "STATUS: "
-                +(school?"schoolwork":"gaming");
-        }
-
-    },1800);
-
-    scheduleVisit(
-        1.15+Math.random()*.55
-    );
-
-    /*
-       If teacher is already present,
-       the whistle makes the situation worse.
-    */
-
-    if(teacher && teacherState==="approach"){
-
-        teacherState="approach";
-
-        teacherX=Math.max(
-            teacherX,
-            -100
-        );
-    }
-}
-
-
-/* =========================
-   PEEK
-========================= */
-
-function doPeek(){
-
-    if(
-        !running ||
-        peeking ||
-        battery<=0
-    ) return;
-
-    peeking=true;
-
-    peekLeft=1.2;
-
-    battery-=5;
-
-    updateBattery();
-
-    $("peekOverlay").classList.add("show");
-
-    let realTeacher=
-        teacher &&
-        teacherState!=="fakePeek" &&
-        teacherState!=="dangerFake";
-
-    let scheduledSoon=
-        !teacher &&
-        nextVisit<=10;
-
-    let nearby=
-        realTeacher ||
-        scheduledSoon;
-
-    $("peekTeacher").textContent=
-        nearby
-        ? "🚨 TEACHER NEARBY"
-        : "✓ CLEAR";
-
-    /*
-       Fakeouts are deliberately harder to
-       identify with the peek.
-    */
-
-    if(
-        teacher &&
-        (
-            teacherState==="fakePeek" ||
-            teacherState==="dangerFake"
-        )
-    ){
-
-        $("peekTeacher").textContent=
-            "⚠️ MOVEMENT DETECTED";
-    }
-}
-
-
-/* =========================
-   BATTERY
-========================= */
-
+const $=id=>document.getElementById(id);
+let running=false,paused=false,school=false,startTime=0,last=0,score=0;
+let loopToken=0;
+let nextVisit=4,teacher=false,teacherX=-180,teacherState="patrol",teacherHold=0;
+let whistleBoost=false,whistleUsed=false,fakeOut=false,longFake=false;
+let coins=0,battery=150,peeking=false,peekLeft=0;
+let suspicion=0,notification=false,charger=false,closeCallShown=false;
+let visitToken=0,notificationToken=0,glitchToken=0;
+let visitTimer=null,notificationTimer=null,glitchTimer=null;
+let teacherType="TEACHER",teacherSpeedMult=1;
+let footstepsStarted=false,audioCtx=null,footTimer=null;
+const snakeCanvas=$("snakeCanvas"),snakeCtx=snakeCanvas.getContext("2d");
+let snake=[],snakeDir={x:1,y:0},snakeNext={x:1,y:0},snakeFood={x:12,y:7},snakeTick=0;
+let snakePower="none",powerLeft=0,powerNext=0;
+const SNAKE_COLS=36,SNAKE_ROWS=21,SNAKE_STEP=.14;
+const keys={up:false,down:false,left:false,right:false};
+
+function fmt(sec){sec=Math.max(0,sec);return String(Math.floor(sec/60)).padStart(2,"0")+":"+String(Math.floor(sec%60)).padStart(2,"0")}
 function updateBattery(){
-
-    battery=clamp(
-        battery,
-        0,
-        150
-    );
-
-    $("battery").textContent=
-        Math.ceil(battery)+"s";
-
-    if(battery<=30){
-
-        $("batteryWarning").style.display=
-            "block";
-
-    }else{
-
-        $("batteryWarning").style.display=
-            "none";
-    }
-
-    if(battery<=0){
-
-        banned(
-            "The camera battery died."
-        );
-    }
+ const pct=Math.max(0,Math.min(100,battery/150*100));
+ $("batteryFill").style.width=pct+"%";
+ $("batteryText").textContent=fmt(battery);
+ if(pct<=25){$("batteryFill").style.background="#f87171";$("batteryWrap").classList.add("flash")}
+ else{$("batteryFill").style.background="#86efac";$("batteryWrap").classList.remove("flash")}
 }
-
-
-/* =========================
-   RANDOM NOTIFICATIONS
-========================= */
-
-function scheduleNotification(){
-
-    clearTimeout(notificationTimer);
-
-    notificationTimer=setTimeout(()=>{
-
-        if(
-            running &&
-            !paused &&
-            !notificationVisible
-        ){
-
-            showNotification();
-        }
-
-        scheduleNotification();
-
-    },rand(18,30)*1000);
+function updateSuspicion(){
+ suspicion=Math.max(0,Math.min(100,suspicion));
+ $("susFill").style.width=suspicion+"%";$("suspicionText").textContent=Math.floor(suspicion)+"%";
+ $("susFill").style.background=suspicion>=75?"#ef4444":suspicion>=45?"#f59e0b":"#86efac";
 }
-
-function showNotification(){
-
-    notificationVisible=true;
-
-    $("notification").classList.add("show");
-
-    /*
-       Notifications only matter while gaming.
-    */
-
-    if(!school){
-
-        suspicion+=8;
-
-        $("status").textContent=
-            "STATUS: DISTRACTED";
-    }
+function updateScreen(){
+ $("gamePage").style.display=school?"none":"block";
+ $("schoolPage").style.display=school?"block":"none";
+ $("screenStatus").textContent=school?"SCHOOLWORK":"GAMING";
+ $("address").textContent=school?"https://school-portal.local/assignment":"https://totally-not-a-game.local";
 }
+function switchScreen(){
+ if(!running||paused)return;
+ const wasGaming=!school;
+ school=!school;
+ updateScreen();
 
-function hideNotification(){
+ // IMPORTANT: switching the fake browser tab must not reset, hide, or freeze the teacher.
+ // He remains a classroom overlay and continues from his exact current position.
+ if(teacher) $("teacher").style.display="block";
 
-    notificationVisible=false;
+ if(wasGaming) suspicion=Math.max(0,suspicion-10);
+ else suspicion=Math.min(100,suspicion+2);
+ updateSuspicion();
 
-    $("notification").classList.remove("show");
-
-    if(running){
-
-        $("status").textContent=
-            "STATUS: "
-            +(school?"schoolwork":"gaming");
-    }
+ const screen=$("screen"),browser=$("browser"),flash=$("tabFlash");
+ screen.classList.remove("tabSwitch");
+ browser.style.transform="scaleX(.985)";
+ browser.style.filter="brightness(1.4)";
+ flash.style.display="block";
+ void screen.offsetWidth;
+ screen.classList.add("tabSwitch");
+ setTimeout(()=>{
+   browser.style.transform="";
+   browser.style.filter="";
+   flash.style.display="none";
+ },220);
 }
-
-
-/* =========================
-   START
-========================= */
-
+function spawnSnakeFood(){
+ let tries=0;
+ do{snakeFood={x:Math.floor(Math.random()*SNAKE_COLS),y:Math.floor(Math.random()*SNAKE_ROWS)};tries++}
+ while(snake.some(s=>s.x===snakeFood.x&&s.y===snakeFood.y)&&tries<500);
+}
+function resetSnake(){snake=[{x:18,y:10},{x:17,y:10},{x:16,y:10},{x:15,y:10}];snakeDir={x:1,y:0};snakeNext={x:1,y:0};snakeTick=0;spawnSnakeFood();drawSnake()}
+function drawSnake(){
+ const cw=snakeCanvas.width/SNAKE_COLS,ch=snakeCanvas.height/SNAKE_ROWS;
+ snakeCtx.clearRect(0,0,snakeCanvas.width,snakeCanvas.height);snakeCtx.fillStyle="#07111a";snakeCtx.fillRect(0,0,snakeCanvas.width,snakeCanvas.height);
+ snakeCtx.strokeStyle="rgba(255,255,255,.025)";snakeCtx.lineWidth=1;
+ for(let x=0;x<=SNAKE_COLS;x++){snakeCtx.beginPath();snakeCtx.moveTo(x*cw,0);snakeCtx.lineTo(x*cw,snakeCanvas.height);snakeCtx.stroke()}
+ for(let y=0;y<=SNAKE_ROWS;y++){snakeCtx.beginPath();snakeCtx.moveTo(0,y*ch);snakeCtx.lineTo(snakeCanvas.width,y*ch);snakeCtx.stroke()}
+ snakeCtx.fillStyle="#facc15";snakeCtx.shadowBlur=12;snakeCtx.shadowColor="#facc15";snakeCtx.fillRect(snakeFood.x*cw+cw*.18,snakeFood.y*ch+ch*.18,cw*.64,ch*.64);snakeCtx.shadowBlur=0;
+ snake.forEach((part,i)=>{snakeCtx.fillStyle=i===0?"#60a5fa":"#2563eb";snakeCtx.fillRect(part.x*cw+1,part.y*ch+1,cw-2,ch-2)});
+}
+function snakeStep(){
+ snakeDir=snakeNext;const head={x:snake[0].x+snakeDir.x,y:snake[0].y+snakeDir.y};
+ if(head.x<0||head.x>=SNAKE_COLS||head.y<0||head.y>=SNAKE_ROWS||snake.some(p=>p.x===head.x&&p.y===head.y)){resetSnake();return}
+ snake.unshift(head);
+ if(head.x===snakeFood.x&&head.y===snakeFood.y){coins++;score+=100;$("coins").textContent=coins;spawnSnakeFood();
+   if(Math.random()<.22) grantPower();
+ }else snake.pop();drawSnake();
+}
+function grantPower(){
+ const powers=["SPEED","SLOW TIME","BONUS"];
+ snakePower=powers[Math.floor(Math.random()*powers.length)];powerLeft=8;
+ $("snakePower").style.display="block";$("powerText").textContent=snakePower;
+}
+function clearPower(){snakePower="none";powerLeft=0;$("snakePower").style.display="none";$("powerText").textContent="NONE"}
+function showCloseCall(){
+ if(closeCallShown)return;closeCallShown=true;$("closeCall").style.display="block";setTimeout(()=>{$("closeCall").style.display="none";closeCallShown=false},1200);
+}
+function randomTeacher(){
+ const types=[{name:"MR. BROWN",mult:1.0},{name:"MS. TAYLOR",mult:1.16},{name:"MR. WILSON",mult:.88}];
+ return types[Math.floor(Math.random()*types.length)];
+}
 function startGame(){
-
-    clearTimeout(visitTimer);
-    clearTimeout(notificationTimer);
-
-    running=true;
-    paused=false;
-
-    school=false;
-
-    startTime=performance.now();
-    lastTime=startTime;
-
-    score=0;
-
-    battery=150;
-
-    suspicion=0;
-
-    whistleUsed=false;
-    whistleBoost=false;
-
-    teacher=false;
-    teacherState="none";
-    teacherX=-180;
-
-    fakeOut=false;
-    longFakeout=false;
-
-    notificationVisible=false;
-
-    $("menu").style.display="none";
-    $("result").style.display="none";
-
-    $("gamePage").classList.remove("hidden");
-    $("schoolPage").classList.add("hidden");
-
-    $("notification").classList.remove("show");
-
-    $("status").textContent=
-        "STATUS: gaming";
-
-    $("warning").classList.remove("show");
-
-    resetSnake();
-    drawSnake();
-
-    updateBattery();
-
-    /*
-       First teacher arrives quickly.
-    */
-
-    scheduleVisit(
-        4+Math.random()*3
-    );
-
-    scheduleNotification();
-
-    requestAnimationFrame(loop);
+ $("over").className="";
+ loopToken++;
+ const myToken=loopToken;
+ running=true;paused=false;school=false;score=0;coins=0;startTime=last=performance.now();
+ nextVisit=4+Math.random()*3;teacher=false;teacherX=-140;teacherState="patrol";teacherHold=0;
+ whistleBoost=false;whistleUsed=false;fakeOut=false;longFake=false;teacherType="TEACHER";teacherSpeedMult=1;
+ battery=150;peeking=false;peekLeft=0;suspicion=0;notification=false;charger=false;closeCallShown=false;snakePower="none";powerLeft=0;
+ resetSnake();
+ $("menu").style.display="none";$("over").style.display="none";$("teacher").style.display="none";$("warning").style.display="none";$("whistle").style.display="none";$("peek").style.display="none";$("peekTeacher").style.display="none";$("batteryWarning").style.display="none";$("notify").style.display="none";$("charger").style.display="none";$("closeCall").style.display="none";$("glitch").style.display="none";$("snakePower").style.display="none";
+ $("pause").textContent="PAUSE";$("camState").textContent="Scanning classroom...";updateBattery();updateSuspicion();updateScreen();scheduleNotification();scheduleGlitch();
+ requestAnimationFrame(t=>loop(t,myToken));
 }
-
-
-/* =========================
-   BAN
-========================= */
-
-function banned(reason){
-
-    if(!running) return;
-
-    running=false;
-
-    clearTimeout(visitTimer);
-    clearTimeout(notificationTimer);
-
-    $("warning").classList.remove("show");
-
-    $("resultTitle").textContent=
-        "BANNED 🚫";
-
-    $("resultText").textContent=
-        reason;
-
-    $("finalScore").textContent=
-        Math.floor(score);
-
-    $("result").style.display=
-        "flex";
+function banned(reason="caught"){
+ if(!running)return;
+ running=false;paused=false;
+ loopToken++;visitToken++;notificationToken++;glitchToken++;
+ stopFootsteps();
+ clearTimeout(visitTimer);clearTimeout(notificationTimer);clearTimeout(glitchTimer);
+ const secs=(performance.now()-startTime)/1000;
+ // Hard-stop the gameplay surface and force the game-over layer above every CRT/VHS layer.
+ $("desktop").style.display="none";
+ $("teacher").style.display="none";
+ $("warning").style.display="none";
+ $("over").className="bannedOverlay";
+ $("over").style.setProperty("display","flex","important");
+ $("over").style.setProperty("visibility","visible","important");
+ $("over").style.setProperty("opacity","1","important");
+ $("over").style.setProperty("pointer-events","auto","important");
+ $("over").style.setProperty("z-index","2147483647","important");
+ const panel=$("over").querySelector(".panel");
+ if(panel)panel.style.setProperty("z-index","2147483648","important");
+ $("result").className="bad";
+ if(reason==="battery"){$("result").textContent="CAMERA DIED 📼";$("resultText").innerHTML=`Your camera battery ran out before you reached 2:00.<br><br><b>No more peeking.</b><br><br>Survived: ${secs.toFixed(1)} seconds<br>Score: ${Math.floor(score)}`}
+ else if(reason==="suspicion"){$("result").textContent="TOO SUSPICIOUS 🚨";$("resultText").innerHTML=`You looked way too suspicious.<br><br><b>The teacher checked your computer.</b><br><br>Survived: ${secs.toFixed(1)} seconds<br>Score: ${Math.floor(score)}`}
+ else{$("result").textContent="BANNED 🚫";$("resultText").innerHTML=`The teacher caught you gaming.<br><br><b>Computer privileges revoked.</b><br><br>Survived: ${secs.toFixed(1)} seconds<br>Score: ${Math.floor(score)}`}
+ $("over").style.display="flex";
+ $("over").style.visibility="visible";
+ $("over").style.opacity="1";
+ $("over").style.pointerEvents="auto";
+ $("over").style.zIndex="9999";
+ $("desktop").style.visibility="hidden";
 }
-
-
-/* =========================
-   WIN
-========================= */
-
 function win(){
+ if(!running)return;running=false;paused=false;loopToken++;visitToken++;notificationToken++;glitchToken++;stopFootsteps();
+ const secs=(performance.now()-startTime)/1000;$("result").className="good";$("result").textContent="YOU FAKED IT 🎉";
+ const best=Math.max(Number(localStorage.getItem("fakingSimBest")||0),Math.floor(score));localStorage.setItem("fakingSimBest",best);
+ $("resultText").innerHTML=`You survived until 2:00 without getting banned.<br><br><b>The teacher never caught you gaming.</b><br><br>Final score: ${Math.floor(score)}<br>Camera battery: ${fmt(battery)}<br>Best score: ${best}`;
+ $("over").style.display="flex";
+}
+function startTeacher(){
+ if(!running||paused||teacher)return;
+ const token=visitToken;
+ teacher=true;teacherX=-140;fakeOut=Math.random()<.34;longFake=fakeOut&&Math.random()<.30;
+ const typ=randomTeacher();teacherType=typ.name;teacherSpeedMult=typ.mult;
+ teacherState=fakeOut?(longFake?"dangerFake":"fakePeek"):"approach";$("teacher").style.display="block";
+ if(fakeOut){
+   $("teacher").style.left="8px";$("teacher").style.top="22%";$("teacher").style.transform="scale(.92) rotate(-3deg)";
+   $("camState").textContent=longFake?teacherType+" IS WATCHING — DANGER": "MOVEMENT DETECTED — "+teacherType+"?!";
+   if(longFake){teacherHold=3.0;$("warning").textContent="🚨 TEACHER IS WATCHING — SWITCH NOW!";$("warning").style.display="block"}
+   setTimeout(()=>{if(running&&visitToken===token&&teacher&&teacherState==="fakePeek"){teacherState="fakeLeave";$("camState").textContent="FALSE ALARM — HE JUST PEEKED";$("teacher").style.transform="translateX(-95px) scale(.92) rotate(-3deg)"}},850);
+ }else{
+   $("teacher").style.left="-140px";$("teacher").style.top="40%";$("teacher").style.transform="";$("camState").textContent=teacherType+" APPROACHING";
+ }
+}
+function leaveTeacher(){teacher=false;teacherState="patrol";teacherX=-180;teacherHold=0;fakeOut=false;longFake=false;$("teacher").style.display="none";$("teacher").style.transform="";$("warning").style.display="none";stopFootsteps();nextVisit=8+Math.random()*6;$("camState").textContent="Scanning classroom...";scheduleGlitch()}
+function doPeek(){
+ if(!running||paused||peeking)return;
+ if(battery<=0){banned("battery");return}
+ battery=Math.max(0,battery-5);updateBattery();peeking=true;peekLeft=1.2;$("peek").style.display="block";$("camState").textContent="PEEKING — CHECKING THE HALL...";
+ if(battery<=0){banned("battery");return}
+}
+function scheduleNotification(){
+ const token=++notificationToken;const delay=(18+Math.random()*12)*1000;
+ setTimeout(()=>{if(running&&token===notificationToken&&!notification){showNotification();}},delay);
+}
+function showNotification(){
+ notification=true;$("notifyTitle").textContent=Math.random()<.5?"📚 History Portal":"📝 School Reminder";
+ $("notifyText").textContent=Math.random()<.5?"Question 4 is still waiting for an answer.":"Your assignment autosave is ready. Dismiss this notification.";
+ $("notify").style.display="block";
+ if(!school){suspicion=Math.min(100,suspicion+8);updateSuspicion()}
+}
+function dismissNotification(){notification=false;$("notify").style.display="none";scheduleNotification()}
+function scheduleGlitch(){
+ const token=++glitchToken;const delay=(22+Math.random()*28)*1000;
+ setTimeout(()=>{if(running&&token===glitchToken){$("glitch").style.display="block";setTimeout(()=>{$("glitch").style.display="none"},480);scheduleGlitch()}},delay);
+}
+function showCharger(){if(!running||charger)return;charger=true;$("charger").style.display="block";setTimeout(()=>{if(running&&charger){$("charger").style.display="none";charger=false}},9000)}
+function collectCharger(){if(!running||!charger)return;battery=Math.min(150,battery+20);charger=false;$("charger").style.display="none";updateBattery();$("camState").textContent="CHARGER USED — BATTERY RESTORED";setTimeout(()=>{if(running)$("camState").textContent=teacher?"MOVEMENT DETECTED":"Scanning classroom..."},900)}
+function startFootsteps(){
+ if(footstepsStarted||!window.AudioContext)return;footstepsStarted=true;
+ try{audioCtx=audioCtx||new AudioContext()}catch(e){return}
+ const beat=()=>{
+   if(!running||!teacher||teacherState!=="approach"){footTimer=null;return}
+   try{const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.type="square";osc.frequency.value=90;gain.gain.value=.018;osc.connect(gain);gain.connect(audioCtx.destination);osc.start();osc.stop(audioCtx.currentTime+.055)}catch(e){}
+   footTimer=setTimeout(beat,Math.max(150,420/teacherSpeedMult));
+ };beat();
+}
+function stopFootsteps(){if(footTimer){clearTimeout(footTimer);footTimer=null}}
+function loop(t,myToken){
+ if(!running || myToken!==loopToken)return;
+ const dt=Math.min(.05,Math.max(0,(t-last)/1000));
+ last=t;
+ if(!paused){
+   const elapsed=(t-startTime)/1000;
+   $("clock").textContent=fmt(elapsed);
+   if(elapsed>=120){win();return}
 
-    if(!running) return;
+   battery=Math.max(0,battery-dt);
+   updateBattery();
+   if(battery<=0){banned("battery");return}
 
-    running=false;
+   if(peeking){
+     peekLeft-=dt;
+     if(peekLeft<=0){
+       peeking=false;
+       $("peek").style.display="none";
+       $("peekTeacher").style.display="none";
+       $("camState").textContent=teacher?"MOVEMENT DETECTED":"Scanning classroom...";
+     }
+   }
 
-    clearTimeout(visitTimer);
-    clearTimeout(notificationTimer);
+   if(!school)score+=dt*10*(1+elapsed/60);
+   else suspicion=Math.max(0,suspicion-dt*1.8);
 
-    $("warning").classList.remove("show");
+   if(!school){
+     if(keys.left&&snakeDir.x!==1)snakeNext={x:-1,y:0};
+     if(keys.right&&snakeDir.x!==-1)snakeNext={x:1,y:0};
+     if(keys.up&&snakeDir.y!==1)snakeNext={x:0,y:-1};
+     if(keys.down&&snakeDir.y!==-1)snakeNext={x:0,y:1};
+     snakeTick+=dt*(snakePower==="SPEED"?1.5:1);
+     let snakeSteps=0;
+     while(snakeTick>=SNAKE_STEP && snakeSteps<4){
+       snakeTick-=SNAKE_STEP;
+       snakeStep();
+       snakeSteps++;
+     }
+     if(snakeSteps>=4)snakeTick=0;
+   }
 
-    $("resultTitle").textContent=
-        "SHIFT COMPLETE 🎉";
+   if(powerLeft>0){powerLeft-=dt;if(powerLeft<=0)clearPower()}
+   if(!school&&notification)suspicion=Math.min(100,suspicion+dt*.4);
+   if(!school&&teacher)suspicion=Math.min(100,suspicion+dt*(teacherState==="approach"?2.2:4));
+   updateSuspicion();
+   if(suspicion>=100){banned("suspicion");return}
+   $("score").textContent=Math.floor(score);
 
-    $("resultText").textContent=
-        "You survived the entire class.";
+   nextVisit-=dt;
+   if(!teacher&&nextVisit<=0)startTeacher();
 
-    $("finalScore").textContent=
-        Math.floor(score);
+   if(teacher){
+     if(teacherState==="fakePeek"||teacherState==="fakeLeave"){
+       $("warning").style.display="none";
+     }else if(teacherState==="dangerFake"){
+       teacherHold-=dt;
+       $("warning").style.display="block";
+       $("warning").textContent="🚨 "+teacherType+" IS WATCHING — SWITCH NOW!";
+       if(school){leaveTeacher();}
+       else if(teacherHold<=0){banned();return}
+     }else{
+       // Use the teacher element's actual pixel position instead of the old
+       // percentage coordinate system. This makes his movement deterministic
+       // and prevents the halfway-across-the-screen freeze.
+       const desk=$("desktop");
+       const mon=$("monitor");
+       const deskW=Math.max(1,desk.clientWidth);
+       const ml=mon.offsetLeft;
+       const mr=ml+mon.offsetWidth;
+       // Three clean movement phases:
+       // approach -> stop at the monitor -> check -> walk all the way off-screen.
+       const approachSpeed=520*teacherSpeedMult*(whistleBoost?10:1);
+       const leaveSpeed=430*teacherSpeedMult;
+       let tc=teacherX+55;
 
-    $("result").style.display=
-        "flex";
+       if(teacherState==="approach"){
+         teacherX+=approachSpeed*dt;
+         tc=teacherX+55;
+
+         const near=tc>ml-140&&tc<mr+140;
+         if(near){
+           const d=Math.max(1,Math.round(Math.min(Math.abs(tc-ml),Math.abs(tc-mr))/55));
+           $("dist").textContent=d;
+           $("warning").style.display="block";
+           $("warning").textContent="📡 "+teacherType+" DETECTED — "+d+"m";
+           $("warning").classList.toggle("flash",d<=3);
+           startFootsteps();
+         }else{
+           $("warning").style.display="none";
+           stopFootsteps();
+         }
+
+         if(tc>ml+100&&tc<mr-100){
+           if(!school){banned();return}
+
+           // Lock him at the monitor while he checks the work.
+           teacherX=((ml+mr)/2)-55;
+           tc=teacherX+55;
+           teacherState="checking";
+           teacherHold=1.5;
+           whistleBoost=false;
+           stopFootsteps();
+           $("camState").textContent=teacherType+" CHECKING YOUR WORK...";
+         }
+       }
+
+       if(teacherState==="checking"){
+         // Stay put during the actual check instead of sliding through the monitor.
+         teacherX=((ml+mr)/2)-55;
+         $("teacher").style.left=teacherX+"px";
+         $("warning").style.display="block";
+         $("warning").textContent="👀 "+teacherType+" CHECKING YOUR WORK";
+         $("warning").classList.remove("flash");
+         teacherHold-=dt;
+
+         if(teacherHold<=0){
+           teacherState="leave";
+           $("camState").textContent=teacherType+" WALKING AWAY";
+         }
+       }
+
+       if(teacherState==="leave"){
+         teacherX+=leaveSpeed*dt;
+         $("warning").style.display="none";
+         stopFootsteps();
+       }
+
+       $("teacher").style.left=teacherX+"px";
+
+       if(teacherState==="leave"&&teacherX>deskW+160)leaveTeacher();
+     }
+     if(teacherState==="fakeLeave")leaveTeacher();
+   }
+
+   if(peeking){
+     const scheduledSoon=!teacher&&nextVisit<=10;
+     const teacherNearby=teacher||scheduledSoon;
+     $("peekTeacher").style.display=teacherNearby?"block":"none";
+     $("camState").textContent=teacher?"PEEKING — HE'S RIGHT THERE":scheduledSoon?"PEEKING — TEACHER APPROACHING SOON":"PEEKING — CLEAR";
+   }
+
+   if(!school&&!charger&&Math.random()<dt*.004)showCharger();
+ }
+ if(running && myToken===loopToken)requestAnimationFrame(t2=>loop(t2,myToken));
 }
 
-
-/* =========================
-   PAUSE
-========================= */
-
-function togglePause(){
-
-    if(!running) return;
-
-    paused=!paused;
-
-    $("pause").classList.toggle(
-        "show",
-        paused
-    );
-
-    if(!paused){
-
-        lastTime=performance.now();
-
-        requestAnimationFrame(loop);
-    }
-}
-
-
-/* =========================
-   MAIN LOOP
-========================= */
-
-function loop(time){
-
-    if(!running || paused) return;
-
-    const dt=
-        Math.min(
-            (time-lastTime)/1000,
-            .05
-        );
-
-    lastTime=time;
-
-    const elapsed=
-        (time-startTime)/1000;
-
-
-    /* =====================
-       TIMER
-    ===================== */
-
-    $("clock").textContent=
-        fmtTime(elapsed);
-
-
-    if(elapsed>=120){
-
-        win();
-
-        return;
-    }
-
-
-    /* =====================
-       VISIT DISPLAY
-    ===================== */
-
-    if(!teacher && nextVisit>0){
-
-        nextVisit=Math.max(
-            0,
-            nextVisit-dt
-        );
-
-        $("next").textContent=
-            Math.ceil(nextVisit)+"s";
-
-    }else if(teacher){
-
-        $("next").textContent=
-            "NOW";
-
-    }else{
-
-        $("next").textContent=
-            "--";
-    }
-
-
-    /* =====================
-       BATTERY
-    ===================== */
-
-    battery-=dt;
-
-    if(peeking){
-
-        peekLeft-=dt;
-
-        if(peekLeft<=0){
-
-            peeking=false;
-
-            $("peekOverlay").classList.remove(
-                "show"
-            );
-        }
-    }
-
-    updateBattery();
-
-
-    /* =====================
-       SNAKE
-    ===================== */
-
-    snakeTick+=dt;
-
-    if(
-        !school &&
-        !notificationVisible &&
-        snakeTick>=SNAKE_STEP
-    ){
-
-        snakeTick=0;
-
-        snakeStep();
-    }
-
-
-    /* =====================
-       KEYBOARD SNAKE
-    ===================== */
-
-    if(
-        keys.ArrowUp ||
-        keys.w
-    ){
-
-        if(snakeDir.y===0)
-            snakeNext={x:0,y:-1};
-    }
-
-    if(
-        keys.ArrowDown ||
-        keys.s
-    ){
-
-        if(snakeDir.y===0)
-            snakeNext={x:0,y:1};
-    }
-
-    if(
-        keys.ArrowLeft ||
-        keys.a
-    ){
-
-        if(snakeDir.x===0)
-            snakeNext={x:-1,y:0};
-    }
-
-    if(
-        keys.ArrowRight ||
-        keys.d
-    ){
-
-        if(snakeDir.x===0)
-            snakeNext={x:1,y:0};
-    }
-
-
-    /* =====================
-       TEACHER
-    ===================== */
-
-    updateTeacher(dt);
-
-
-    /* =====================
-       SUSPICION
-    ===================== */
-
-    updateSuspicion(dt);
-
-
-    /* =====================
-       DRAW
-    ===================== */
-
-    drawSnake();
-
-    $("teacher").style.left=
-        teacherX+"px";
-
-
-    /*
-       VHS flicker
-    */
-
-    $("noise").style.opacity=
-        (.035+Math.random()*.035).toFixed(3);
-
-    $("vhs").style.opacity=
-        (.08+Math.random()*.08).toFixed(3);
-
-
-    requestAnimationFrame(loop);
-}
-
-
-/* =========================
-   KEYBOARD
-========================= */
-
-window.addEventListener(
-    "keydown",
-    e=>{
-
-        if(
-            e.key==="ArrowUp" ||
-            e.key==="ArrowDown" ||
-            e.key==="ArrowLeft" ||
-            e.key==="ArrowRight" ||
-            e.key===" "
-        ){
-
-            e.preventDefault();
-        }
-
-        keys[e.key]=true;
-        keys[e.key.toLowerCase()]=true;
-
-
-        if(e.repeat) return;
-
-
-        /* SPACE */
-
-        if(e.key===" "){
-
-            if(running)
-                switchScreen();
-
-            return;
-        }
-
-
-        /* P */
-
-        if(
-            e.key.toLowerCase()==="p"
-        ){
-
-            togglePause();
-
-            return;
-        }
-
-
-        /* Q */
-
-        if(
-            e.key.toLowerCase()==="q"
-        ){
-
-            doPeek();
-
-            return;
-        }
-
-
-        /* F */
-
-        if(
-            e.key.toLowerCase()==="f"
-        ){
-
-            whistle();
-
-            return;
-        }
-    }
-);
-
-window.addEventListener(
-    "keyup",
-    e=>{
-
-        keys[e.key]=false;
-        keys[e.key.toLowerCase()]=false;
-    }
-);
-
-
-/* =========================
-   BUTTONS
-========================= */
-
-$("play").addEventListener(
-    "click",
-    startGame
-);
-
-$("retry").addEventListener(
-    "click",
-    startGame
-);
-
-$("switchBtn").addEventListener(
-    "click",
-    ()=>{
-
-        if(running)
-            switchScreen();
-    }
-);
-
-$("peekBtn").addEventListener(
-    "click",
-    doPeek
-);
-
-$("pauseBtn").addEventListener(
-    "click",
-    togglePause
-);
-
-$("dismissNotification").addEventListener(
-    "click",
-    hideNotification
-);
-
-
-/* =========================
-   INITIAL
-========================= */
-
-resetSnake();
-drawSnake();
-
+$("start").onclick=startGame;$("again").onclick=startGame;$("switch").onclick=switchScreen;$("peekBtn").onclick=doPeek;$("notifyBtn").onclick=dismissNotification;$("charger").onclick=collectCharger;
+$("pause").onclick=()=>{if(!running)return;paused=!paused;$("pause").textContent=paused?"RESUME":"PAUSE";if(paused)stopFootsteps()};
+window.addEventListener("keydown",e=>{
+ const code=e.code;if(["Space","KeyW","KeyA","KeyS","KeyD","KeyQ","KeyF","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Escape"].includes(code))e.preventDefault();
+ if(code==="KeyW"||code==="ArrowUp")keys.up=true;if(code==="KeyS"||code==="ArrowDown")keys.down=true;if(code==="KeyA"||code==="ArrowLeft")keys.left=true;if(code==="KeyD"||code==="ArrowRight")keys.right=true;
+ if(e.repeat)return;
+ if(code==="Space"){switchScreen();return}if(code==="KeyQ"){doPeek();return}if(code==="Escape"){if(running)$("pause").click();return}
+ if(code==="KeyF"&&running&&!paused&&!whistleUsed){whistleUsed=true;whistleBoost=true;score+=1000;nextVisit=1.15+Math.random()*.55;$("whistle").style.display="block";$("camState").textContent="WHISTLE DETECTED — TEACHER IS COMING FAST";setTimeout(()=>{if($("whistle"))$("whistle").style.display="none"},1200)}
+});
+window.addEventListener("keyup",e=>{const c=e.code;if(c==="KeyW"||c==="ArrowUp")keys.up=false;if(c==="KeyS"||c==="ArrowDown")keys.down=false;if(c==="KeyA"||c==="ArrowLeft")keys.left=false;if(c==="KeyD"||c==="ArrowRight")keys.right=false});
+window.addEventListener("blur",()=>{keys.up=keys.down=keys.left=keys.right=false;});
+window.addEventListener("visibilitychange",()=>{
+  if(!document.hidden && running){
+    last=performance.now();
+  }
+});
 </script>
-
-</body>
-</html>
+</body></html>
