@@ -1,0 +1,2975 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maze TD</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    user-select: none;
+}
+
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #07111f;
+    font-family: Arial, sans-serif;
+    color: white;
+}
+
+body {
+    width: 100vw;
+    height: 100vh;
+}
+
+#game {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+}
+
+canvas {
+    position: absolute;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    display: block;
+    cursor: crosshair;
+}
+
+#topbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+
+    height: 76px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 26px;
+
+    background: linear-gradient(
+        180deg,
+        rgba(7,17,31,.95),
+        rgba(7,17,31,.75)
+    );
+
+    border-bottom: 1px solid rgba(255,255,255,.12);
+
+    box-shadow:
+        0 5px 25px rgba(0,0,0,.35);
+
+    z-index: 5;
+}
+
+#title {
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 8px #000;
+}
+
+#stats {
+    display: flex;
+    gap: 28px;
+    font-size: 17px;
+}
+
+.stat {
+    color: #cbd5e1;
+}
+
+.stat span {
+    color: white;
+    font-weight: 900;
+}
+
+#toolbar {
+    position: absolute;
+
+    left: 50%;
+    bottom: 20px;
+
+    transform: translateX(-50%);
+
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    padding: 11px;
+
+    background: rgba(7,17,31,.9);
+
+    border: 1px solid rgba(255,255,255,.15);
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 10px 40px rgba(0,0,0,.5);
+
+    z-index: 5;
+
+    backdrop-filter: blur(10px);
+}
+
+button {
+    border: 0;
+    border-radius: 11px;
+
+    padding: 12px 15px;
+
+    background: #1e293b;
+    color: white;
+
+    font-size: 14px;
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition:
+        transform .12s,
+        background .12s,
+        box-shadow .12s;
+}
+
+button:hover {
+    background: #334155;
+    transform: translateY(-2px);
+}
+
+button.selected {
+    background: #2563eb;
+
+    box-shadow:
+        0 0 18px rgba(37,99,235,.45);
+}
+
+button.danger {
+    background: #7f1d1d;
+}
+
+button.danger:hover {
+    background: #991b1b;
+}
+
+#startWave {
+    background: #16a34a;
+
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+#startWave:hover {
+    background: #22c55e;
+
+    box-shadow:
+        0 0 20px rgba(34,197,94,.35);
+}
+
+.toolIcon {
+    font-size: 18px;
+    margin-right: 5px;
+}
+
+#message {
+    position: absolute;
+
+    left: 50%;
+    top: 50%;
+
+    transform: translate(-50%, -50%);
+
+    padding: 20px 30px;
+
+    background: rgba(7,17,31,.95);
+
+    border: 1px solid rgba(255,255,255,.15);
+
+    border-radius: 16px;
+
+    text-align: center;
+
+    display: none;
+
+    pointer-events: none;
+
+    z-index: 10;
+
+    box-shadow:
+        0 15px 60px rgba(0,0,0,.55);
+}
+
+#message h2 {
+    margin: 0 0 8px;
+}
+
+#message p {
+    margin: 0;
+    color: #94a3b8;
+}
+
+@media (max-width: 900px) {
+
+    #topbar {
+        height: 62px;
+        padding: 0 14px;
+    }
+
+    #title {
+        font-size: 19px;
+    }
+
+    #stats {
+        gap: 10px;
+        font-size: 13px;
+    }
+
+    #toolbar {
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+
+        transform: none;
+
+        overflow-x: auto;
+
+        justify-content: flex-start;
+    }
+
+    button {
+        white-space: nowrap;
+        padding: 10px 12px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+    <canvas id="canvas"></canvas>
+
+    <div id="topbar">
+
+        <div id="title">
+            🌀 MAZE TD
+        </div>
+
+        <div id="stats">
+
+            <div class="stat">
+                💰 <span id="money">250</span>
+            </div>
+
+            <div class="stat">
+                ❤️ <span id="lives">20</span>
+            </div>
+
+            <div class="stat">
+                🌊 Wave <span id="wave">0</span>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="toolbar">
+
+        <button id="wallTool" class="selected">
+            <span class="toolIcon">🧱</span>
+            Wall $20
+        </button>
+
+        <button id="towerTool">
+            <span class="toolIcon">🎯</span>
+            Tower $50
+        </button>
+
+        <button id="cannonTool">
+            <span class="toolIcon">💥</span>
+            Cannon $90
+        </button>
+
+        <button id="slowTool">
+            <span class="toolIcon">❄️</span>
+            Slow $30
+        </button>
+
+        <button id="spikeTool">
+            <span class="toolIcon">🔺</span>
+            Spike $25
+        </button>
+
+        <button id="eraseTool" class="danger">
+            <span class="toolIcon">🗑️</span>
+            Erase
+        </button>
+
+        <button id="startWave">
+            ▶ START WAVE
+        </button>
+
+    </div>
+
+    <div id="message">
+
+        <h2 id="messageTitle"></h2>
+
+        <p id="messageText"></p>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   SETUP
+========================================================= */
+
+const canvas =
+    document.getElementById("canvas");
+
+const ctx =
+    canvas.getContext("2d");
+
+const GRID = 16;
+
+let W = window.innerWidth;
+let H = window.innerHeight;
+
+let cellSize = 50;
+
+let boardSize = 800;
+
+
+/* =========================================================
+   RESIZE
+========================================================= */
+
+function resize() {
+
+    W = window.innerWidth;
+    H = window.innerHeight;
+
+    canvas.width = W;
+    canvas.height = H;
+
+    boardSize =
+        Math.min(
+            W - 30,
+            H - 30
+        );
+
+    cellSize =
+        boardSize / GRID;
+
+}
+
+window.addEventListener(
+    "resize",
+    resize
+);
+
+resize();
+
+
+/* =========================================================
+   GAME STATE
+========================================================= */
+
+let money = 250;
+let lives = 20;
+let wave = 0;
+
+let selectedTool = "wall";
+
+let enemies = [];
+let towers = [];
+let traps = [];
+
+let waveRunning = false;
+
+let spawnTimer = 0;
+let enemiesToSpawn = 0;
+
+let lastTime =
+    performance.now();
+
+let gameOver = false;
+
+
+/* =========================================================
+   BOARD
+========================================================= */
+
+const board = [];
+
+for (
+    let y = 0;
+    y < GRID;
+    y++
+) {
+
+    board[y] = [];
+
+    for (
+        let x = 0;
+        x < GRID;
+        x++
+    ) {
+
+        board[y][x] = {
+            wall: false
+        };
+
+    }
+
+}
+
+
+/* =========================================================
+   START / END
+========================================================= */
+
+const START_Y = 7;
+const END_Y = 7;
+
+
+/* =========================================================
+   COSTS
+========================================================= */
+
+const costs = {
+
+    wall: 20,
+    tower: 50,
+    cannon: 90,
+    slow: 30,
+    spike: 25
+
+};
+
+
+/* =========================================================
+   UI
+========================================================= */
+
+const moneyEl =
+    document.getElementById("money");
+
+const livesEl =
+    document.getElementById("lives");
+
+const waveEl =
+    document.getElementById("wave");
+
+
+function updateUI() {
+
+    moneyEl.textContent =
+        money;
+
+    livesEl.textContent =
+        lives;
+
+    waveEl.textContent =
+        wave;
+
+}
+
+
+/* =========================================================
+   PATHFINDING
+========================================================= */
+
+function getPath() {
+
+    const start = {
+        x: 0,
+        y: START_Y
+    };
+
+    const end = {
+        x: GRID - 1,
+        y: END_Y
+    };
+
+
+    const queue = [start];
+
+    const visited =
+        new Set();
+
+    const previous =
+        new Map();
+
+
+    function key(x, y) {
+
+        return `${x},${y}`;
+
+    }
+
+
+    visited.add(
+        key(
+            start.x,
+            start.y
+        )
+    );
+
+
+    while (
+        queue.length > 0
+    ) {
+
+        const current =
+            queue.shift();
+
+
+        if (
+            current.x === end.x &&
+            current.y === end.y
+        ) {
+
+            break;
+
+        }
+
+
+        const neighbours = [
+
+            {
+                x: current.x + 1,
+                y: current.y
+            },
+
+            {
+                x: current.x - 1,
+                y: current.y
+            },
+
+            {
+                x: current.x,
+                y: current.y + 1
+            },
+
+            {
+                x: current.x,
+                y: current.y - 1
+            }
+
+        ];
+
+
+        for (
+            const n of neighbours
+        ) {
+
+            if (
+                n.x < 0 ||
+                n.x >= GRID ||
+                n.y < 0 ||
+                n.y >= GRID
+            ) {
+
+                continue;
+
+            }
+
+
+            if (
+                board[n.y][n.x].wall
+            ) {
+
+                continue;
+
+            }
+
+
+            const k =
+                key(
+                    n.x,
+                    n.y
+                );
+
+
+            if (
+                visited.has(k)
+            ) {
+
+                continue;
+
+            }
+
+
+            visited.add(k);
+
+            previous.set(
+                k,
+                current
+            );
+
+            queue.push(n);
+
+        }
+
+    }
+
+
+    const endKey =
+        key(
+            end.x,
+            end.y
+        );
+
+
+    if (
+        !visited.has(endKey)
+    ) {
+
+        return null;
+
+    }
+
+
+    const path = [];
+
+    let current = end;
+
+
+    while (current) {
+
+        path.push(current);
+
+        current =
+            previous.get(
+                key(
+                    current.x,
+                    current.y
+                )
+            );
+
+    }
+
+
+    path.reverse();
+
+    return path;
+
+}
+
+
+/* =========================================================
+   WALL VALIDATION
+========================================================= */
+
+function canPlaceWall(x, y) {
+
+    if (
+        x === 0 ||
+        x === GRID - 1
+    ) {
+
+        return false;
+
+    }
+
+
+    if (
+        board[y][x].wall
+    ) {
+
+        return false;
+
+    }
+
+
+    board[y][x].wall = true;
+
+
+    const path =
+        getPath();
+
+
+    board[y][x].wall = false;
+
+
+    return path !== null;
+
+}
+
+
+/* =========================================================
+   OBJECT CHECK
+========================================================= */
+
+function hasObject(x, y) {
+
+    return (
+
+        towers.some(
+            t =>
+                t.x === x &&
+                t.y === y
+        )
+
+        ||
+
+        traps.some(
+            t =>
+                t.x === x &&
+                t.y === y
+        )
+
+    );
+
+}
+
+
+/* =========================================================
+   PLACE OBJECT
+========================================================= */
+
+function placeObject(x, y) {
+
+    if (
+        x < 0 ||
+        x >= GRID ||
+        y < 0 ||
+        y >= GRID
+    ) {
+
+        return;
+
+    }
+
+
+    if (
+        (x === 0 && y === START_Y) ||
+        (x === GRID - 1 && y === END_Y)
+    ) {
+
+        return;
+
+    }
+
+
+    /* WALL */
+
+    if (
+        selectedTool === "wall"
+    ) {
+
+        if (
+            money < costs.wall
+        ) {
+
+            showMessage(
+                "Not enough money",
+                "You need $20."
+            );
+
+            return;
+
+        }
+
+
+        if (
+            !canPlaceWall(x, y)
+        ) {
+
+            showMessage(
+                "Can't place wall",
+                "You must leave a path to the exit."
+            );
+
+            return;
+
+        }
+
+
+        money -=
+            costs.wall;
+
+
+        board[y][x].wall =
+            true;
+
+
+        updateUI();
+
+        return;
+
+    }
+
+
+    /* TOWER */
+
+    if (
+        selectedTool === "tower"
+    ) {
+
+        if (
+            board[y][x].wall ||
+            hasObject(x, y)
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            money < costs.tower
+        ) {
+
+            return;
+
+        }
+
+
+        money -=
+            costs.tower;
+
+
+        towers.push({
+
+            x,
+            y,
+
+            range: 2.8,
+
+            damage: 8,
+
+            fireRate: .65,
+
+            cooldown: 0
+
+        });
+
+
+        updateUI();
+
+        return;
+
+    }
+
+
+    /* CANNON */
+
+    if (
+        selectedTool === "cannon"
+    ) {
+
+        if (
+            board[y][x].wall ||
+            hasObject(x, y)
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            money < costs.cannon
+        ) {
+
+            return;
+
+        }
+
+
+        money -=
+            costs.cannon;
+
+
+        towers.push({
+
+            x,
+            y,
+
+            range: 3.2,
+
+            damage: 25,
+
+            fireRate: 1.5,
+
+            cooldown: 0,
+
+            splash: 1.3
+
+        });
+
+
+        updateUI();
+
+        return;
+
+    }
+
+
+    /* SLOW */
+
+    if (
+        selectedTool === "slow"
+    ) {
+
+        if (
+            board[y][x].wall ||
+            hasObject(x, y)
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            money < costs.slow
+        ) {
+
+            return;
+
+        }
+
+
+        money -=
+            costs.slow;
+
+
+        traps.push({
+
+            type: "slow",
+
+            x,
+            y,
+
+            duration: 1.5
+
+        });
+
+
+        updateUI();
+
+        return;
+
+    }
+
+
+    /* SPIKE */
+
+    if (
+        selectedTool === "spike"
+    ) {
+
+        if (
+            board[y][x].wall ||
+            hasObject(x, y)
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            money < costs.spike
+        ) {
+
+            return;
+
+        }
+
+
+        money -=
+            costs.spike;
+
+
+        traps.push({
+
+            type: "spike",
+
+            x,
+            y,
+
+            damage: 35
+
+        });
+
+
+        updateUI();
+
+        return;
+
+    }
+
+
+    /* ERASE */
+
+    if (
+        selectedTool === "erase"
+    ) {
+
+        if (
+            board[y][x].wall
+        ) {
+
+            board[y][x].wall =
+                false;
+
+            return;
+
+        }
+
+
+        towers =
+            towers.filter(
+                t =>
+                    !(
+                        t.x === x &&
+                        t.y === y
+                    )
+            );
+
+
+        traps =
+            traps.filter(
+                t =>
+                    !(
+                        t.x === x &&
+                        t.y === y
+                    )
+            );
+
+    }
+
+}
+
+
+/* =========================================================
+   SPAWN
+========================================================= */
+
+function spawnEnemy() {
+
+    enemies.push({
+
+        x: 0,
+        y: START_Y,
+
+        pathIndex: 0,
+
+        progress: 0,
+
+        hp:
+            45 +
+            wave * 12,
+
+        maxHp:
+            45 +
+            wave * 12,
+
+        speed:
+            .9 +
+            wave * .025,
+
+        reward:
+            7 +
+            Math.floor(
+                wave * .5
+            ),
+
+        slowTimer: 0,
+
+        dead: false
+
+    });
+
+}
+
+
+/* =========================================================
+   START WAVE
+========================================================= */
+
+function startWave() {
+
+    if (
+        waveRunning ||
+        gameOver
+    ) {
+
+        return;
+
+    }
+
+
+    wave++;
+
+    waveRunning =
+        true;
+
+    enemiesToSpawn =
+        5 +
+        wave * 2;
+
+    spawnTimer = 0;
+
+    updateUI();
+
+}
+
+
+/* =========================================================
+   ENEMIES
+========================================================= */
+
+function updateEnemies(dt) {
+
+    const path =
+        getPath();
+
+
+    if (!path) {
+        return;
+    }
+
+
+    for (
+        const enemy of enemies
+    ) {
+
+        if (
+            enemy.dead
+        ) {
+
+            continue;
+
+        }
+
+
+        if (
+            enemy.slowTimer > 0
+        ) {
+
+            enemy.slowTimer -= dt;
+
+        }
+
+
+        let speed =
+            enemy.speed;
+
+
+        if (
+            enemy.slowTimer > 0
+        ) {
+
+            speed *= .45;
+
+        }
+
+
+        enemy.progress +=
+            speed * dt;
+
+
+        while (
+            enemy.progress >= 1
+        ) {
+
+            enemy.progress -= 1;
+
+            enemy.pathIndex++;
+
+
+            if (
+                enemy.pathIndex >=
+                path.length - 1
+            ) {
+
+                enemy.dead =
+                    true;
+
+                lives--;
+
+                updateUI();
+
+                break;
+
+            }
+
+        }
+
+
+        if (
+            enemy.dead
+        ) {
+
+            continue;
+
+        }
+
+
+        const a =
+            path[
+                Math.min(
+                    enemy.pathIndex,
+                    path.length - 1
+                )
+            ];
+
+
+        const b =
+            path[
+                Math.min(
+                    enemy.pathIndex + 1,
+                    path.length - 1
+                )
+            ];
+
+
+        enemy.x =
+            a.x +
+            (
+                b.x - a.x
+            ) *
+            enemy.progress;
+
+
+        enemy.y =
+            a.y +
+            (
+                b.y - a.y
+            ) *
+            enemy.progress;
+
+
+        checkTraps(enemy);
+
+    }
+
+
+    enemies =
+        enemies.filter(
+            e =>
+                !e.dead
+        );
+
+}
+
+
+/* =========================================================
+   TRAPS
+========================================================= */
+
+function checkTraps(enemy) {
+
+    const ex =
+        Math.round(enemy.x);
+
+    const ey =
+        Math.round(enemy.y);
+
+
+    for (
+        const trap of traps
+    ) {
+
+        if (
+            trap.x !== ex ||
+            trap.y !== ey
+        ) {
+
+            continue;
+
+        }
+
+
+        if (
+            trap.type === "slow"
+        ) {
+
+            enemy.slowTimer =
+                trap.duration;
+
+        }
+
+
+        if (
+            trap.type === "spike"
+        ) {
+
+            enemy.hp -=
+                trap.damage;
+
+            enemy.dead =
+                true;
+
+            if (
+                enemy.hp <= 0
+            ) {
+
+                money +=
+                    enemy.reward;
+
+                updateUI();
+
+            }
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   TOWERS
+========================================================= */
+
+function updateTowers(dt) {
+
+    for (
+        const tower of towers
+    ) {
+
+        tower.cooldown -= dt;
+
+
+        if (
+            tower.cooldown > 0
+        ) {
+
+            continue;
+
+        }
+
+
+        let target = null;
+
+        let closest =
+            Infinity;
+
+
+        for (
+            const enemy of enemies
+        ) {
+
+            if (
+                enemy.dead
+            ) {
+
+                continue;
+
+            }
+
+
+            const d =
+                Math.hypot(
+                    enemy.x - tower.x,
+                    enemy.y - tower.y
+                );
+
+
+            if (
+                d <= tower.range &&
+                d < closest
+            ) {
+
+                closest = d;
+
+                target =
+                    enemy;
+
+            }
+
+        }
+
+
+        if (!target) {
+            continue;
+        }
+
+
+        target.hp -=
+            tower.damage;
+
+
+        if (
+            tower.splash
+        ) {
+
+            for (
+                const other of enemies
+            ) {
+
+                if (
+                    other === target ||
+                    other.dead
+                ) {
+
+                    continue;
+
+                }
+
+
+                const d =
+                    Math.hypot(
+                        other.x - target.x,
+                        other.y - target.y
+                    );
+
+
+                if (
+                    d <= tower.splash
+                ) {
+
+                    other.hp -=
+                        tower.damage * .45;
+
+                }
+
+            }
+
+        }
+
+
+        tower.cooldown =
+            tower.fireRate;
+
+
+        for (
+            const enemy of enemies
+        ) {
+
+            if (
+                enemy.dead ||
+                enemy.hp > 0
+            ) {
+
+                continue;
+
+            }
+
+
+            enemy.dead =
+                true;
+
+            money +=
+                enemy.reward;
+
+        }
+
+
+        updateUI();
+
+    }
+
+}
+
+
+/* =========================================================
+   WAVE
+========================================================= */
+
+function updateWave(dt) {
+
+    if (
+        !waveRunning
+    ) {
+
+        return;
+
+    }
+
+
+    spawnTimer -= dt;
+
+
+    if (
+        enemiesToSpawn > 0 &&
+        spawnTimer <= 0
+    ) {
+
+        spawnEnemy();
+
+        enemiesToSpawn--;
+
+        spawnTimer =
+            Math.max(
+                .25,
+                .8 -
+                wave * .02
+            );
+
+    }
+
+
+    if (
+        enemiesToSpawn <= 0 &&
+        enemies.length === 0
+    ) {
+
+        waveRunning =
+            false;
+
+        money +=
+            30 +
+            wave * 3;
+
+        updateUI();
+
+    }
+
+}
+
+
+/* =========================================================
+   BOARD POSITION
+========================================================= */
+
+function getBoardPosition() {
+
+    const left =
+        (W - boardSize) / 2;
+
+    const top =
+        (H - boardSize) / 2;
+
+
+    return {
+        left,
+        top
+    };
+
+}
+
+
+/* =========================================================
+   DRAW MAP
+========================================================= */
+
+function drawBoard() {
+
+    const {
+        left,
+        top
+    } =
+        getBoardPosition();
+
+
+    /* Background */
+
+    const gradient =
+        ctx.createLinearGradient(
+            0,
+            0,
+            0,
+            H
+        );
+
+
+    gradient.addColorStop(
+        0,
+        "#102a43"
+    );
+
+    gradient.addColorStop(
+        .5,
+        "#123b45"
+    );
+
+    gradient.addColorStop(
+        1,
+        "#092a2d"
+    );
+
+
+    ctx.fillStyle =
+        gradient;
+
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    /* Decorative glow */
+
+    const glow =
+        ctx.createRadialGradient(
+            W / 2,
+            H / 2,
+            50,
+            W / 2,
+            H / 2,
+            Math.max(W, H) * .7
+        );
+
+
+    glow.addColorStop(
+        0,
+        "rgba(34,197,94,.08)"
+    );
+
+    glow.addColorStop(
+        1,
+        "rgba(0,0,0,0)"
+    );
+
+
+    ctx.fillStyle =
+        glow;
+
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    /* Path */
+
+    const path =
+        getPath();
+
+
+    if (
+        path
+    ) {
+
+        drawPath(
+            path,
+            left,
+            top
+        );
+
+    }
+
+
+    /* Grid */
+
+    for (
+        let y = 0;
+        y < GRID;
+        y++
+    ) {
+
+        for (
+            let x = 0;
+            x < GRID;
+            x++
+        ) {
+
+            const px =
+                left +
+                x * cellSize;
+
+            const py =
+                top +
+                y * cellSize;
+
+
+            if (
+                board[y][x].wall
+            ) {
+
+                drawWall(
+                    px,
+                    py
+                );
+
+            } else {
+
+                ctx.strokeStyle =
+                    "rgba(255,255,255,.09)";
+
+                ctx.lineWidth = 1;
+
+                ctx.strokeRect(
+                    px,
+                    py,
+                    cellSize,
+                    cellSize
+                );
+
+            }
+
+        }
+
+    }
+
+
+    /* Entrance */
+
+    drawEndpoint(
+        left,
+        top,
+        0,
+        START_Y,
+        "#22c55e",
+        "IN"
+    );
+
+
+    /* Exit */
+
+    drawEndpoint(
+        left,
+        top,
+        GRID - 1,
+        END_Y,
+        "#ef4444",
+        "OUT"
+    );
+
+
+    /* Border */
+
+    ctx.strokeStyle =
+        "rgba(255,255,255,.35)";
+
+    ctx.lineWidth = 4;
+
+    ctx.strokeRect(
+        left,
+        top,
+        boardSize,
+        boardSize
+    );
+
+}
+
+
+/* =========================================================
+   DRAW PATH
+========================================================= */
+
+function drawPath(
+    path,
+    left,
+    top
+) {
+
+    if (
+        path.length === 0
+    ) {
+
+        return;
+
+    }
+
+
+    /*
+       Brown dirt road.
+       We draw connected rectangles
+       between path cells so the route
+       looks like one continuous road.
+    */
+
+    ctx.save();
+
+
+    /* Wide shadow */
+
+    ctx.beginPath();
+
+
+    const first =
+        cellCenter(
+            path[0].x,
+            path[0].y
+        );
+
+
+    ctx.moveTo(
+        left + first.x,
+        top + first.y
+    );
+
+
+    for (
+        let i = 1;
+        i < path.length;
+        i++
+    ) {
+
+        const c =
+            cellCenter(
+                path[i].x,
+                path[i].y
+            );
+
+
+        ctx.lineTo(
+            left + c.x,
+            top + c.y
+        );
+
+    }
+
+
+    ctx.strokeStyle =
+        "rgba(0,0,0,.25)";
+
+    ctx.lineWidth =
+        cellSize * .78;
+
+    ctx.lineCap =
+        "round";
+
+    ctx.lineJoin =
+        "round";
+
+    ctx.stroke();
+
+
+    /* Main road */
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+        left + first.x,
+        top + first.y
+    );
+
+
+    for (
+        let i = 1;
+        i < path.length;
+        i++
+    ) {
+
+        const c =
+            cellCenter(
+                path[i].x,
+                path[i].y
+            );
+
+
+        ctx.lineTo(
+            left + c.x,
+            top + c.y
+        );
+
+    }
+
+
+    const roadGradient =
+        ctx.createLinearGradient(
+            0,
+            top,
+            boardSize,
+            top + boardSize
+        );
+
+
+    roadGradient.addColorStop(
+        0,
+        "#a16207"
+    );
+
+    roadGradient.addColorStop(
+        .5,
+        "#92400e"
+    );
+
+    roadGradient.addColorStop(
+        1,
+        "#78350f"
+    );
+
+
+    ctx.strokeStyle =
+        roadGradient;
+
+    ctx.lineWidth =
+        cellSize * .68;
+
+    ctx.lineCap =
+        "round";
+
+    ctx.lineJoin =
+        "round";
+
+    ctx.stroke();
+
+
+    /* Road highlights */
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+        left + first.x,
+        top + first.y
+    );
+
+
+    for (
+        let i = 1;
+        i < path.length;
+        i++
+    ) {
+
+        const c =
+            cellCenter(
+                path[i].x,
+                path[i].y
+            );
+
+
+        ctx.lineTo(
+            left + c.x,
+            top + c.y
+        );
+
+    }
+
+
+    ctx.strokeStyle =
+        "rgba(251,191,36,.18)";
+
+    ctx.lineWidth =
+        cellSize * .15;
+
+    ctx.stroke();
+
+
+    /* Little dirt spots */
+
+    for (
+        let i = 0;
+        i < path.length;
+        i += 2
+    ) {
+
+        const c =
+            cellCenter(
+                path[i].x,
+                path[i].y
+            );
+
+
+        ctx.fillStyle =
+            "rgba(255,220,150,.18)";
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            left +
+                c.x +
+                Math.sin(i * 4) *
+                cellSize * .2,
+
+            top +
+                c.y +
+                Math.cos(i * 3) *
+                cellSize * .2,
+
+            Math.max(
+                1.5,
+                cellSize * .025
+            ),
+
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+    }
+
+
+    ctx.restore();
+
+}
+
+
+/* =========================================================
+   CELL CENTER
+========================================================= */
+
+function cellCenter(x, y) {
+
+    return {
+
+        x:
+            x * cellSize +
+            cellSize / 2,
+
+        y:
+            y * cellSize +
+            cellSize / 2
+
+    };
+
+}
+
+
+/* =========================================================
+   WALL
+========================================================= */
+
+function drawWall(px, py) {
+
+    const padding =
+        cellSize * .08;
+
+
+    /* Shadow */
+
+    ctx.fillStyle =
+        "rgba(0,0,0,.35)";
+
+    ctx.fillRect(
+        px + padding + 3,
+        py + padding + 5,
+        cellSize - padding * 2,
+        cellSize - padding * 2
+    );
+
+
+    /* Main */
+
+    const gradient =
+        ctx.createLinearGradient(
+            px,
+            py,
+            px + cellSize,
+            py + cellSize
+        );
+
+
+    gradient.addColorStop(
+        0,
+        "#64748b"
+    );
+
+    gradient.addColorStop(
+        .5,
+        "#475569"
+    );
+
+    gradient.addColorStop(
+        1,
+        "#334155"
+    );
+
+
+    ctx.fillStyle =
+        gradient;
+
+
+    ctx.fillRect(
+        px + padding,
+        py + padding,
+        cellSize - padding * 2,
+        cellSize - padding * 2
+    );
+
+
+    /* Wall highlight */
+
+    ctx.strokeStyle =
+        "rgba(255,255,255,.2)";
+
+    ctx.lineWidth = 2;
+
+    ctx.strokeRect(
+        px + padding,
+        py + padding,
+        cellSize - padding * 2,
+        cellSize - padding * 2
+    );
+
+
+    /* Brick line */
+
+    ctx.strokeStyle =
+        "rgba(15,23,42,.35)";
+
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        px + padding,
+        py + cellSize / 2
+    );
+
+    ctx.lineTo(
+        px + cellSize - padding,
+        py + cellSize / 2
+    );
+
+    ctx.stroke();
+
+}
+
+
+/* =========================================================
+   ENDPOINT
+========================================================= */
+
+function drawEndpoint(
+    left,
+    top,
+    x,
+    y,
+    color,
+    text
+) {
+
+    const c =
+        cellCenter(
+            x,
+            y
+        );
+
+
+    ctx.save();
+
+
+    ctx.fillStyle =
+        color;
+
+
+    ctx.shadowBlur = 20;
+
+    ctx.shadowColor =
+        color;
+
+
+    ctx.beginPath();
+
+    ctx.arc(
+        left + c.x,
+        top + c.y,
+        cellSize * .24,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    ctx.shadowBlur = 0;
+
+
+    ctx.fillStyle =
+        "white";
+
+    ctx.font =
+        `bold ${Math.max(10, cellSize * .22)}px Arial`;
+
+    ctx.textAlign =
+        "center";
+
+    ctx.textBaseline =
+        "middle";
+
+
+    ctx.fillText(
+        text,
+        left + c.x,
+        top + c.y
+    );
+
+
+    ctx.restore();
+
+}
+
+
+/* =========================================================
+   DRAW TRAPS
+========================================================= */
+
+function drawTraps() {
+
+    const {
+        left,
+        top
+    } =
+        getBoardPosition();
+
+
+    for (
+        const trap of traps
+    ) {
+
+        const c =
+            cellCenter(
+                trap.x,
+                trap.y
+            );
+
+
+        const x =
+            left + c.x;
+
+        const y =
+            top + c.y;
+
+
+        if (
+            trap.type === "slow"
+        ) {
+
+            ctx.fillStyle =
+                "rgba(56,189,248,.22)";
+
+            ctx.beginPath();
+
+            ctx.arc(
+                x,
+                y,
+                cellSize * .3,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fill();
+
+
+            ctx.strokeStyle =
+                "#38bdf8";
+
+            ctx.lineWidth = 3;
+
+            ctx.stroke();
+
+
+            ctx.fillStyle =
+                "#bae6fd";
+
+            ctx.font =
+                `${cellSize * .42}px Arial`;
+
+            ctx.textAlign =
+                "center";
+
+            ctx.textBaseline =
+                "middle";
+
+            ctx.fillText(
+                "❄",
+                x,
+                y
+            );
+
+        }
+
+
+        if (
+            trap.type === "spike"
+        ) {
+
+            ctx.fillStyle =
+                "#f97316";
+
+            ctx.shadowBlur = 10;
+
+            ctx.shadowColor =
+                "#f97316";
+
+
+            ctx.beginPath();
+
+            ctx.moveTo(
+                x,
+                y - cellSize * .28
+            );
+
+            ctx.lineTo(
+                x + cellSize * .27,
+                y + cellSize * .22
+            );
+
+            ctx.lineTo(
+                x - cellSize * .27,
+                y + cellSize * .22
+            );
+
+            ctx.closePath();
+
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   DRAW TOWERS
+========================================================= */
+
+function drawTowers() {
+
+    const {
+        left,
+        top
+    } =
+        getBoardPosition();
+
+
+    for (
+        const tower of towers
+    ) {
+
+        const c =
+            cellCenter(
+                tower.x,
+                tower.y
+            );
+
+
+        const x =
+            left + c.x;
+
+        const y =
+            top + c.y;
+
+
+        /* Range */
+
+        ctx.fillStyle =
+            tower.splash
+                ? "rgba(249,115,22,.07)"
+                : "rgba(59,130,246,.07)";
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            x,
+            y,
+            tower.range * cellSize,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        /* Base */
+
+        ctx.fillStyle =
+            tower.splash
+                ? "#ea580c"
+                : "#2563eb";
+
+
+        ctx.shadowBlur = 15;
+
+        ctx.shadowColor =
+            tower.splash
+                ? "#f97316"
+                : "#3b82f6";
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            x,
+            y,
+            cellSize * .27,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        ctx.shadowBlur = 0;
+
+
+        /* Barrel */
+
+        ctx.strokeStyle =
+            "#e2e8f0";
+
+        ctx.lineWidth =
+            Math.max(
+                4,
+                cellSize * .1
+            );
+
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            x,
+            y
+        );
+
+        ctx.lineTo(
+            x,
+            y - cellSize * .3
+        );
+
+        ctx.stroke();
+
+
+        /* Core */
+
+        ctx.fillStyle =
+            "#bfdbfe";
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            x,
+            y,
+            Math.max(
+                3,
+                cellSize * .07
+            ),
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+    }
+
+}
+
+
+/* =========================================================
+   DRAW ENEMIES
+========================================================= */
+
+function drawEnemies() {
+
+    const {
+        left,
+        top
+    } =
+        getBoardPosition();
+
+
+    for (
+        const enemy of enemies
+    ) {
+
+        if (
+            enemy.dead
+        ) {
+
+            continue;
+
+        }
+
+
+        const c =
+            cellCenter(
+                enemy.x,
+                enemy.y
+            );
+
+
+        const x =
+            left + c.x;
+
+        const y =
+            top + c.y;
+
+
+        const radius =
+            cellSize * .2;
+
+
+        /* Glow */
+
+        ctx.shadowBlur = 14;
+
+        ctx.shadowColor =
+            "#ef4444";
+
+
+        ctx.fillStyle =
+            "#ef4444";
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            x,
+            y,
+            radius,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        ctx.shadowBlur = 0;
+
+
+        /* Enemy core */
+
+        ctx.fillStyle =
+            "#fecaca";
+
+
+        ctx.beginPath();
+
+        ctx.arc(
+            x - radius * .3,
+            y - radius * .3,
+            radius * .25,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+
+        /* Health bar */
+
+        const barWidth =
+            cellSize * .65;
+
+        const barHeight =
+            Math.max(
+                3,
+                cellSize * .06
+            );
+
+
+        ctx.fillStyle =
+            "#450a0a";
+
+
+        ctx.fillRect(
+            x - barWidth / 2,
+            y - cellSize * .36,
+            barWidth,
+            barHeight
+        );
+
+
+        ctx.fillStyle =
+            "#4ade80";
+
+
+        ctx.fillRect(
+            x - barWidth / 2,
+            y - cellSize * .36,
+            barWidth *
+                Math.max(
+                    0,
+                    enemy.hp /
+                    enemy.maxHp
+                ),
+            barHeight
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   DRAW
+========================================================= */
+
+function draw() {
+
+    drawBoard();
+
+    drawTraps();
+
+    drawTowers();
+
+    drawEnemies();
+
+}
+
+
+/* =========================================================
+   MOUSE
+========================================================= */
+
+canvas.addEventListener(
+    "click",
+    event => {
+
+        const rect =
+            canvas.getBoundingClientRect();
+
+
+        const {
+            left,
+            top
+        } =
+            getBoardPosition();
+
+
+        const mx =
+            event.clientX -
+            left;
+
+        const my =
+            event.clientY -
+            top;
+
+
+        if (
+            mx < 0 ||
+            my < 0 ||
+            mx >= boardSize ||
+            my >= boardSize
+        ) {
+
+            return;
+
+        }
+
+
+        const x =
+            Math.floor(
+                mx / cellSize
+            );
+
+        const y =
+            Math.floor(
+                my / cellSize
+            );
+
+
+        placeObject(
+            x,
+            y
+        );
+
+    }
+);
+
+
+/* =========================================================
+   TOOLS
+========================================================= */
+
+function selectTool(tool) {
+
+    selectedTool =
+        tool;
+
+
+    document
+        .querySelectorAll(
+            "#toolbar button"
+        )
+        .forEach(
+            button => {
+                button.classList.remove(
+                    "selected"
+                );
+            }
+        );
+
+
+    const button =
+        document.getElementById(
+            tool + "Tool"
+        );
+
+
+    if (button) {
+
+        button.classList.add(
+            "selected"
+        );
+
+    }
+
+}
+
+
+document
+    .getElementById("wallTool")
+    .onclick =
+    () =>
+        selectTool("wall");
+
+
+document
+    .getElementById("towerTool")
+    .onclick =
+    () =>
+        selectTool("tower");
+
+
+document
+    .getElementById("cannonTool")
+    .onclick =
+    () =>
+        selectTool("cannon");
+
+
+document
+    .getElementById("slowTool")
+    .onclick =
+    () =>
+        selectTool("slow");
+
+
+document
+    .getElementById("spikeTool")
+    .onclick =
+    () =>
+        selectTool("spike");
+
+
+document
+    .getElementById("eraseTool")
+    .onclick =
+    () =>
+        selectTool("erase");
+
+
+document
+    .getElementById("startWave")
+    .onclick =
+    startWave;
+
+
+/* =========================================================
+   MESSAGE
+========================================================= */
+
+let messageTimer = null;
+
+function showMessage(
+    title,
+    text
+) {
+
+    const message =
+        document.getElementById(
+            "message"
+        );
+
+
+    document.getElementById(
+        "messageTitle"
+    ).textContent =
+        title;
+
+
+    document.getElementById(
+        "messageText"
+    ).textContent =
+        text;
+
+
+    message.style.display =
+        "block";
+
+
+    clearTimeout(
+        messageTimer
+    );
+
+
+    messageTimer =
+        setTimeout(
+            () => {
+
+                message.style.display =
+                    "none";
+
+            },
+            1600
+        );
+
+}
+
+
+/* =========================================================
+   KEYBOARD
+========================================================= */
+
+document.addEventListener(
+    "keydown",
+    event => {
+
+        if (
+            event.key === "1"
+        ) {
+
+            selectTool("wall");
+
+        }
+
+
+        if (
+            event.key === "2"
+        ) {
+
+            selectTool("tower");
+
+        }
+
+
+        if (
+            event.key === "3"
+        ) {
+
+            selectTool("cannon");
+
+        }
+
+
+        if (
+            event.key === "4"
+        ) {
+
+            selectTool("slow");
+
+        }
+
+
+        if (
+            event.key === "5"
+        ) {
+
+            selectTool("spike");
+
+        }
+
+
+        if (
+            event.key.toLowerCase() === "x"
+        ) {
+
+            selectTool("erase");
+
+        }
+
+
+        if (
+            event.code === "Space"
+        ) {
+
+            event.preventDefault();
+
+            startWave();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   GAME LOOP
+========================================================= */
+
+function gameLoop(time) {
+
+    const dt =
+        Math.min(
+            (time - lastTime) / 1000,
+            .05
+        );
+
+
+    lastTime =
+        time;
+
+
+    if (
+        !gameOver
+    ) {
+
+        updateWave(dt);
+
+        updateEnemies(dt);
+
+        updateTowers(dt);
+
+
+        if (
+            lives <= 0
+        ) {
+
+            lives = 0;
+
+            gameOver =
+                true;
+
+            waveRunning =
+                false;
+
+            enemies = [];
+
+
+            showMessage(
+                "GAME OVER",
+                "Refresh the page to try again."
+            );
+
+        }
+
+    }
+
+
+    draw();
+
+
+    requestAnimationFrame(
+        gameLoop
+    );
+
+}
+
+
+/* =========================================================
+   START
+========================================================= */
+
+updateUI();
+
+draw();
+
+requestAnimationFrame(
+    gameLoop
+);
+
+</script>
+
+</body>
+</html>
+```
